@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Device.Location;
 
 /// <summary>
 /// Summary description for Event
@@ -63,10 +64,12 @@ public class Event : Base<Event>
         {
             double lat = double.Parse(latitude);
             double lng = double.Parse(longitude);
+            var sCoord = new GeoCoordinate(lat, lng);
 
             foreach(Event ev in events)
             {
-                ev.Distance = DistanceLabel(DistanceTo(lat, lng, ev.LocationLatitude, ev.LocationLongitude));
+                var eCoord = new GeoCoordinate(ev.LocationLatitude, ev.LocationLongitude);
+                ev.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
             }
         }
         catch(Exception ex) { }
@@ -100,14 +103,15 @@ public class Event : Base<Event>
         return dist;
     }
 
-    private static string DistanceLabel(double distance)
+    private static string DistanceLabel(double meters)
     {
-        if (distance < 1)
+        double miles = meters * 0.000621371;
+        if (miles < 1)
             return "< 1 mile away";
-        else if (distance < 1.5)
+        else if (miles < 1.5)
             return "1 mile away";
         else
-            return string.Format("{0} miles away", Math.Round(distance));
+            return string.Format("{0} miles away", Math.Round(miles));
     }
 
 }

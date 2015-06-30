@@ -20,8 +20,21 @@
                 $("body").addClass("Mobile");
             }
 
-            navigator.geolocation.getCurrentPosition(LoadEvents);
+            if (!$("#FacebookId").val()) {
+                var fbInterval = setInterval(function () {
+                    if ($("#FacebookId").val()) {
+                        clearInterval(fbInterval);
+                        GetLocation();
+                    }
+                }, 500);
+            }
+            
         });
+
+        function GetLocation()
+        {
+            navigator.geolocation.getCurrentPosition(LoadEvents);
+        }
 
         function LoadEvents(position)
         {
@@ -64,7 +77,7 @@
                 var eventHtml = '<div class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;">{time}<div style="height:4px;"></div>{going}</div></div>';
                 var time = new Date(event.StartTime).toLocaleTimeString().replace(":00", "");
                 eventHtml = eventHtml.replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
-                if (event.Going.indexOf(fbId) >= 0) 
+                if (event.Going.indexOf(fbId) >= 0)
                     eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
                 else if (event.Invited.indexOf(fbId) >= 0)
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/invited.png" />');
@@ -100,6 +113,7 @@
                     // request, and the time the access token 
                     // and signed request each expire
                     var uid = response.authResponse.userID;
+                    $("#FacebookId").val(uid);
                     var fbAccessToken = response.authResponse.accessToken;
 
                     var success = (function (results) {
