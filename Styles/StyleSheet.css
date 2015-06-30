@@ -1,0 +1,41 @@
+﻿body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    margin: 0;
+}
+.header
+{
+    background: #4285F4;
+    text-align: center;
+}
+.content
+{
+    color: #4285F4;
+}
+.title
+{
+    height: 40px;
+    margin: 10px 0;
+}
+.links
+{
+    text-align:center;
+    margin:0 auto;
+    width:425px;
+}
+.links a, .links div
+{
+    float: left;
+}
+.links img
+{
+    height: 50px;
+}
+.Mobile .links
+{
+    width: 90%;
+    margin-left: 5%;
+}
+.Mobile .links a, .Mobile .links div
+{
+    float: none;
+}

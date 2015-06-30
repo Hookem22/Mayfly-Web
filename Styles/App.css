@@ -1,0 +1,45 @@
+﻿body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    margin: 0;
+}
+.header
+{
+    background: #4285F4;
+    text-align: center;
+}
+.title
+{
+    height: 40px;
+    margin: 10px 0;
+}
+.notifications
+{
+    height: 40px;
+    margin: 14px 0;
+    float: right;
+}
+.content
+{
+    width: 400px;
+    margin: 0 auto;
+}
+.event
+{
+    border: 1px solid #F2F2F2;
+    padding: 10px 20px;
+    width: 100%;
+    float: left;
+}
+.event img
+{
+    height: 40px;
+    float: left;
+}
+.event img.going
+{
+    border-radius: 20px;
+}
+.event > div
+{
+    margin: 2px 20px;
+}
