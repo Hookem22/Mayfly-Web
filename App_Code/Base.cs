@@ -64,15 +64,28 @@ public abstract class Base<T>
     public void Save()
     {
         AzureService service = new AzureService(AzureTable);
+        T obj = (T)this.MemberwiseClone();
         if (string.IsNullOrEmpty(this.Id))
         {
-            var obj = JsonConvert.SerializeObject(this, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
-            this.Id = service.Post(obj);
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                if (prop.Name == "Id" || prop.GetCustomAttributes(typeof(NonSave), false).Length > 0)
+                    prop.SetValue(obj, null);
+            }
+
+            var json = JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+            this.Id = service.Post(json);
         }
         else
         {
-            var obj = JsonConvert.SerializeObject(this);
-            service.Put(this.Id, obj);
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                if (prop.GetCustomAttributes(typeof(NonSave), false).Length > 0)
+                    prop.SetValue(obj, null);
+            }
+
+            var json = JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+            service.Put(this.Id, json);
         }
     }
 

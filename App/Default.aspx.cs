@@ -32,6 +32,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static Event GetEvent(string id)
+    {
+        return Event.Get(id);
+    }
+
+    [WebMethod]
     public static List<Event> GetEvents(string latitude, string longitude)
     {
         return Event.GetCurrent(latitude, longitude);
@@ -74,10 +80,16 @@ public partial class App_Default : System.Web.UI.Page
     public static void SaveEvent(Event evt)
     {
         evt.Save();
-        Notification notification = new Notification();
-        notification.Message = "Created: " + evt.Name;
-        notification.EventId = evt.Id;
-        notification.FacebookId = evt.Going;
-        notification.Save();
+
+        if(!string.IsNullOrEmpty(evt.NotificationMessage))
+        {
+            Notification notification = new Notification();
+            notification.Message = evt.NotificationMessage;
+            notification.EventId = evt.Id;
+            notification.FacebookId = evt.FacebookId;
+            notification.Save();
+        }
+
     }
+
 }

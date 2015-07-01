@@ -42,39 +42,50 @@ public class Event : Base<Event>
 
     public string Going { get; set; }
 
-    //public int? ReferenceId { get; set; }
+    [NonSave]
+    public int? ReferenceId { get; set; }
 
-    //public string Distance { get; set; }
+    [NonSave]
+    public string Distance { get; set; }
 
-    //public string HowManyGoing
-    //{
-    //    get
-    //    {
-    //        string[] going = Going.Split('|');
-    //        return string.Format("{0} of {1}", going.Length.ToString(), MinParticipants.ToString());
-    //    }
-    //}
+    [NonSave]
+    public string HowManyGoing { get; set; }
+
+    [NonSave]
+    public string NotificationMessage { get; set; }
+
+    [NonSave]
+    public string FacebookId { get; set; }
+
 
     #endregion
 
     public static List<Event> GetCurrent(string latitude, string longitude)
     {
         List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        AddHelperProperties(events, latitude, longitude);
+        return events;
+    }
+
+    private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
+    {
         try
         {
             double lat = double.Parse(latitude);
             double lng = double.Parse(longitude);
             var sCoord = new GeoCoordinate(lat, lng);
 
-            foreach(Event ev in events)
+            foreach (Event evt in events)
             {
-                var eCoord = new GeoCoordinate(ev.LocationLatitude, ev.LocationLongitude);
-                //ev.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
+                var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
+                evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
+
+                string[] going = evt.Going.Split('|');
+                int goingCt = going.Length == 1 && string.IsNullOrEmpty(going[0]) ? 0 : going.Length;
+                evt.HowManyGoing = string.Format("{0} of {1}", goingCt.ToString(), evt.MinParticipants.ToString());
             }
         }
-        catch(Exception ex) { }
-
-        return events;
+        catch (Exception ex) { }
     }
 
     private static string DistanceLabel(double meters)
