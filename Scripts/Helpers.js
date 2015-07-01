@@ -84,3 +84,12 @@ function MessageBox(message, height, width)
     $(".messageDialog").show();
     $(".modal-backdrop").show();
 }
+
+function OpenFromBottom(divId) {
+    $("#" + divId).show();
+    $("#" + divId).animate({ top: "0" }, 350);
+}
+
+function CloseToBottom(divId){
+    $("#" + divId).animate({ top: "100%" }, 350, function () { $("#" + divId).hide() });
+}

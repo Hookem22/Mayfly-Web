@@ -52,7 +52,7 @@ public class AzureService
             throw new HttpResponseException(data.StatusCode);
 
         string idString = data.Headers.Location.AbsoluteUri;
-        return idString.Substring(idString.LastIndexOf("/") + 1);
+        return idString.Substring(idString.LastIndexOf("/") + 1);   
     }
 
 

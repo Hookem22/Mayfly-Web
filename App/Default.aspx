@@ -34,7 +34,7 @@
                 var fbInterval = setInterval(function () {
                     if ($("#FacebookId").val()) {
                         clearInterval(fbInterval);
-                        navigator.geolocation.getCurrentPosition(LoadEvents);
+                        navigator.geolocation.getCurrentPosition(LocationReturn);
                     }
                 }, 500);
             }
@@ -50,6 +50,10 @@
             $("#AddLocation").click(function () {
                 $("#locationSearchTextbox").val("");
                 OpenFromBottom("locationDiv");
+            });
+
+            $("#AddStartTime").click(function () {
+                InitClock();
             });
 
             $("#isPublicBtn").click(function () {
@@ -76,16 +80,19 @@
 
                 Post("GetLocations", { searchName: search, latitude: currentLat, longitude: currentLng }, PopulateLocations);
             });
-
             
         });
 
-        function LoadEvents(position)
+        function LocationReturn(position)
         {
             currentLat = position.coords.latitude;
             currentLng = position.coords.longitude;
+            LoadEvents();
+        }
 
-            Post("GetEvents", { latitude: position.coords.latitude, longitude: position.coords.longitude }, PopulateEvents);
+        function LoadEvents()
+        {
+            Post("GetEvents", { latitude: currentLat, longitude: currentLng }, PopulateEvents);
         }
 
         function ReorderEvents(list)
@@ -138,14 +145,88 @@
 
         function SaveClick() {
 
+            $("#addDiv input, #addDiv textarea").removeClass("error");
+            var error = false;
+            if (!$("#AddName").val()) {
+                $("#AddName").addClass("error");
+                error = true;
+            }
+            if (!$("#AddLocation").val()) {
+                $("#AddLocation").addClass("error");
+                error = true;
+            }
+            if (!$("#AddStartTime").val()) {
+                $("#AddStartTime").addClass("error");
+                error = true;
+            }
+            if (!$("#AddMin").val()) {
+                $("#AddMin").addClass("error");
+                error = true;
+            }
+            if (error)
+                return;
+
+            var now = new Date();
+            var startTime = new Date();
+            var time = $("#clockDiv .time").html();
+            var hr = +time.substring(0, time.indexOf(":"));
+            time = time.substring(time.indexOf(":") + 1);
+            var min = +time.substring(0, time.indexOf(" "));
+            var AMPM = time.substring(time.length - 2, time.length);
+            if (AMPM == "AM" && hr == 12)
+                hr = 0;
+            if (AMPM == "PM")
+                hr += 12;
+            startTime.setHours(hr);
+            startTime.setMinutes(min);
+
+            if(now > startTime) {
+                $("#AddStartTime").addClass("error");
+                return;
+            }
+            var diffMinutes = parseInt((startTime - now)/(60*1000));
+            var cutoffDiff = 0;
+            if (diffMinutes > 29)
+                cutoffDiff = 15;
+            if (diffMinutes > 59)
+                cutoffDiff = 30;
+            if(diffMinutes > 179)
+                cutoffDiff = 60;
+
+            var MS_PER_MINUTE = 60000;
+            var cutoffTime = new Date(startTime - cutoffDiff * MS_PER_MINUTE);
+
+            var invited = "";
+            $("#invitedFriends div").each(function () {
+                var fbId = $(this).attr("facebookid");
+                if (fbId)
+                    invited += !invited ? fbId : "|" + fbId;
+            })
+
+            var max = +$("#AddMax").val();
+            if (max) max++;
+
+            var event = { Name: $("#AddName").val(), EventDescription: $("#AddDetails").val(), LocationName: currentLocation.Name,
+                LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
+                IsPrivate: $("#isPublicBtn .selected").html() == "Private", MinParticipants: +$("#AddMin").val() + 1, MaxParticipants: max, 
+                StartTime: startTime, CutoffTime: cutoffTime, Invited:invited, Going: currentUser.FacebookId + ":" + currentUser.FirstName };
+
+            var success = (function() {
+                LoadEvents();
+                CloseToBottom("addDiv");
+            });
+            Post("SaveEvent", { evt: event }, success);
+
             CloseToBottom("addDiv");
         }
 
         function PublicClick() {
-            var marginLeft = $(".pillBtn .slider").css("margin-left") == "0px" ? "44%" : "0px";
-            $(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
-                $(".pillBtn div").not(".slider").toggleClass("selected");
-            });
+            alert("Pow Wow currently does not have enough members near you to create public events. Invite your friends to enable public events.");
+
+            //var marginLeft = $(".pillBtn .slider").css("margin-left") == "0px" ? "44%" : "0px";
+            //$(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
+            //    $(".pillBtn div").not(".slider").toggleClass("selected");
+            //});
         }
 
         function PopulateLocations(locations) {
@@ -272,7 +353,6 @@
                 $("#notificationDiv").hide();
             });
         }
-
     </script>
     <script type="text/javascript">
         var currentUser;
@@ -317,11 +397,165 @@
             ref.parentNode.insertBefore(js, ref);
         }(document));
 </script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#clockCircle").on("click", "div", function () {
+                $("#clockCircle div").removeClass("selected");
+                $(this).addClass("selected");
+                if ($(this).hasClass("hour")) {
+                    HourClicked($(this).html());
+                }
+                else {
+                    var time = $("#clockDiv .time").html();
+                    var hr = time.substring(0, time.indexOf(":"));
+                    var min = $(this).html();
+                    if (min == "5")
+                        min = "05";
+                    var AMPM = time.substring(time.indexOf(" ") + 1);
+                    time = hr + ":" + min + " " + AMPM;
+                    $("#clockDiv .time").html(time);
+                    $("#AddStartTime").val(time);
+                    $("#clockDiv").fadeOut();
+                    $(".modal-backdrop").fadeOut();
+                }
+            });
+
+            $(".ampm").click(function () {
+                $(".ampm").removeClass("selected");
+                $(this).addClass("selected");
+
+                var time = $("#clockDiv .time").html();
+                time = time.substring(0, time.indexOf(" ") + 1);
+                time += $(this).html();
+                $("#clockDiv .time").html(time)
+            });
+        });
+
+        function InitClock() {
+            $(".modal-backdrop").show();
+            $("#clockDiv").show();
+            $("#clockCircle").html("");
+            if (!$("#clockDiv .time").html().length) {
+                var date = new Date;
+                var min = date.getMinutes();
+                if (min < 10)
+                    min = "0" + min;
+                var hr = date.getHours();
+                var AMPM = "AM";
+                if (hr > 11)
+                    AMPM = "PM";
+                if (hr > 12)
+                    hr -= 12;
+                if (hr == 0)
+                    hr = 12;
+
+                $(".ampm").each(function () {
+                    if ($(this).html() == AMPM)
+                        $(this).addClass("selected");
+                });
+
+                $("#clockDiv .time").html(hr + ":" + min + " " + AMPM);
+            }
+            else {
+                var time = $("#clockDiv .time").html();
+                var hr = time.substring(0, time.indexOf(":"));
+            }
+
+            var wd = $("#clockCircle").width();
+            $("#clockCircle").height(wd * .8);
+
+            var radius = (wd / 2) * .7;
+            var html = "";
+            var centerX = wd / 2;
+            var centerY = wd / 2 + 60;
+            for (var i = 1; i < 13; i++) {
+                var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
+                var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
+                if (i == hr) {
+                    html += '<div class="selected hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
+                }
+                else {
+                    html += '<div class="hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
+                }
+
+            }
+            $("#clockCircle").append(html);
+        }
+
+        function HourClicked(hr) {
+
+            var time = $("#clockDiv .time").html();
+            time = time.substring(time.indexOf(":"));
+            var min = +time.substring(1, time.indexOf(" "));
+            console.log(min);
+            time = hr + time;
+            $("#clockDiv .time").html(time);
+
+            var wd = $("#clockCircle").width();
+            $("#clockCircle").fadeOut("slow", function () {
+                var radius = (wd / 2) * .7;
+                var html = "";
+                var centerX = wd / 2;
+                var centerY = wd / 2 + 60;
+                for (var i = 0; i < 12; i++) {
+                    var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
+                    var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
+                    var val = i == 0 ? "00" : (i * 5);
+                    if ((i - 1) * 5 < min && i * 5 >= min)
+                        html += '<div class="selected" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + val + '</div>';
+                    else
+                        html += '<div style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + val + '</div>';
+
+                }
+                $("#clockCircle").html(html);
+                $("#clockCircle").fadeIn("slow");
+            });
+
+        }
+
+        function DrawLine(x1, y1, x2, y2) {
+
+            if (y1 < y2) {
+                var pom = y1;
+                y1 = y2;
+                y2 = pom;
+                pom = x1;
+                x1 = x2;
+                x2 = pom;
+            }
+
+            var a = Math.abs(x1 - x2);
+            var b = Math.abs(y1 - y2);
+            var c;
+            var sx = (x1 + x2) / 2;
+            var sy = (y1 + y2) / 2;
+            var width = Math.sqrt(a * a + b * b);
+            var x = sx - width / 2;
+            var y = sy;
+
+            a = width / 2;
+            c = Math.abs(sx - x);
+            b = Math.sqrt(Math.abs(x1 - x) * Math.abs(x1 - x) + Math.abs(y1 - y) * Math.abs(y1 - y));
+
+            var cosb = (b * b - a * a - c * c) / (2 * a * c);
+            var rad = Math.acos(cosb);
+            var deg = (rad * 180) / Math.PI
+
+            htmlns = "http://www.w3.org/1999/xhtml";
+            div = document.createElementNS(htmlns, "div");
+            div.setAttribute('style', 'border:1px solid #4285F4;width:' + width + 'px;height:0px;-moz-transform:rotate(' + deg + 'deg);-webkit-transform:rotate(' + deg + 'deg);position:absolute;top:' + y + 'px;left:' + x + 'px;');
+
+            document.getElementById("clockDiv").appendChild(div);
+
+        }
+    </script>
+
 </head>
 <body class="Mobile">
     <form id="form1" runat="server">
         <div id="fb-root"></div>
         <input type="hidden" id="FacebookId" runat="server" />
+        <div class="modal-backdrop"></div>
         <div class="header">
             <div>
                 <img class="title" src="/Img/title.png" />
@@ -340,13 +574,13 @@
             <a onclick="CloseToBottom('addDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
             <div style="font-size:1.1em;margin-top:18px;text-align: center;">Create Event</div>
             <a onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;">Create</a>
-            <input type="text" placeholder="What do you want to do?" style="margin:12px 0;" />
-            <textarea rows="4" placeholder="Details"></textarea>
+            <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0;" />
+            <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
             <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;" />
-            <input type="text" placeholder="Start Time" style="width:32%;float:right;" />
+            <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
             <div style="float:left;margin:16px 0;">Other People:</div>
-            <input type="number" placeholder="Max" style="width:20%;float:right;margin-left:12px;" />
-            <input type="number" placeholder="Min" style="width:20%;float:right;" />
+            <input id="AddMax" type="number" placeholder="Max" style="width:20%;float:right;margin-left:12px;" />
+            <input id="AddMin" type="number" placeholder="Min" style="width:20%;float:right;" />
             <div id="isPublicBtn" class="pillBtn" style="clear:both;">
                 <div class="slider"></div>
                 <div style="margin: -25px 0 0 18%;float:left;">Public</div>
@@ -370,6 +604,15 @@
             <div id="inviteResults"></div>
         </div>
         <div id="notificationDiv"></div>
+        <div id="clockDiv">
+            <div class="time"></div>
+            <div id="clockCircle"></div>
+            <div class="ampm" style="float:left;">AM</div>
+            <div class="ampm" style="float:right;">PM</div>
+            <div onclick='$("#clockDiv").fadeOut();$(".modal-backdrop").fadeOut();' style="position:absolute;bottom: 0;left:0;height: 36px;width:100%;border-top: 1px solid #ccc;">
+                <div style="text-align:center;color:#4285F4;margin-top:9px;">Cancel</div>
+            </div>
+        </div>
     </form>
 </body>
 </html>

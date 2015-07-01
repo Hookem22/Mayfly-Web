@@ -38,6 +38,7 @@ public class Users : Base<Users>
             user.FirstName = me.first_name;
             user.Save();
         }
+        user.FirstName = me.first_name;
         return user;
     }
 

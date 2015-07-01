@@ -42,18 +42,18 @@ public class Event : Base<Event>
 
     public string Going { get; set; }
 
-    public int? ReferenceId { get; set; }
+    //public int? ReferenceId { get; set; }
 
-    public string Distance { get; set; }
+    //public string Distance { get; set; }
 
-    public string HowManyGoing
-    {
-        get
-        {
-            string[] going = Going.Split('|');
-            return string.Format("{0} of {1}", going.Length.ToString(), MinParticipants.ToString());
-        }
-    }
+    //public string HowManyGoing
+    //{
+    //    get
+    //    {
+    //        string[] going = Going.Split('|');
+    //        return string.Format("{0} of {1}", going.Length.ToString(), MinParticipants.ToString());
+    //    }
+    //}
 
     #endregion
 
@@ -69,38 +69,12 @@ public class Event : Base<Event>
             foreach(Event ev in events)
             {
                 var eCoord = new GeoCoordinate(ev.LocationLatitude, ev.LocationLongitude);
-                ev.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
+                //ev.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
             }
         }
         catch(Exception ex) { }
 
         return events;
-    }
-
-    private static double DistanceTo(double lat1, double lon1, double lat2, double lon2, char unit = 'M')
-    {
-        double rlat1 = Math.PI * lat1 / 180;
-        double rlat2 = Math.PI * lat2 / 180;
-        double theta = lon1 - lon2;
-        double rtheta = Math.PI * theta / 180;
-        double dist =
-            Math.Sin(rlat1) * Math.Sin(rlat2) + Math.Cos(rlat1) *
-            Math.Cos(rlat2) * Math.Cos(rtheta);
-        dist = Math.Acos(dist);
-        dist = dist * 180 / Math.PI;
-        dist = dist * 60 * 1.1515;
-
-        switch (unit)
-        {
-            case 'K': //Kilometers -> default
-                return dist * 1.609344;
-            case 'N': //Nautical Miles 
-                return dist * 0.8684;
-            case 'M': //Miles
-                return dist;
-        }
-
-        return dist;
     }
 
     private static string DistanceLabel(double meters)

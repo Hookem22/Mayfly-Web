@@ -45,7 +45,7 @@ public abstract class Base<T>
         return items.ToList();
     }
 
-    public static List<T> GetByWhere(string whereStatement)
+    protected static List<T> GetByWhere(string whereStatement)
     {
         AzureService service = new AzureService(AzureTable);
         var data = service.GetByWhere(whereStatement);
@@ -53,7 +53,7 @@ public abstract class Base<T>
         return items.ToList();
     }
 
-    public static List<T> GetByProc(string procName, string parameters)
+    protected static List<T> GetByProc(string procName, string parameters)
     {
         AzureService service = new AzureService(AzureTable);
         var data = service.GetByProc(procName, parameters);

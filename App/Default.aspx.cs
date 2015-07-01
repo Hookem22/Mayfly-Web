@@ -17,6 +17,20 @@ public partial class App_Default : System.Web.UI.Page
         }
         catch { }
     }
+
+    [WebMethod]
+    public static Users GetUser(string facebookAccessToken)
+    {
+        var client = new FacebookClient(facebookAccessToken);
+        dynamic me = client.Get("me");
+
+        Users user = null;
+        if (me != null)
+            user = Users.Login(me);
+
+        return user;
+    }
+
     [WebMethod]
     public static List<Event> GetEvents(string latitude, string longitude)
     {
@@ -24,16 +38,46 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static Users GetUser(string facebookAccessToken)
+    public static List<Notification> GetNotifications(string facebookId)
+    {
+        return Notification.GetByFacebookId(facebookId);
+    }
+
+    [WebMethod]
+    public static List<Location> GetLocations(string searchName, string latitude, string longitude)
+    {
+        return Location.SearchGooglePlaces(searchName, latitude, longitude);
+    }
+
+    [WebMethod]
+    public static List<Users> GetFriends(string facebookAccessToken)
     {
         var client = new FacebookClient(facebookAccessToken);
-        dynamic me = client.Get("me");
-        //Image = https://graph.facebook.com/id/picture?type=large
+        dynamic result = client.Get("me/friends");
+        
+        List<Users> users = new List<Users>();
+        if (result != null)
+        {
+            foreach (var item in result.data)
+            {
+                Users user = new Users();
+                user.Name = item.name;
+                user.FacebookId = item.id;
+                users.Add(user);
+            }
+        }
+        return users.OrderBy(u => u.Name).ToList();
+        
+    }
 
-        Users user = null;
-        if (me != null)
-            user = Users.Login(me);
-
-        return user;
+    [WebMethod]
+    public static void SaveEvent(Event evt)
+    {
+        evt.Save();
+        Notification notification = new Notification();
+        notification.Message = "Created: " + evt.Name;
+        notification.EventId = evt.Id;
+        notification.FacebookId = evt.Going;
+        notification.Save();
     }
 }
