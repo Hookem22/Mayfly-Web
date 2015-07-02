@@ -1,0 +1,40 @@
+﻿
+.NonMobile .content
+{
+    width: 400px;
+}
+.NonMobile #addDiv > div
+{
+    width: 400px;
+    position: absolute;
+    left: 50%;
+    margin-left: -200px;
+}
+.NonMobile #detailsDiv > div
+{
+    width: 400px;
+    position: absolute;
+    left: 50%;
+    margin-left: -200px;
+}
+.NonMobile #messageDiv > div
+{
+    width: 400px;
+    position: absolute;
+    left: 50%;
+    margin-left: -200px;
+}
+.NonMobile #locationDiv > div
+{
+    width: 400px;
+    position: absolute;
+    left: 50%;
+    margin-left: -200px;
+}
+.NonMobile #inviteDiv > div
+{
+    width: 400px;
+    position: absolute;
+    left: 50%;
+    margin-left: -200px;
+}

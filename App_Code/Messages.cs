@@ -37,7 +37,7 @@ public class Messages : Base<Messages>
     {
         List<Messages> messages = GetByProc("getmessages", string.Format("eventid={0}", eventId));
         AddHelperProperties(messages);
-        return messages;
+        return messages.OrderByDescending(m => m.Seconds).ToList();
     }
 
     private static void AddHelperProperties(List<Messages> messages)

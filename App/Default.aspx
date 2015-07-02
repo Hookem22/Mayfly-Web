@@ -9,6 +9,7 @@
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
     <link href="/Styles/App.css" rel="stylesheet" type="text/css" />
+    <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
@@ -25,11 +26,11 @@
             var mobParam = getParameterByName("id");
             isMobile = mobilecheck() || tabletCheck() || mobParam == "m";
             if (!isMobile) {
-                $("body").removeClass("Mobile");
+                $("body").addClass("NonMobile");
             }
             else
             {
-                $("#addMap").height($(document).height() - 475);
+                //$("#addMap").height($(document).height() - 475);
             }
 
             var fbInterval = setInterval(function () {
@@ -67,6 +68,20 @@
 
             $("#inviteBtn").click(function () {
                 OpenFromBottom("inviteDiv");
+                $("#Invite").html("Add");
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+            });
+
+            $("#Invite").click(function () {
+                if ($(this).html() == "Add")
+                    AddInvites();
+                else
+                    SendInvites();
+            });
+
+            $("#DetailsInvitedBtn").click(function () {
+                OpenFromBottom("inviteDiv");
+                $("#Invite").html("Invite");
                 Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
             });
 
@@ -88,24 +103,13 @@
 
             $("#DetailsJoinBtn").click(function () {
                 if ($(this).html() == "Join") {
-                    if (!currentEvent.Going)
-                        currentEvent.Going = currentUser.FacebookId + ":" + currentUser.FirstName;
-                    else
-                        currentEvent.Going += "|" + currentUser.FacebookId + ":" + currentUser.FirstName;
+                    currentEvent.Going = AddToString(currentEvent.Going, currentUser.FacebookId + ":" + currentUser.FirstName)
 
                     currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
                     $(this).html("Unjoin");
                 }
                 else {
-                    var going = "";
-                    $(currentEvent.Going.split("|")).each(function () {
-                        if (this.indexOf(currentUser.FacebookId) < 0)
-                            going += this + "|";
-                    });
-                    if (going)
-                        going = going.substring(0, going.length - 1);
-
-                    currentEvent.Going = going;
+                    currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.FacebookId);
                     currentEvent.NotificationMessage = "Unjoined: " + currentEvent.Name;
                     $(this).html("Join");
                 }
@@ -122,12 +126,32 @@
             });
         });
 
-        function OpenAdd(event) {
+        function OpenAdd(isEdit) {
             OpenFromBottom("addDiv");
-            if (!event) {
+            if (!isEdit) {
+                $("#addHeader").html("Create Event");
+                $("#AddSaveBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
                 $("#addDiv .invitedFriends").html("");
                 $("#addMap").hide();
+                $("#inviteBtn").show();
+                $("#addDiv .invitedFriends").show();
+                currentEvent = {};
+                currentLocation = {};
+            }
+            else {
+                $("#AddName").val(currentEvent.Name);
+                $("#AddSaveBtn").html("Save");
+                $("#AddDetails").val(currentEvent.EventDescription);
+                $("#AddLocation").val(currentEvent.LocationName);
+                currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
+                $("#AddStartTime").val(new Date(currentEvent.StartTime).toLocaleTimeString().replace(":00", ""));
+                $("#AddMin").val(currentEvent.MinParticipants);
+                var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
+                $("#AddMax").val(max);
+                PlotMap("addMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
+                $("#inviteBtn").hide();
+                $("#addDiv .invitedFriends").hide();
             }
         }
 
@@ -196,6 +220,10 @@
             OpenFromBottom("detailsDiv");
 
             $("#DetailsName").html(event.Name);
+            if (event.IsPrivate && event.Going.indexOf(currentUser.FacebookId) == 0) {
+                var edit = " - <span onclick='OpenAdd(true);' style='color:#4285F4;'>Edit</span>";
+                $("#DetailsName").append(edit);
+            }
             $("#DetailsDetails").html(event.EventDescription);
             $("#DetailsLocation").html("Location: " + event.LocationName);
             $("#DetailsStartTime").html("Start Time: " + new Date(event.StartTime).toLocaleTimeString().replace(":00", ""));
@@ -257,7 +285,7 @@
 
             var now = new Date();
             var startTime = new Date();
-            var time = $("#clockDiv .time").html();
+            var time = $("#AddStartTime").val();
             var hr = +time.substring(0, time.indexOf(":"));
             time = time.substring(time.indexOf(":") + 1);
             var min = +time.substring(0, time.indexOf(" "));
@@ -302,9 +330,23 @@
                 NotificationMessage: "Created: " + $("#AddName").val(), FacebookId: currentUser.FacebookId
             };
 
-            var success = (function() {
+            if (currentEvent) {
+                event.Id = currentEvent.Id;
+                event.NotificationMessage = "";
+            }
+
+            var success = (function(event) {
                 LoadEvents();
                 CloseToBottom("addDiv");
+                if (currentEvent) {
+                    currentEvent = event;
+                    OpenDetails(currentEvent);
+                }
+                else {
+                    event.Invited = event.Invited.replace(currentUser.FacebookId, "");
+                    event.NotificationMessage = "Invited: " + event.Name;
+                    Post("SendInvites", { evt: event });
+                }
             });
             Post("SaveEvent", { evt: event }, success);
 
@@ -312,7 +354,7 @@
         }
 
         function PublicClick() {
-            alert("Pow Wow currently does not have enough members near you to create public events. Invite your friends to enable public events.");
+            MessageBox("Pow Wow currently does not have enough members near you to create public events. Invite your friends to enable public events.");
 
             //var marginLeft = $(".pillBtn .slider").css("margin-left") == "0px" ? "44%" : "0px";
             //$(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
@@ -408,6 +450,79 @@
 
             $("#addDiv .invitedFriends").html(html);
             CloseToBottom("inviteDiv");
+        }
+
+        function SendInvites() {
+            var invited = "";
+            $("#inviteResults div.invited").each(function () {
+                var fbId = $(this).attr("facebookId");
+                var name = $(this).find("span").html();
+                invited += name + ", ";
+                currentEvent.Invited = AddToString(currentEvent.Invited, fbId);
+            });
+
+            if (invited) {
+                invite = invited.substring(0, invited.length - 2);
+                invited += " have been invited.";
+                
+                currentEvent.NotificationMessage = "Invited: " + currentEvent.Name;
+
+                var prev = currentEvent.Invited;
+                currentEvent.Invited = currentEvent.Invited.replace(currentUser.FacebookId, "");
+                Post("SendInvites", { evt: currentEvent });
+                currentEvent.Invited = prev;
+
+                MessageBox(invited);
+            }
+            CloseToBottom("inviteDiv");
+        }
+
+        function OpenMessages() {
+            $("#addBtn").hide();
+            $("#DetailMap").hide();
+            $("#messageDiv").show();
+            $("#messageDiv").animate({ left: "0" }, 350);
+            $("#MessageName").html(currentEvent.Name);
+            LoadMessages();
+        }
+
+        function LoadMessages() {
+            Post("GetMessages", { eventId: currentEvent.Id }, PopulateMessages);
+        }
+
+        function PopulateMessages(messages) {
+            var html = "";
+            for (var i = 0; i < messages.length; i++) {
+                var message = messages[i];
+                if (message.FacebookId.indexOf(currentUser.FacebookId) >= 0) {
+                    var messageHtml = "<div style='float:right;clear:both;margin-top: 8px;'>{SinceSent}</div><div class='meMessage'>{Message}</div>";
+                    html += messageHtml.replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
+                }
+                else {
+                    var messageHtml = "<div style='float:left;clear:both;margin-top: 8px;'>{From} - {SinceSent}</div><div class='youMessage'>{Message}</div>";
+                    html += messageHtml.replace("{From}", message.Name).replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
+                }
+            }
+            $("#MessageResults").html(html);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function SendMessage() {
+            var text = $("#messageDiv input").val();
+            if(!text)
+                return;
+            
+            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, FacebookId: currentUser.FacebookId };
+            Post("SendMessage", { message: message }, LoadMessages);
+            $("#messageDiv input").val("");
+        }
+
+        function CloseMessages() {
+            $("#DetailMap").show();
+            $("#addBtn").show();
+            $("#messageDiv").animate({ left: "100%" }, 350, function () {
+                $("#messageDiv").hide();
+            });
         }
 
         function NotificationClick() {
@@ -642,7 +757,7 @@
     </script>
 
 </head>
-<body class="Mobile">
+<body>
     <form id="form1" runat="server">
         <div id="fb-root"></div>
         <input type="hidden" id="FacebookId" runat="server" />
@@ -662,9 +777,10 @@
         </div>
         <img id="addBtn" src="../Img/add.png" />
         <div id="addDiv">
+            <div>
             <a onclick="CloseToBottom('addDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
-            <div style="font-size:1.1em;margin-top:18px;text-align: center;">Create Event</div>
-            <a onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;">Create</a>
+            <div id="addHeader" style="font-size:1.1em;margin-top:18px;text-align: center;">Create Event</div>
+            <a id="AddSaveBtn" onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;">Create</a>
             <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0;" />
             <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
             <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;" />
@@ -680,11 +796,13 @@
             <div id="inviteBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;">Invite Friends</div>
             <div class="invitedFriends"></div>
             <div id="addMap"></div>
+            </div>
         </div>
         <div id="detailsDiv">
+            <div>
             <a onclick="CloseToBottom('detailsDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
             <div id="DetailsName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
-            <img src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
+            <img onclick="OpenMessages();" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>
             <div id="DetailsLocation"></div>
             <div id="DetailsStartTime"></div>
@@ -693,20 +811,38 @@
             <div id="DetailsInvitedFriends" class="invitedFriends" style="height:80px;position:absolute;overflow:hidden;"></div>
             <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 98px 0 14px;">Invite Friends</div>
             <div id="DetailsMap"></div>
-            <div id="DetailsJoinBtn" class="bottomBtn">Join</div>
+            <div id="DetailsJoinBtn" class="bottomBtn" style="position:fixed;top:100%;margin-top: -42px;bottom:initial;">Join</div>
+            </div>
+        </div>
+        <div id="messageDiv">
+            <div>
+            <div style="left:0;right:0;position:fixed;background:white;border-bottom:1px solid #ccc;z-index:500;">
+                <a onclick="CloseMessages();" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
+                <div id="MessageName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
+            </div>
+            <div id="MessageResults"></div>
+            <div id="sendDiv">
+                <input id="sendText" type="text" placeholder="Message" />
+                <div onclick="SendMessage();">Send</div>
+            </div>
+            </div>
         </div>
         <div id="locationDiv">
+            <div>
             <a onclick="CloseToBottom('locationDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
             <div style="font-size:1.1em;margin-top:18px;text-align: center;">Add Location</div>
             <input id="locationSearchTextbox" type="text" placeholder="Search" style="margin:12px 0;" />
             <div id="locationResults"></div>
+            </div>
         </div>
         <div id="inviteDiv">
+            <div>
             <a onclick="CloseToBottom('inviteDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
             <div style="font-size:1.1em;margin-top:18px;text-align: center;">Recipients</div>
-            <a onclick="AddInvites();" style="position: absolute; right:5%;top:20px;color:#4285F4;">Add</a>
+            <a id="Invite" style="position: absolute; right:5%;top:20px;color:#4285F4;">Add</a>
             <input id="filterFriendsTextbox" type="text" placeholder="Search" style="margin:12px 0;" />
             <div id="inviteResults"></div>
+            </div>
         </div>
         <div id="notificationDiv"></div>
         <div id="clockDiv">
@@ -715,6 +851,10 @@
             <div class="ampm" style="float:left;">AM</div>
             <div class="ampm" style="float:right;">PM</div>
             <div onclick='$("#clockDiv").fadeOut();$(".modal-backdrop").fadeOut();' class="bottomBtn" >Cancel</div>
+        </div>
+        <div id="MessageBox">
+            <div class="messageContent"></div>
+            <div onclick="CloseMessageBox();" class="bottomBtn">Ok</div>
         </div>
     </form>
 </body>

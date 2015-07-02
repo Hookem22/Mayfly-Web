@@ -56,6 +56,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static List<Messages> GetMessages(string eventId)
+    {
+        return Messages.GetByEvent(eventId);
+    }
+
+    [WebMethod]
     public static List<Users> GetFriends(string facebookAccessToken)
     {
         var client = new FacebookClient(facebookAccessToken);
@@ -77,7 +83,7 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static void SaveEvent(Event evt)
+    public static Event SaveEvent(Event evt)
     {
         evt.Save();
 
@@ -90,6 +96,34 @@ public partial class App_Default : System.Web.UI.Page
             notification.Save();
         }
 
+        return evt;
+    }
+
+    [WebMethod]
+    public static void SendInvites(Event evt)
+    {
+        string[] fbIds = evt.Invited.Split('|');
+        foreach(string fbId in fbIds)
+        {
+            if (string.IsNullOrEmpty(fbId))
+                continue;
+
+            Notification notification = new Notification();
+            notification.Message = evt.NotificationMessage;
+            notification.EventId = evt.Id;
+            notification.FacebookId = fbId;
+            notification.Save();
+
+            //TODO: Send push message
+        }
+    }
+
+    [WebMethod]
+    public static void SendMessage(Messages message)
+    {
+        message.Save();
+
+        //TODO: Send push message
     }
 
 }

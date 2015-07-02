@@ -59,30 +59,36 @@ function RemoveFrontBreaks(text)
     }
     return text;
 }
-function MessageBox(message, height, width)
+function MessageBox(message)
 {
-    if (!$(".messageDialog").length)
-    {
-        var html = '<div class="messageDialog">';
-        html += '<div class="dialogClose" style="margin:10px -30px 0 0;" onclick="$(\'.messageDialog\').hide();$(\'.modal-backdrop\').hide();">X</div>';
-        html += '<div class="messageContent" style="padding: 2em 1em 1em;">' + message + '</div>';
-        html += '<div class="messageError error"></div>';
-        html += '<div class="btn" onclick="$(\'.messageDialog\').hide();$(\'.modal-backdrop\').hide();">Ok</div>';
-        html += '</div>';
-        $("body").append(html);
-    }
-    else
-    {
-        $(".messageContent").html(message);
-    }
-
-    if (height)
-        $(".messageDialog").css({ height: height + "px" });
-    if (width)
-        $(".messageDialog").css({ width: width + "px", "margin-left": (width / -2) + "px" });
-
-    $(".messageDialog").show();
+    $(".messageContent").html(message);
+    $("#MessageBox").show();
     $(".modal-backdrop").show();
+}
+
+function CloseMessageBox() {
+    $("#MessageBox").hide();
+    $(".modal-backdrop").hide();
+}
+function AddToString(list, item) {
+    if (list.indexOf(item) < 0) {
+        if (!list)
+            list = item;
+        else
+            list += "|" + item;
+    }
+    return list;
+}
+function RemoveFromString(list, item) {
+    var newList = "";
+    $(list.split("|")).each(function () {
+        if (this.indexOf(item) < 0)
+            newList += this + "|";
+    });
+    if (newList)
+        newList = newList.substring(0, newList.length - 1);
+
+    return newList;
 }
 
 function OpenFromBottom(divId) {
