@@ -99,3 +99,6 @@ function OpenFromBottom(divId) {
 function CloseToBottom(divId){
     $("#" + divId).animate({ top: "100%" }, 350, function () { $("#" + divId).hide() });
 }
+function Contains(fullString, sub) {
+    return fullString.indexOf(sub) >= 0;
+}

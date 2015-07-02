@@ -1,7 +1,7 @@
 ﻿
 .NonMobile .content
 {
-    width: 400px;
+    max-width: 400px;
 }
 .NonMobile #addDiv > div
 {
@@ -37,4 +37,17 @@
     position: absolute;
     left: 50%;
     margin-left: -200px;
+}
+.NonMobile #notificationDiv 
+{
+    width: 300px;
+}
+.NonMobile #clockDiv
+{
+    width: 300px;
+    position: absolute;
+    left: 50%;
+    margin-left: -150px;
+    right: initial;
+    height: 430px;
 }

@@ -19,8 +19,6 @@
         var currentLng;
         var eventsResults = [];
         var currentEvent = {};
-        var locationResults = [];
-        var currentLocation = {};
 
         $(document).ready(function () {
             var mobParam = getParameterByName("id");
@@ -36,13 +34,10 @@
             var fbInterval = setInterval(function () {
                 if ($("#FacebookId").val()) {
                     clearInterval(fbInterval);
-                    navigator.geolocation.getCurrentPosition(LocationReturn);
+                    navigator.geolocation.getCurrentPosition(LatLngReturn);
                 }
             }, 500);
 
-            $("#notificationBtn").click(function () {
-                NotificationClick();
-            });
 
             $("#addBtn").click(function () {
                 OpenAdd();
@@ -52,53 +47,12 @@
                 OpenDetails(eventResults[$(this).attr("index")]);
             });
 
-            $("#AddLocation").click(function () {
-                $("#locationSearchTextbox").val("");
-                $("#locationResults").html("");
-                OpenFromBottom("locationDiv");
-            });
-
             $("#AddStartTime").click(function () {
                 InitClock();
             });
 
             $("#isPublicBtn").click(function () {
                 PublicClick();
-            });
-
-            $("#inviteBtn").click(function () {
-                OpenFromBottom("inviteDiv");
-                $("#Invite").html("Add");
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
-            });
-
-            $("#Invite").click(function () {
-                if ($(this).html() == "Add")
-                    AddInvites();
-                else
-                    SendInvites();
-            });
-
-            $("#DetailsInvitedBtn").click(function () {
-                OpenFromBottom("inviteDiv");
-                $("#Invite").html("Invite");
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
-            });
-
-            $("#filterFriendsTextbox").keyup(function () {
-                FilterFriends();
-            });
-
-            $("#inviteResults").on("click", "div", function () {
-                $(this).toggleClass("invited");
-            });
-
-            $("#locationSearchTextbox").keyup(function () {
-                var search = $("#locationSearchTextbox").val();
-                if (search.length < 3)
-                    return;
-
-                Post("GetLocations", { searchName: search, latitude: currentLat, longitude: currentLng }, PopulateLocations);
             });
 
             $("#DetailsJoinBtn").click(function () {
@@ -119,11 +73,7 @@
                 Post("SaveEvent", { evt: currentEvent }, LoadEvents);
             });
             
-            $("#notificationDiv").on("click", "div", function () {
-                var eventId = $(this).attr("eventid");
-                Post("GetEvent", { id: eventId }, OpenDetails);
-                CloseNotification();
-            });
+
         });
 
         function OpenAdd(isEdit) {
@@ -155,7 +105,7 @@
             }
         }
 
-        function LocationReturn(position)
+        function LatLngReturn(position)
         {
             currentLat = position.coords.latitude;
             currentLng = position.coords.longitude;
@@ -216,6 +166,11 @@
         }
 
         function OpenDetails(event) {
+            if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId)) {
+                MessageBox("This event is private. You cannot join private events unless you are invited.");
+                return;
+            }
+
             currentEvent = event;
             OpenFromBottom("detailsDiv");
 
@@ -330,7 +285,7 @@
                 NotificationMessage: "Created: " + $("#AddName").val(), FacebookId: currentUser.FacebookId
             };
 
-            if (currentEvent) {
+            if (currentEvent.Id) {
                 event.Id = currentEvent.Id;
                 event.NotificationMessage = "";
             }
@@ -338,7 +293,7 @@
             var success = (function(event) {
                 LoadEvents();
                 CloseToBottom("addDiv");
-                if (currentEvent) {
+                if (currentEvent.Id) {
                     currentEvent = event;
                     OpenDetails(currentEvent);
                 }
@@ -361,6 +316,33 @@
             //    $(".pillBtn div").not(".slider").toggleClass("selected");
             //});
         }
+
+
+
+    </script>
+
+    <!-- Location -->
+    <script type="text/javascript">
+        var locationResults = [];
+        var currentLocation = {};
+
+        $(document).ready(function () {
+            $("#AddLocation").focus(function () {
+                $("#locationSearchTextbox").val("");
+                $("#locationResults").html("");
+                OpenFromBottom("locationDiv");
+            });
+
+            $("#locationSearchTextbox").keyup(function () {
+                var search = $("#locationSearchTextbox").val();
+                if (search.length < 3)
+                    return;
+
+                Post("GetLocations", { searchName: search, latitude: currentLat, longitude: currentLng }, PopulateLocations);
+            });
+
+
+        });
 
         function PopulateLocations(locations) {
             locationResults = locations;
@@ -417,6 +399,39 @@
                 title: name
             });
         }
+
+    </script>
+
+    <!-- Friends / Address Book -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#inviteBtn").click(function () {
+                OpenFromBottom("inviteDiv");
+                $("#Invite").html("Add");
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+            });
+
+            $("#Invite").click(function () {
+                if ($(this).html() == "Add")
+                    AddInvites();
+                else
+                    SendInvites();
+            });
+
+            $("#DetailsInvitedBtn").click(function () {
+                OpenFromBottom("inviteDiv");
+                $("#Invite").html("Invite");
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+            });
+
+            $("#filterFriendsTextbox").keyup(function () {
+                FilterFriends();
+            });
+
+            $("#inviteResults").on("click", "div", function () {
+                $(this).toggleClass("invited");
+            });
+        });
 
         function PopulateFriends(friendList) {
 
@@ -477,6 +492,14 @@
             CloseToBottom("inviteDiv");
         }
 
+    </script>
+
+    <!-- Messages -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+        });
+
         function OpenMessages() {
             $("#addBtn").hide();
             $("#DetailMap").hide();
@@ -525,6 +548,22 @@
             });
         }
 
+    </script>
+
+    <!-- Notifications -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#notificationBtn").click(function () {
+                NotificationClick();
+            });
+
+            $("#notificationDiv").on("click", "div", function () {
+                var eventId = $(this).attr("eventid");
+                Post("GetEvent", { id: eventId }, OpenDetails);
+                CloseNotification();
+            });
+        });
+
         function NotificationClick() {
             if ($("#notificationDiv").is(':visible'))
                 CloseNotification();
@@ -552,15 +591,180 @@
 
         function OpenNotification() {
             $("#notificationDiv").show();
-            $("#notificationDiv").animate({ left: "25%" }, 350);
+            if (isMobile)
+                $("#notificationDiv").animate({ left: "25%" }, 350);
+            else
+                $("#notificationDiv").animate({ "margin-left": "-300px" }, 350);
         }
 
         function CloseNotification() {
-            $("#notificationDiv").animate({ left: "100%" }, 350, function() {
-                $("#notificationDiv").hide();
-            });
+            if (isMobile) {
+                $("#notificationDiv").animate({ left: "100%" }, 350, function () {
+                    $("#notificationDiv").hide();
+                });
+            }
+            else {
+                $("#notificationDiv").animate({ "margin-left": "0" }, 350, function () {
+                    $("#notificationDiv").hide();
+                });
+            }
         }
     </script>
+
+    <!-- Clock -->
+    <script type="text/javascript">
+            $(document).ready(function () {
+                $("#clockCircle").on("click", "div", function () {
+                    $("#clockCircle div").removeClass("selected");
+                    $(this).addClass("selected");
+                    if ($(this).hasClass("hour")) {
+                        HourClicked($(this).html());
+                    }
+                    else {
+                        var time = $("#clockDiv .time").html();
+                        var hr = time.substring(0, time.indexOf(":"));
+                        var min = $(this).html();
+                        if (min == "5")
+                            min = "05";
+                        var AMPM = time.substring(time.indexOf(" ") + 1);
+                        time = hr + ":" + min + " " + AMPM;
+                        $("#clockDiv .time").html(time);
+                        $("#AddStartTime").val(time);
+                        $("#clockDiv").fadeOut();
+                        $(".modal-backdrop").fadeOut();
+                    }
+                });
+
+                $(".ampm").click(function () {
+                    $(".ampm").removeClass("selected");
+                    $(this).addClass("selected");
+
+                    var time = $("#clockDiv .time").html();
+                    time = time.substring(0, time.indexOf(" ") + 1);
+                    time += $(this).html();
+                    $("#clockDiv .time").html(time)
+                });
+            });
+
+            function InitClock() {
+                $(".modal-backdrop").show();
+                $("#clockDiv").show();
+                $("#clockCircle").html("");
+                if (!$("#clockDiv .time").html().length) {
+                    var date = new Date;
+                    var min = date.getMinutes();
+                    if (min < 10)
+                        min = "0" + min;
+                    var hr = date.getHours();
+                    var AMPM = "AM";
+                    if (hr > 11)
+                        AMPM = "PM";
+                    if (hr > 12)
+                        hr -= 12;
+                    if (hr == 0)
+                        hr = 12;
+
+                    $(".ampm").each(function () {
+                        if ($(this).html() == AMPM)
+                            $(this).addClass("selected");
+                    });
+
+                    $("#clockDiv .time").html(hr + ":" + min + " " + AMPM);
+                }
+                else {
+                    var time = $("#clockDiv .time").html();
+                    var hr = time.substring(0, time.indexOf(":"));
+                }
+
+                var wd = $("#clockCircle").width();
+                $("#clockCircle").height(wd * .8);
+
+                var radius = (wd / 2) * .7;
+                var html = "";
+                var centerX = wd / 2;
+                var centerY = wd / 2 + 60;
+                for (var i = 1; i < 13; i++) {
+                    var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
+                    var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
+                    if (i == hr) {
+                        html += '<div class="selected hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
+                    }
+                    else {
+                        html += '<div class="hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
+                    }
+
+                }
+                $("#clockCircle").append(html);
+            }
+
+            function HourClicked(hr) {
+
+                var time = $("#clockDiv .time").html();
+                time = time.substring(time.indexOf(":"));
+                var min = +time.substring(1, time.indexOf(" "));
+                time = hr + time;
+                $("#clockDiv .time").html(time);
+
+                var wd = $("#clockCircle").width();
+                $("#clockCircle").fadeOut("slow", function () {
+                    var radius = (wd / 2) * .7;
+                    var html = "";
+                    var centerX = wd / 2;
+                    var centerY = wd / 2 + 60;
+                    for (var i = 0; i < 12; i++) {
+                        var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
+                        var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
+                        var val = i == 0 ? "00" : (i * 5);
+                        if ((i - 1) * 5 < min && i * 5 >= min)
+                            html += '<div class="selected" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + val + '</div>';
+                        else
+                            html += '<div style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + val + '</div>';
+
+                    }
+                    $("#clockCircle").html(html);
+                    $("#clockCircle").fadeIn("slow");
+                });
+
+            }
+
+            function DrawLine(x1, y1, x2, y2) {
+
+                if (y1 < y2) {
+                    var pom = y1;
+                    y1 = y2;
+                    y2 = pom;
+                    pom = x1;
+                    x1 = x2;
+                    x2 = pom;
+                }
+
+                var a = Math.abs(x1 - x2);
+                var b = Math.abs(y1 - y2);
+                var c;
+                var sx = (x1 + x2) / 2;
+                var sy = (y1 + y2) / 2;
+                var width = Math.sqrt(a * a + b * b);
+                var x = sx - width / 2;
+                var y = sy;
+
+                a = width / 2;
+                c = Math.abs(sx - x);
+                b = Math.sqrt(Math.abs(x1 - x) * Math.abs(x1 - x) + Math.abs(y1 - y) * Math.abs(y1 - y));
+
+                var cosb = (b * b - a * a - c * c) / (2 * a * c);
+                var rad = Math.acos(cosb);
+                var deg = (rad * 180) / Math.PI
+
+                htmlns = "http://www.w3.org/1999/xhtml";
+                div = document.createElementNS(htmlns, "div");
+                div.setAttribute('style', 'border:1px solid #4285F4;width:' + width + 'px;height:0px;-moz-transform:rotate(' + deg + 'deg);-webkit-transform:rotate(' + deg + 'deg);position:absolute;top:' + y + 'px;left:' + x + 'px;');
+
+                document.getElementById("clockDiv").appendChild(div);
+
+            }
+    </script>
+
+    <!-- Facebook -->
     <script type="text/javascript">
         var currentUser;
         var fbAccessToken;
@@ -604,157 +808,8 @@
             ref.parentNode.insertBefore(js, ref);
         }(document));
     </script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $("#clockCircle").on("click", "div", function () {
-                $("#clockCircle div").removeClass("selected");
-                $(this).addClass("selected");
-                if ($(this).hasClass("hour")) {
-                    HourClicked($(this).html());
-                }
-                else {
-                    var time = $("#clockDiv .time").html();
-                    var hr = time.substring(0, time.indexOf(":"));
-                    var min = $(this).html();
-                    if (min == "5")
-                        min = "05";
-                    var AMPM = time.substring(time.indexOf(" ") + 1);
-                    time = hr + ":" + min + " " + AMPM;
-                    $("#clockDiv .time").html(time);
-                    $("#AddStartTime").val(time);
-                    $("#clockDiv").fadeOut();
-                    $(".modal-backdrop").fadeOut();
-                }
-            });
 
-            $(".ampm").click(function () {
-                $(".ampm").removeClass("selected");
-                $(this).addClass("selected");
 
-                var time = $("#clockDiv .time").html();
-                time = time.substring(0, time.indexOf(" ") + 1);
-                time += $(this).html();
-                $("#clockDiv .time").html(time)
-            });
-        });
-
-        function InitClock() {
-            $(".modal-backdrop").show();
-            $("#clockDiv").show();
-            $("#clockCircle").html("");
-            if (!$("#clockDiv .time").html().length) {
-                var date = new Date;
-                var min = date.getMinutes();
-                if (min < 10)
-                    min = "0" + min;
-                var hr = date.getHours();
-                var AMPM = "AM";
-                if (hr > 11)
-                    AMPM = "PM";
-                if (hr > 12)
-                    hr -= 12;
-                if (hr == 0)
-                    hr = 12;
-
-                $(".ampm").each(function () {
-                    if ($(this).html() == AMPM)
-                        $(this).addClass("selected");
-                });
-
-                $("#clockDiv .time").html(hr + ":" + min + " " + AMPM);
-            }
-            else {
-                var time = $("#clockDiv .time").html();
-                var hr = time.substring(0, time.indexOf(":"));
-            }
-
-            var wd = $("#clockCircle").width();
-            $("#clockCircle").height(wd * .8);
-
-            var radius = (wd / 2) * .7;
-            var html = "";
-            var centerX = wd / 2;
-            var centerY = wd / 2 + 60;
-            for (var i = 1; i < 13; i++) {
-                var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
-                var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
-                if (i == hr) {
-                    html += '<div class="selected hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
-                }
-                else {
-                    html += '<div class="hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
-                }
-
-            }
-            $("#clockCircle").append(html);
-        }
-
-        function HourClicked(hr) {
-
-            var time = $("#clockDiv .time").html();
-            time = time.substring(time.indexOf(":"));
-            var min = +time.substring(1, time.indexOf(" "));
-            time = hr + time;
-            $("#clockDiv .time").html(time);
-
-            var wd = $("#clockCircle").width();
-            $("#clockCircle").fadeOut("slow", function () {
-                var radius = (wd / 2) * .7;
-                var html = "";
-                var centerX = wd / 2;
-                var centerY = wd / 2 + 60;
-                for (var i = 0; i < 12; i++) {
-                    var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
-                    var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
-                    var val = i == 0 ? "00" : (i * 5);
-                    if ((i - 1) * 5 < min && i * 5 >= min)
-                        html += '<div class="selected" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + val + '</div>';
-                    else
-                        html += '<div style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + val + '</div>';
-
-                }
-                $("#clockCircle").html(html);
-                $("#clockCircle").fadeIn("slow");
-            });
-
-        }
-
-        function DrawLine(x1, y1, x2, y2) {
-
-            if (y1 < y2) {
-                var pom = y1;
-                y1 = y2;
-                y2 = pom;
-                pom = x1;
-                x1 = x2;
-                x2 = pom;
-            }
-
-            var a = Math.abs(x1 - x2);
-            var b = Math.abs(y1 - y2);
-            var c;
-            var sx = (x1 + x2) / 2;
-            var sy = (y1 + y2) / 2;
-            var width = Math.sqrt(a * a + b * b);
-            var x = sx - width / 2;
-            var y = sy;
-
-            a = width / 2;
-            c = Math.abs(sx - x);
-            b = Math.sqrt(Math.abs(x1 - x) * Math.abs(x1 - x) + Math.abs(y1 - y) * Math.abs(y1 - y));
-
-            var cosb = (b * b - a * a - c * c) / (2 * a * c);
-            var rad = Math.acos(cosb);
-            var deg = (rad * 180) / Math.PI
-
-            htmlns = "http://www.w3.org/1999/xhtml";
-            div = document.createElementNS(htmlns, "div");
-            div.setAttribute('style', 'border:1px solid #4285F4;width:' + width + 'px;height:0px;-moz-transform:rotate(' + deg + 'deg);-webkit-transform:rotate(' + deg + 'deg);position:absolute;top:' + y + 'px;left:' + x + 'px;');
-
-            document.getElementById("clockDiv").appendChild(div);
-
-        }
-    </script>
 
 </head>
 <body>
@@ -800,7 +855,7 @@
         </div>
         <div id="detailsDiv">
             <div>
-            <a onclick="CloseToBottom('detailsDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
+            <a onclick="CloseToBottom('detailsDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Done</a>
             <div id="DetailsName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
             <img onclick="OpenMessages();" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>
