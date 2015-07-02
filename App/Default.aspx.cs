@@ -102,7 +102,9 @@ public partial class App_Default : System.Web.UI.Page
     [WebMethod]
     public static void SendInvites(Event evt)
     {
-        string[] fbIds = evt.Invited.Split('|');
+        evt.Save();
+        
+        string[] fbIds = evt.FacebookId.Split('|');
         foreach(string fbId in fbIds)
         {
             if (string.IsNullOrEmpty(fbId))

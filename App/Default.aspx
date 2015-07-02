@@ -26,8 +26,7 @@
             if (!isMobile) {
                 $("body").addClass("NonMobile");
             }
-            else
-            {
+            else {
                 //$("#addMap").height($(document).height() - 475);
             }
 
@@ -45,10 +44,6 @@
 
             $(".content").on("click", ".event", function () {
                 OpenDetails(eventResults[$(this).attr("index")]);
-            });
-
-            $("#AddStartTime").click(function () {
-                InitClock();
             });
 
             $("#isPublicBtn").click(function () {
@@ -127,9 +122,9 @@
             for(var i = 0; i < list.length; i++)
             {
                 var event = list[i];
-                if (event.Going.indexOf(fbId) >= 0)
+                if (Contains(event.Going, fbId))
                     goingList.push(event);
-                else if (event.Invited.indexOf(fbId) >= 0)
+                else if (Contains(event.Invited, fbId))
                     invitedList.push(event);
                 else
                     otherList.push(event);
@@ -150,9 +145,9 @@
                 var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
                 var time = new Date(event.StartTime).toLocaleTimeString().replace(":00", "");
                 eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
-                if (event.Going.indexOf(fbId) >= 0)
+                if (Contains(event.Going, fbId))
                     eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
-                else if (event.Invited.indexOf(fbId) >= 0)
+                else if (Contains(event.Invited, fbId))
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/invited.png" />');
                 else if (event.IsPrivate)
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/lock.png" />');
@@ -188,7 +183,7 @@
 
             PlotMap("DetailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
 
-            if (event.Going.indexOf(currentUser.FacebookId) >= 0)
+            if (Contains(event.Going, currentUser.FacebookId))
                 $("#DetailsJoinBtn").html("Unjoin");
             else
                 $("#DetailsJoinBtn").html("Join");
@@ -446,7 +441,7 @@
         function FilterFriends() {
             var filter = $("#filterFriendsTextbox").val();
             $("#inviteResults div").not(":eq(0)").each(function () {
-                if (!filter || $(this).html().toLowerCase().indexOf(filter.toLowerCase()) >= 0)
+                if (!filter || Contains($(this).html().toLowerCase(), filter.toLowerCase()))
                     $(this).show();
                 else
                     $(this).hide();
@@ -458,7 +453,7 @@
             $("#inviteResults div.invited").each(function () {
                 var fbId = $(this).attr("facebookId");
                 var name = $(this).find("span").html();
-                if (name.indexOf(" ") >= 0)
+                if (Contains(name, " "))
                     name = name.substring(0, name.indexOf(" "));
                 html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
             });
@@ -477,15 +472,14 @@
             });
 
             if (invited) {
-                invite = invited.substring(0, invited.length - 2);
+                invited = invited.substring(0, invited.length - 2);
                 invited += " have been invited.";
                 
-                currentEvent.NotificationMessage = "Invited: " + currentEvent.Name;
+                currentEvent.NotificationMessage = currentUser.FirstName + " invited you: " + currentEvent.Name;
+                currentEvent.FacebookId = currentEvent.Invited.replace(currentUser.FacebookId, "");
 
-                var prev = currentEvent.Invited;
-                currentEvent.Invited = currentEvent.Invited.replace(currentUser.FacebookId, "");
                 Post("SendInvites", { evt: currentEvent });
-                currentEvent.Invited = prev;
+                currentEvent.FacebookId = "";
 
                 MessageBox(invited);
             }
@@ -517,7 +511,7 @@
             var html = "";
             for (var i = 0; i < messages.length; i++) {
                 var message = messages[i];
-                if (message.FacebookId.indexOf(currentUser.FacebookId) >= 0) {
+                if (Contains(message.FacebookId, currentUser.FacebookId)) {
                     var messageHtml = "<div style='float:right;clear:both;margin-top: 8px;'>{SinceSent}</div><div class='meMessage'>{Message}</div>";
                     html += messageHtml.replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
                 }
@@ -614,6 +608,10 @@
     <!-- Clock -->
     <script type="text/javascript">
             $(document).ready(function () {
+                $("#AddStartTime").click(function () {
+                    InitClock();
+                });
+
                 $("#clockCircle").on("click", "div", function () {
                     $("#clockCircle div").removeClass("selected");
                     $(this).addClass("selected");
