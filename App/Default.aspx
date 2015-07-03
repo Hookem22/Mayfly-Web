@@ -293,7 +293,7 @@
                     OpenDetails(currentEvent);
                 }
                 else {
-                    event.Invited = event.Invited.replace(currentUser.FacebookId, "");
+                    event.FacebookId = event.Invited.replace(currentUser.FacebookId, "");
                     event.NotificationMessage = "Invited: " + event.Name;
                     Post("SendInvites", { evt: event });
                 }
