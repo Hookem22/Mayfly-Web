@@ -57,7 +57,6 @@ public class Event : Base<Event>
     [NonSave]
     public string FacebookId { get; set; }
 
-
     #endregion
 
     public static List<Event> GetCurrent(string latitude, string longitude)

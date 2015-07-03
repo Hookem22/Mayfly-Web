@@ -36,6 +36,29 @@ public class Notification : Base<Notification>
         return notifications;
     }
 
+    public static Notification ReferredEvent(string referenceId, string facebookId)
+    {
+        List<Event> events = Event.GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));
+        if (events.Count == 1)
+        {
+            Event evt = events[0];
+            List<Notification> notifications = Notification.GetByWhere(string.Format("(eventid%20eq%20'{0}')%20and%20(facebookid%20eq%20'{1}')", evt.Id, facebookId));
+            if (notifications.Count > 0)
+                return notifications[0];
+            else
+            {
+                Notification notification = new Notification();
+                notification.EventId = evt.Id;
+                notification.FacebookId = facebookId;
+                notification.Message = "Invited: " + evt.Name;
+                notification.Save();
+
+                return notification;
+            }
+        }
+        return null;
+    }
+
     private static void AddHelperProperties(List<Notification> notifications)
     {
         try

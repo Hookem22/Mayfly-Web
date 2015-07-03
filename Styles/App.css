@@ -370,7 +370,7 @@ input.error, textarea.error
 {
     height: 4px;
 }
-#MessageBox
+#MessageBox, #ActionMessageBox
 {
     background: #F6F6F6;
     position: absolute;
@@ -387,7 +387,7 @@ input.error, textarea.error
     z-index: 9000;
     display: none;
 }
-#MessageBox .messageContent
+#MessageBox .messageContent, #ActionMessageBox .messageContent
 {
     margin: 8px 10px 50px;
 }

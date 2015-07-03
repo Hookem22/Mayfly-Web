@@ -553,8 +553,7 @@
 
             $("#notificationDiv").on("click", "div", function () {
                 var eventId = $(this).attr("eventid");
-                Post("GetEvent", { id: eventId }, OpenDetails);
-                CloseNotification();
+                OpenEventFromNotification(eventId);
             });
         });
 
@@ -602,6 +601,15 @@
                     $("#notificationDiv").hide();
                 });
             }
+        }
+
+        function OpenEventFromNotification(eventId) {
+            Post("GetEvent", { id: eventId }, OpenDetails);
+            CloseNotification();
+        }
+
+        function OpenReferredNotification(notification) {
+            ActionMessageBox(notification.Message, OpenEventFromNotification, notification.EventId);
         }
     </script>
 
@@ -788,6 +796,11 @@
 
                     var success = (function (results) {
                         currentUser = results;
+
+                        if (document.URL.indexOf("?") > 0) {
+                            var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
+                            Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
+                        }
                     });
                     Post("GetUser", { facebookAccessToken: fbAccessToken }, success);
 
@@ -908,6 +921,10 @@
         <div id="MessageBox">
             <div class="messageContent"></div>
             <div onclick="CloseMessageBox();" class="bottomBtn">Ok</div>
+        </div>
+        <div id="ActionMessageBox">
+            <div class="messageContent"></div>
+            <div class="goBtn bottomBtn" style="left:0;right:50%;"">Go</div><div onclick="CloseMessageBox();" class="bottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
     </form>
 </body>

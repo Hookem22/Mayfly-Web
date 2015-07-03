@@ -12,11 +12,23 @@
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
     <script type="text/javascript">
+        var appUrl = "/App";
+
         $(document).ready(function () {
             var mobParam = getParameterByName("id");
             var isMobile = mobilecheck() || tabletCheck() || mobParam == "m";
             if (isMobile) {
                 $("body").addClass("Mobile");
+            }
+
+            if (document.URL.indexOf("?") > 0) {
+                var iOS = (navigator.userAgent.match(/iPad|iPhone|iPod/g) ? true : false);
+                if (iOS)
+                {
+                    //window.location = Apple Store;
+                }
+
+                appUrl = "/App?" + document.URL.substr(document.URL.indexOf("?") + 1);
             }
 
             $("#loginLink").click(function () {
@@ -58,7 +70,7 @@
         function login() {
             if (fbAccessToken)
             {
-                window.location = "/App";
+                window.location = appUrl;
                 return;
             }
 
@@ -68,7 +80,7 @@
                     fbAccessToken = response.authResponse.accessToken;
 
                     var success = (function () {
-                        window.location = "/App";
+                        window.location = appUrl;
                     });
                     Post("Login", { facebookId: uid }, success);
                 }

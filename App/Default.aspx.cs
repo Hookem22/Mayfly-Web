@@ -44,6 +44,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static Notification GetReferredNotification(string referenceId, string facebookId)
+    {
+        return Notification.ReferredEvent(referenceId, facebookId);
+    }
+
+    [WebMethod]
     public static List<Notification> GetNotifications(string facebookId)
     {
         return Notification.GetByFacebookId(facebookId);

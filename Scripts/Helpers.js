@@ -61,13 +61,32 @@ function RemoveFrontBreaks(text)
 }
 function MessageBox(message)
 {
-    $(".messageContent").html(message);
+    $("#MessageBox .messageContent").html(message);
     $("#MessageBox").show();
     $(".modal-backdrop").show();
 }
 
+var goFunction;
+var goParam;
+
+function ActionMessageBox(message, go, param) {
+    $("#ActionMessageBox .messageContent").html(message);
+    $("#ActionMessageBox").show();
+    $(".modal-backdrop").show();
+
+    goFunction = go;
+    goParam = param;
+}
+$(function () {
+    $("#ActionMessageBox .goBtn").click(function() {
+        goFunction(goParam);
+        CloseMessageBox();
+    });
+});
+
 function CloseMessageBox() {
     $("#MessageBox").hide();
+    $("#ActionMessageBox").hide();
     $(".modal-backdrop").hide();
 }
 function AddToString(list, item) {
