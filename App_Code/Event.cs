@@ -79,9 +79,15 @@ public class Event : Base<Event>
                 var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
                 evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
 
-                string[] going = evt.Going.Split('|');
-                int goingCt = going.Length == 1 && string.IsNullOrEmpty(going[0]) ? 0 : going.Length;
-                evt.HowManyGoing = string.Format("{0} of {1}", goingCt.ToString(), evt.MinParticipants.ToString());
+                //string[] going = evt.Going.Split('|');
+                //int goingCt = going.Length == 1 && string.IsNullOrEmpty(going[0]) ? 0 : going.Length;
+                evt.HowManyGoing = "";
+                if(evt.MinParticipants > 1 && evt.MaxParticipants > 0)
+                    evt.HowManyGoing = string.Format("Min: {0} Max: {1}", evt.MinParticipants.ToString(), evt.MaxParticipants.ToString());
+                else if(evt.MinParticipants > 1)
+                    evt.HowManyGoing = string.Format("Min: {0}", evt.MinParticipants.ToString());
+                else if(evt.MaxParticipants > 0)
+                    evt.HowManyGoing = string.Format("Max: {0}", evt.MaxParticipants.ToString());
             }
         }
         catch (Exception ex) { }

@@ -308,8 +308,9 @@ input.error, textarea.error
     float: left;
     text-align: center;
     margin: 0 8px 8px;
+    position: relative;
 }
-.invitedFriends > div img
+.invitedFriends > div > img
 {
     height: 50px;
     border-radius: 25px;
@@ -322,6 +323,40 @@ input.error, textarea.error
 {
     height: 60px;
     margin-bottom: -10px;
+}
+.invitedFbImg 
+{
+    opacity: .5;
+}
+.invitedFriends > div .icon 
+{
+    background-color: white;
+    height: 20px;
+    width: 20px;
+    top: 30px;
+    position: absolute;
+    left: 34px;
+    border-radius: 20px;
+}
+
+.invitedFriends > div .icon.goingIcon
+{
+    border: 2px solid #079500;
+    left: 42px;
+}
+.invitedFriends > div .icon.invitedIcon
+{
+    border: 2px solid #4285F4;
+}
+.invitedFriends > div .icon.goingIcon img
+{
+    height: 15px;
+    padding-top: 3px;
+}
+.invitedFriends > div .icon.invitedIcon img
+{
+    height: 16px;
+    padding-top: 2px;
 }
 #inviteDiv
 {

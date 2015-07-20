@@ -177,7 +177,7 @@
             $("#DetailsDetails").html(event.EventDescription);
             $("#DetailsLocation").html("Location: " + event.LocationName);
             $("#DetailsStartTime").html("Start Time: " + new Date(event.StartTime).toLocaleTimeString().replace(":00", ""));
-            $("#DetailsCutoffTime").html("Join By: " + new Date(event.CutoffTime).toLocaleTimeString().replace(":00", ""));
+            //$("#DetailsCutoffTime").html("Join By: " + new Date(event.CutoffTime).toLocaleTimeString().replace(":00", ""));
 
             UpdateDetailsGoing(event);
 
@@ -193,16 +193,25 @@
             var going = event.Going.split("|");
             var goingCt = going.length == 1 && !going[0] ? 0 : going.length;
 
-            var howMany = "Going " + goingCt + " of " + event.MinParticipants;
-            if (event.MaxParticipants)
-                howMany += " (maximum " + event.MaxParticipants + ")";
+            var invited = event.Invited.split("|");
+            var invitedCt = invited.length == 1 && !invited[0] ? 0 : invited.length;
+
+            var howMany = "Going " + goingCt;
+            if (event.HowManyGoing)
+                howMany += " (" + event.HowManyGoing + ")";
             $("#DetailsHowMany").html(howMany);
 
             var inviteHtml = "";
             for (var i = 0; i < goingCt; i++) {
                 var fbId = going[i].split(":")[0];
                 var name = going[i].split(":")[1];
-                inviteHtml += "<div><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
+                inviteHtml += "<div><img src='https://graph.facebook.com/" + fbId + "/picture' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + name + "</div></div>";
+            }
+            for (var i = 0; i < invitedCt; i++) {
+                var fbId = invited[i].split(":")[0];
+                var name = invited[i].split(":")[1];
+                if(event.Going.indexOf(fbId) < 0)
+                    inviteHtml += "<div><img class='invitedFbImg' src='https://graph.facebook.com/" + fbId + "/picture' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + name + "</div></div>";
             }
             for (var i = goingCt; i < event.MaxParticipants; i++) {
                 inviteHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
@@ -226,10 +235,10 @@
                 $("#AddStartTime").addClass("error");
                 error = true;
             }
-            if (!$("#AddMin").val()) {
-                $("#AddMin").addClass("error");
-                error = true;
-            }
+            //if (!$("#AddMin").val()) {
+            //    $("#AddMin").addClass("error");
+            //    error = true;
+            //}
             if (error)
                 return;
 
@@ -264,10 +273,15 @@
             var MS_PER_MINUTE = 60000;
             var cutoffTime = new Date(startTime - cutoffDiff * MS_PER_MINUTE);
 
-            var invited = currentUser.FacebookId;
+            var invited = currentUser.FacebookId + ":" + currentUser.FirstName;
             $("#addDiv .invitedFriends div").each(function () {
-                if ($(this).attr("facebookid"))
+                if ($(this).attr("facebookid")) {
                     invited += "|" + $(this).attr("facebookid");
+                    var name = $(this).find("div").html();
+                    if (name.indexOf(" ") > 0)
+                        name = name.substring(0, name.indexOf(" "));
+                    invited += ":" + name;
+                }
             });
 
             var max = +$("#AddMax").val();
@@ -311,8 +325,6 @@
             //    $(".pillBtn div").not(".slider").toggleClass("selected");
             //});
         }
-
-
 
     </script>
 
@@ -407,10 +419,13 @@
             });
 
             $("#Invite").click(function () {
-                if ($(this).html() == "Add")
+                if ($(this).html() == "Add") {
                     AddInvites();
-                else
+                }
+                else {
                     SendInvites();
+                    UpdateDetailsGoing(currentEvent);
+                }
             });
 
             $("#DetailsInvitedBtn").click(function () {
@@ -467,8 +482,10 @@
             $("#inviteResults div.invited").each(function () {
                 var fbId = $(this).attr("facebookId");
                 var name = $(this).find("span").html();
+                if (name.indexOf(" ") > 0)
+                    name = name.substring(0, name.indexOf(" "));
                 invited += name + ", ";
-                currentEvent.Invited = AddToString(currentEvent.Invited, fbId);
+                currentEvent.Invited = AddToString(currentEvent.Invited, fbId + ":" + name);
             });
 
             if (invited) {
@@ -847,13 +864,13 @@
             <a onclick="CloseToBottom('addDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
             <div id="addHeader" style="font-size:1.1em;margin-top:18px;text-align: center;">Create Event</div>
             <a id="AddSaveBtn" onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;">Create</a>
-            <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0;" />
-            <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
-            <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;" />
+            <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
+            <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
             <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
-            <div style="float:left;margin:16px 0;">Other People:</div>
-            <input id="AddMax" type="number" placeholder="Max" style="width:20%;float:right;margin-left:12px;" />
-            <input id="AddMin" type="number" placeholder="Min" style="width:20%;float:right;" />
+            <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
+            <div style="float:left;margin:16px 0;">How Many People?</div>
+            <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:12px;" />
+            <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
             <div id="isPublicBtn" class="pillBtn" style="clear:both;">
                 <div class="slider"></div>
                 <div style="margin: -25px 0 0 18%;float:left;">Public</div>
@@ -870,12 +887,12 @@
             <div id="DetailsName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
             <img onclick="OpenMessages();" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>
-            <div id="DetailsLocation"></div>
-            <div id="DetailsStartTime"></div>
-            <div id="DetailsCutoffTime"></div>
+            <div id="DetailsLocation" style="margin-bottom: 4px;"></div>
+            <div id="DetailsStartTime" style="margin-bottom: 10px;"></div>
+            <%--<div id="DetailsCutoffTime" style="margin-bottom: 4px;"></div>--%>
             <div id="DetailsHowMany" style="text-align:center;"></div>
             <div id="DetailsInvitedFriends" class="invitedFriends" style="height:80px;position:absolute;overflow:hidden;"></div>
-            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 98px 0 14px;">Invite Friends</div>
+            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 84px 0 14px;">Invite Friends</div>
             <div id="DetailsMap"></div>
             <div id="DetailsJoinBtn" class="bottomBtn" style="position:fixed;top:100%;margin-top: -42px;bottom:initial;">Join</div>
             </div>
