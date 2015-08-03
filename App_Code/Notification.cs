@@ -13,6 +13,13 @@ public class Notification : Base<Notification>
 
     }
 
+    public Notification(string eventId, string facebookId, string message) : base("Notification")
+    {
+        EventId = eventId;
+        FacebookId = facebookId;
+        Message = message;
+    }
+
     #region Properties
 
     public string EventId { get; set; }
@@ -38,10 +45,7 @@ public class Notification : Base<Notification>
 
     public static void Invite(Event evt, string fbId)
     {
-        Notification notification = new Notification();
-        notification.Message = evt.NotificationMessage;
-        notification.EventId = evt.Id;
-        notification.FacebookId = fbId;
+        Notification notification = new Notification(evt.Id, fbId, evt.NotificationMessage);
         notification.Save();
 
         string alert = evt.NotificationMessage;
@@ -65,10 +69,7 @@ public class Notification : Base<Notification>
                 return notifications[0];
             else
             {
-                Notification notification = new Notification();
-                notification.EventId = evt.Id;
-                notification.FacebookId = facebookId;
-                notification.Message = "Invited: " + evt.Name;
+                Notification notification = new Notification(evt.Id, facebookId, "Invited: " + evt.Name);
                 notification.Save();
 
                 return notification;

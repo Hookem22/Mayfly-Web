@@ -95,10 +95,7 @@ public partial class App_Default : System.Web.UI.Page
 
         if(!string.IsNullOrEmpty(evt.NotificationMessage))
         {
-            Notification notification = new Notification();
-            notification.Message = evt.NotificationMessage;
-            notification.EventId = evt.Id;
-            notification.FacebookId = evt.FacebookId;
+            Notification notification = new Notification(evt.Id, evt.FacebookId, evt.NotificationMessage);
             notification.Save();
         }
 
