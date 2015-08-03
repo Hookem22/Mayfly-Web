@@ -26,16 +26,19 @@ public class AzureMessagingService
         Push(alert, message, user.PushDeviceToken.Replace(" ", ""));
     }
 
+    private const string KEYNAME = "DefaultFullSharedAccessSignature";
+    private const string KEY = "Xx0XVX29Gb0hPyBsoB7BYD0SUPiNYSQAB21Y115OXME=";
+
     private static void Push(string alert, string message, string tag)
     {
-        string URL = "https://mayflyapphub-ns.servicebus.windows.net/mayflyapphub/messages";
-        string DATA = "{\"aps\":{\"badge\":1,\"alert\":\"" + alert + "\",\"message\": \"" + message + "\"}}";
-        
-        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
+        string url = "https://mayflyapphub-ns.servicebus.windows.net/mayflyapphub/messages";
+        string data = "{\"aps\":{\"badge\":1,\"alert\":\"" + alert + "\",\"message\": \"" + message + "\"}}";
+        var sasToken = createToken("http://mayflyapphub-ns.servicebus.windows.net/mayflyapphub", KEYNAME, KEY);
+
+        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
         request.Method = "POST";
         request.ContentType = "application/json;charset=utf-8";
-        request.ContentLength = DATA.Length;
-        var sasToken = createToken("http://mayflyapphub-ns.servicebus.windows.net/mayflyapphub", "DefaultFullSharedAccessSignature", "Xx0XVX29Gb0hPyBsoB7BYD0SUPiNYSQAB21Y115OXME=");
+        request.ContentLength = data.Length;
         request.Headers.Add("Authorization", sasToken);
         request.Headers.Add("ServiceBusNotification-Format", "apple");
         if(!string.IsNullOrEmpty(tag))
@@ -43,7 +46,7 @@ public class AzureMessagingService
         using (Stream webStream = request.GetRequestStream())
         using (StreamWriter requestWriter = new StreamWriter(webStream, System.Text.Encoding.ASCII))
         {
-            requestWriter.Write(DATA);
+            requestWriter.Write(data);
         }
 
         try

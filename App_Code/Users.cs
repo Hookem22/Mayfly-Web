@@ -26,6 +26,8 @@ public class Users : Base<Users>
 
     public string FacebookId { get; set; }
 
+    public string Email { get; set; }
+
     #endregion
 
     public static Users Login(dynamic me)
@@ -37,6 +39,7 @@ public class Users : Base<Users>
             user.FacebookId = me.id;
             user.Name = me.name;
             user.FirstName = me.first_name;
+            user.Email = me.email;
             user.Save();
         }
         user.FirstName = me.first_name;
