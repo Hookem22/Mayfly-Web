@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.Web.Http;
 using System.Net;
-using Microsoft.ServiceBus.Messaging;
-using Microsoft.ServiceBus.Notifications;
-using System.Net.Http.Headers;
-using System.IO;
-using System.Text;
 using System.Security.Cryptography;
 using System.Globalization;
+using System.IO;
+using System.Text;
 
 /// <summary>
 /// Summary description for AzureMessagingService
