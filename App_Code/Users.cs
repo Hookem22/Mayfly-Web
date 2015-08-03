@@ -17,6 +17,7 @@ public class Users : Base<Users>
 
     public string Name { get; set; }
 
+    [NonSave]
     public string FirstName { get; set; }
 
     public string DeviceId { get; set; }

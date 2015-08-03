@@ -110,19 +110,14 @@ public partial class App_Default : System.Web.UI.Page
     {
         evt.Save();
         
-        string[] fbIds = evt.FacebookId.Split('|');
-        foreach(string fbId in fbIds)
+        string[] people = evt.FacebookId.Split('|');
+        foreach (string person in people)
         {
-            if (string.IsNullOrEmpty(fbId))
+            string[] data = person.Split(':');
+            if (data.Length < 2 || string.IsNullOrEmpty(data[0]))
                 continue;
 
-            Notification notification = new Notification();
-            notification.Message = evt.NotificationMessage;
-            notification.EventId = evt.Id;
-            notification.FacebookId = fbId;
-            notification.Save();
-
-            //TODO: Send push message
+            Notification.Invite(evt, data[0]);
         }
     }
 
@@ -131,7 +126,20 @@ public partial class App_Default : System.Web.UI.Page
     {
         message.Save();
 
-        //TODO: Send push message
+        Messages.SendPushMessageToEvent(message);
+    }
+
+    [WebMethod]
+    public static void SendJoinMessage(string alert, string message, string facebookId, Event evt)
+    {
+        if(evt.Going.Contains(":"))
+        {
+            string organizingFbId = evt.Going.Substring(0, evt.Going.IndexOf(":"));
+            if(organizingFbId != facebookId)
+            {
+                AzureMessagingService.Send(alert, message, organizingFbId);
+            }
+        }
     }
 
 }

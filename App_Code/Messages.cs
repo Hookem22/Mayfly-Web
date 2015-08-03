@@ -62,4 +62,23 @@ public class Messages : Base<Messages>
         }
         catch (Exception ex) { }
     }
+
+    public static void SendPushMessageToEvent(Messages message)
+    {
+        Event evt = Event.Get(message.EventId);
+        foreach(string person in evt.Going.Split('|'))
+        {
+            if (!person.Contains(":"))
+                continue;
+
+            string fbId = person.Split(':')[0];
+            if (fbId == message.FacebookId)
+                continue;
+
+
+            string alert = evt.Name + ": " + message.Message;
+            string messageText = "New Message|" + evt.Id;
+            AzureMessagingService.Send(alert, messageText, fbId);
+        }
+    }
 }

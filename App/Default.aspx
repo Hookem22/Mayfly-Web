@@ -56,6 +56,9 @@
 
                     currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
                     $(this).html("Unjoin");
+                    var alert = currentUser.FirstName + " joined " + currentEvent.Name;
+                    var message = "";
+                    Post("SendJoinMessage", { alert: alert, message: message, facebookId: currentUser.FacebookId, evt: currentEvent });
                 }
                 else {
                     currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.FacebookId);
@@ -90,7 +93,7 @@
                 $("#AddDetails").val(currentEvent.EventDescription);
                 $("#AddLocation").val(currentEvent.LocationName);
                 currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
-                $("#AddStartTime").val(new Date(currentEvent.StartTime).toLocaleTimeString().replace(":00", ""));
+                $("#AddStartTime").val(ToLocalTime(currentEvent.StartTime));
                 $("#AddMin").val(currentEvent.MinParticipants);
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
                 $("#AddMax").val(max);
@@ -142,8 +145,13 @@
             var html = "";
             for (var i = 0; i < eventResults.length; i++) {
                 var event = eventResults[i];
+                var isGoing = event.Going.indexOf(fbId) >= 0;
+                var goingCt = event.Going.split("|").length;
+                if (!isGoing && event.MaxParticipants > 0 && goingCt >= event.MaxParticipants)
+                    continue;
+
                 var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
-                var time = new Date(event.StartTime).toLocaleTimeString().replace(":00", "");
+                var time = ToLocalTime(event.StartTime);
                 eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
                 if (Contains(event.Going, fbId))
                     eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
@@ -176,8 +184,8 @@
             }
             $("#DetailsDetails").html(event.EventDescription);
             $("#DetailsLocation").html("Location: " + event.LocationName);
-            $("#DetailsStartTime").html("Start Time: " + new Date(event.StartTime).toLocaleTimeString().replace(":00", ""));
-            //$("#DetailsCutoffTime").html("Join By: " + new Date(event.CutoffTime).toLocaleTimeString().replace(":00", ""));
+            $("#DetailsStartTime").html("Start Time: " + ToLocalTime(event.StartTime));
+            //$("#DetailsCutoffTime").html("Join By: " + ToLocalTime(event.CutoffTime));
 
             UpdateDetailsGoing(event);
 
@@ -251,7 +259,7 @@
             var AMPM = time.substring(time.length - 2, time.length);
             if (AMPM == "AM" && hr == 12)
                 hr = 0;
-            if (AMPM == "PM")
+            if (AMPM == "PM" && hr != 12)
                 hr += 12;
             startTime.setHours(hr);
             startTime.setMinutes(min);
@@ -318,12 +326,12 @@
         }
 
         function PublicClick() {
-            MessageBox("Pow Wow currently does not have enough members near you to create public events. Invite your friends to enable public events.");
+            //MessageBox("Pow Wow currently does not have enough members near you to create public events. Invite your friends to enable public events.");
 
-            //var marginLeft = $(".pillBtn .slider").css("margin-left") == "0px" ? "44%" : "0px";
-            //$(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
-            //    $(".pillBtn div").not(".slider").toggleClass("selected");
-            //});
+            var marginLeft = $(".pillBtn .slider").css("margin-left") == "0px" ? "44%" : "0px";
+            $(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
+                $(".pillBtn div").not(".slider").toggleClass("selected");
+            });
         }
 
     </script>
@@ -348,6 +356,11 @@
                 Post("GetLocations", { searchName: search, latitude: currentLat, longitude: currentLng }, PopulateLocations);
             });
 
+            $("#locationResults").on("click", "div", function () {
+                var idx = $(this).attr("locationIdx");
+                console.log(idx);
+                AddLocation(idx);
+            });
 
         });
 
@@ -355,12 +368,12 @@
             locationResults = locations;
             var html = "";
             if (locationResults.length == 1 && !locationResults[0].Name) {
-                html = '<div onclick="AddLocation(-1);" style="border:none;" ><span style="font-weight:bold;color:#4285F4;">Just use "' + $("#locationSearchTextbox").val() + '"</span></div>';
+                html = '<div locationIdx="-1" style="border:none;" ><span style="font-weight:bold;color:#4285F4;">Just use "' + $("#locationSearchTextbox").val() + '"</span></div>';
             }
             else {
                 for (var i = 0; i < locationResults.length; i++) {
                     var location = locationResults[i];
-                    var locationHtml = '<div onclick="AddLocation(' + i + ');" ><span style="font-weight:bold;">{Name}</span><div></div>{Address}</div>';
+                    var locationHtml = '<div locationIdx="' + i + '" ><span style="font-weight:bold;">{Name}</span><div></div>{Address}</div>';
                     html += locationHtml.replace("{Name}", location.Name).replace("{Address}", location.Address);
                 }
             }
@@ -492,7 +505,7 @@
                 invited = invited.substring(0, invited.length - 2);
                 invited += " have been invited.";
                 
-                currentEvent.NotificationMessage = currentUser.FirstName + " invited you: " + currentEvent.Name;
+                currentEvent.NotificationMessage = currentUser.FirstName + " invited you to " + currentEvent.Name;
                 currentEvent.FacebookId = currentEvent.Invited.replace(currentUser.FacebookId, "");
 
                 Post("SendInvites", { evt: currentEvent });
@@ -861,9 +874,9 @@
         <img id="addBtn" src="../Img/add.png" />
         <div id="addDiv">
             <div>
-            <a onclick="CloseToBottom('addDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
+            <a onclick="CloseToBottom('addDiv', true);" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
             <div id="addHeader" style="font-size:1.1em;margin-top:18px;text-align: center;">Create Event</div>
-            <a id="AddSaveBtn" onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;">Create</a>
+            <a id="AddSaveBtn" onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;font-weight: bold;">Create</a>
             <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
             <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
             <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
@@ -883,7 +896,7 @@
         </div>
         <div id="detailsDiv">
             <div>
-            <a onclick="CloseToBottom('detailsDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Done</a>
+            <a onclick="CloseToBottom('detailsDiv', true);" style="position: absolute; left:5%;top:20px;color:#4285F4;">Done</a>
             <div id="DetailsName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
             <img onclick="OpenMessages();" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>

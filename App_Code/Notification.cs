@@ -36,6 +36,24 @@ public class Notification : Base<Notification>
         return notifications;
     }
 
+    public static void Invite(Event evt, string fbId)
+    {
+        Notification notification = new Notification();
+        notification.Message = evt.NotificationMessage;
+        notification.EventId = evt.Id;
+        notification.FacebookId = fbId;
+        notification.Save();
+
+        string alert = evt.NotificationMessage;
+        string message = "Invitation|" + evt.Id;
+        AzureMessagingService.Send(alert, message, fbId);
+        /*
+        Users user = Users.GetByFacebookId(fbId);
+        if (user == null || !string.IsNullOrEmpty(user.PushDeviceToken))
+            AzureMessagingService.SendMessage(evt.NotificationMessage, user.PushDeviceToken);
+         */ 
+    }
+
     public static Notification ReferredEvent(string referenceId, string facebookId)
     {
         List<Event> events = Event.GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));

@@ -115,9 +115,20 @@ function OpenFromBottom(divId) {
     $("#" + divId).animate({ top: "0" }, 350);
 }
 
-function CloseToBottom(divId){
+function CloseToBottom(divId, withRefresh){
+    if (withRefresh)
+        LoadEvents();
     $("#" + divId).animate({ top: "100%" }, 350, function () { $("#" + divId).hide() });
 }
 function Contains(fullString, sub) {
     return fullString.indexOf(sub) >= 0;
+}
+function ToLocalTime(dateTime) {
+    var localTime = new Date(dateTime).toLocaleTimeString().replace(":00", "");
+    if(localTime.split(" ").length > 2)
+    {
+        var splitTime = localTime.split(" ");
+        localTime = splitTime[0] + " " + splitTime[1];
+    }
+    return localTime;
 }

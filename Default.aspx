@@ -36,9 +36,9 @@
 
                 appUrl = "/App?" + document.URL.substr(document.URL.indexOf("?") + 1);
             }
-            else if (iOS) {
-                window.location = "https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8";
-            }
+            //else if (iOS) {
+            //    window.location = "https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8";
+            //}
 
             $("#loginLink").click(function () {
                 login();
@@ -82,7 +82,12 @@
                 window.location = appUrl;
                 return;
             }
-
+            else if (navigator.userAgent.match('CriOS')) {
+                var appId = "397533583786525";
+                var redirect = "http://joinpowwow.com/App";
+                window.location = 'https://www.facebook.com/dialog/oauth?client_id=' + appId + '&redirect_uri=' + redirect + '&scope=public_profile,email,user_friends';
+                return;
+            }
             FB.login(function (response) {
                 if (response.status === 'connected') {
                     var uid = response.authResponse.userID;

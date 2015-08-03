@@ -307,8 +307,9 @@ input.error, textarea.error
 {
     float: left;
     text-align: center;
-    margin: 0 8px 8px;
+    margin: 0 6px 8px;
     position: relative;
+    width: 55px;
 }
 .invitedFriends > div > img
 {
@@ -335,14 +336,13 @@ input.error, textarea.error
     width: 20px;
     top: 30px;
     position: absolute;
-    left: 34px;
+    right: -8px;
     border-radius: 20px;
 }
 
 .invitedFriends > div .icon.goingIcon
 {
     border: 2px solid #079500;
-    left: 42px;
 }
 .invitedFriends > div .icon.invitedIcon
 {
