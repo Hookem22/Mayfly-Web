@@ -316,7 +316,7 @@
                 }
                 else {
                     event.FacebookId = event.Invited.replace(currentUser.FacebookId, "");
-                    event.NotificationMessage = "Invited: " + event.Name;
+                    event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
                     Post("SendInvites", { evt: event });
                 }
             });
@@ -849,8 +849,6 @@
             ref.parentNode.insertBefore(js, ref);
         }(document));
     </script>
-
-
 
 </head>
 <body>

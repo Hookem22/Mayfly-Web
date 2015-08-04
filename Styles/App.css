@@ -175,9 +175,9 @@ input.error, textarea.error
 {
     border-radius: 20px;
 }
-.event > div
+.event > div:first-of-type
 {
-    margin: 2px 20px;
+    margin: 0px 6px 0px 20px;
 }
 #addDiv
 {
