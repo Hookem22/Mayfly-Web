@@ -71,7 +71,10 @@
                 Post("SaveEvent", { evt: currentEvent }, LoadEvents);
             });
             
-
+            $("#deleteEventBtn").click(function () {
+                $(".goBtn").html("Ok");
+                ActionMessageBox("This will delete this event. Continue?", DeleteEvent);
+            });
         });
 
         function OpenAdd(isEdit) {
@@ -81,13 +84,15 @@
                 $("#AddSaveBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
                 $("#addDiv .invitedFriends").html("");
-                $("#addMap").hide();
+                $("#addMap").css("height", "165px").hide();
                 $("#inviteBtn").show();
                 $("#addDiv .invitedFriends").show();
+                $("#deleteEventBtn").hide();
                 currentEvent = {};
                 currentLocation = {};
             }
             else {
+                $("#addHeader").html("Edit Event");
                 $("#AddName").val(currentEvent.Name);
                 $("#AddSaveBtn").html("Save");
                 $("#AddDetails").val(currentEvent.EventDescription);
@@ -97,8 +102,10 @@
                 $("#AddMin").val(currentEvent.MinParticipants);
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
                 $("#AddMax").val(max);
+                $("#addMap").css("height", "135px");
                 PlotMap("addMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
                 $("#inviteBtn").hide();
+                $("#deleteEventBtn").show();
                 $("#addDiv .invitedFriends").hide();
             }
         }
@@ -332,6 +339,14 @@
             $(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
                 $(".pillBtn div").not(".slider").toggleClass("selected");
             });
+        }
+
+        function DeleteEvent() {
+            var success = function () {
+                CloseToBottom('addDiv');
+                CloseToBottom('detailsDiv', true);
+            }
+            Post("DeleteEvent", { evt: currentEvent }, success);
         }
 
     </script>
@@ -639,6 +654,7 @@
         }
 
         function OpenReferredNotification(notification) {
+            $(".goBtn").html("Go");
             ActionMessageBox(notification.Message, OpenEventFromNotification, notification.EventId);
         }
     </script>
@@ -880,7 +896,7 @@
             <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
             <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
             <div style="float:left;margin:16px 0;">How Many People?</div>
-            <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:12px;" />
+            <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
             <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
             <div id="isPublicBtn" class="pillBtn" style="clear:both;">
                 <div class="slider"></div>
@@ -890,6 +906,7 @@
             <div id="inviteBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;">Invite Friends</div>
             <div class="invitedFriends"></div>
             <div id="addMap"></div>
+            <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
             </div>
         </div>
         <div id="detailsDiv">

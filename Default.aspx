@@ -21,24 +21,20 @@
                 $("body").addClass("Mobile");
             }
 
+            var appBanner = '<meta name="apple-itunes-app" content="app-id=1009503264"/>';
             var iOS = (navigator.userAgent.match(/iPad|iPhone|iPod/g) ? true : false);
             if (document.URL.indexOf("?") > 0) {
-                if (iOS)
-                {
-                    var appBanner = '<meta name="apple-itunes-app" content="app-id=1009503264"/>';
-                    if (document.URL.indexOf("?") > 0) {
-                        var referralId = document.URL.substr(document.URL.indexOf("?") + 1);
-                        appBanner = '<meta name="apple-itunes-app" content=\"app-id=1009503264, app-argument=fb397533583786525://?' + referralId + '\" />';
-                    }
-
-                    $('head').append(appBanner);
+                if (document.URL.indexOf("?") > 0) {
+                    var referralId = document.URL.substr(document.URL.indexOf("?") + 1);
+                    appBanner = '<meta name="apple-itunes-app" content=\"app-id=1009503264, app-argument=fb397533583786525://?' + referralId + '\" />';
                 }
-
                 appUrl = "/App?" + document.URL.substr(document.URL.indexOf("?") + 1);
             }
             //else if (iOS) {
             //    window.location = "https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8";
             //}
+
+            $('head').append(appBanner);
 
             $("#loginLink").click(function () {
                 login();

@@ -104,4 +104,36 @@ public class Event : Base<Event>
             return string.Format("{0} miles away", Math.Round(miles));
     }
 
+    public static void PurgeDeleted(string latitude, string longitude)
+    {
+        //List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        ////List<Event> events = GetByWhere(string.Format("(referenceid%20gt%20{0})", 275));
+        //foreach (Event ev in events)
+        //    ev.Delete();
+
+        GetByProc("purgedeletedevents", "");
+    }
+
+    public static void AddTestEvents(Event evt)
+    {
+        for (int i = 1; i < 401; i++)
+        {
+            Event ev = new Event();
+            ev.Name = "Test" + i;
+            ev.EventDescription = evt.EventDescription;
+            ev.LocationName = evt.LocationName;
+            ev.LocationAddress = evt.LocationAddress;
+            ev.LocationLatitude = evt.LocationLatitude;
+            ev.LocationLongitude = evt.LocationLongitude;
+            ev.StartTime = DateTime.Now.AddHours(8).ToString();
+            ev.CutoffTime = DateTime.Now.AddHours(8).ToString();
+            ev.Going = evt.Going;
+            ev.Invited = evt.Invited;
+            ev.IsPrivate = evt.IsPrivate;
+            ev.MinParticipants = evt.MinParticipants;
+            ev.MaxParticipants = evt.MaxParticipants;
+            ev.Save();
+        }
+    }
+
 }

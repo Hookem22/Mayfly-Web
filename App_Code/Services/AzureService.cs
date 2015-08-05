@@ -69,7 +69,7 @@ public class AzureService
 
     public void Delete(string id)
     {
-        var request = new HttpRequestMessage(HttpMethod.Delete, "https://mayflyapp.azure-mobile.net/tables/Place/" + id);
+        var request = new HttpRequestMessage(HttpMethod.Delete, string.Format("https://mayflyapp.azure-mobile.net/tables/{0}/{1}", _tableName, id));
         var data = client.SendAsync(request).Result;
 
         if (!data.IsSuccessStatusCode)

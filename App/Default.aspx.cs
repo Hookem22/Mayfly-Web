@@ -139,4 +139,10 @@ public partial class App_Default : System.Web.UI.Page
         }
     }
 
+    [WebMethod]
+    public static void DeleteEvent(Event evt)
+    {
+        evt.Delete();
+    }
+
 }
