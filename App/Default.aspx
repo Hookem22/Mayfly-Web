@@ -31,7 +31,13 @@
             });
 
             $(".content").on("click", ".event", function () {
-                OpenDetails(eventResults[$(this).attr("index")]);
+                var event = eventResults[$(this).attr("index")];
+                if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId)) {
+                    MessageBox("This event is private. You cannot join private events unless you are invited.");
+                    return;
+                }
+
+                OpenDetails(event);
             });
 
             $("#isPublicBtn").click(function () {
@@ -248,16 +254,12 @@
         }
 
         function OpenDetails(event) {
-            if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId)) {
-                MessageBox("This event is private. You cannot join private events unless you are invited.");
-                return;
-            }
 
             currentEvent = event;
             OpenFromBottom("detailsDiv");
 
             $("#DetailsName").html(event.Name);
-            if (/*event.IsPrivate &&*/ event.Invited && event.Invited.indexOf(currentUser.FacebookId) == 0) {
+            if (/*event.IsPrivate &&*/ event.Invited && currentUser && event.Invited.indexOf(currentUser.FacebookId) == 0) {
                 var edit = " - <span onclick='OpenAdd(true);' style='color:#4285F4;'>Edit</span>";
                 $("#DetailsName").append(edit);
             }
@@ -306,13 +308,15 @@
             for (var i = 0; i < goingCt; i++) {
                 var fbId = going[i].split(":")[0];
                 var name = going[i].split(":")[1];
-                inviteHtml += "<div><img src='https://graph.facebook.com/" + fbId + "/picture' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + name + "</div></div>";
+                var src = fbId.indexOf("p") == 0 ? "/Img/face" + Math.floor(Math.random() * 8) + ".png" : "https://graph.facebook.com/" + fbId + "/picture";
+                inviteHtml += "<div><img src='" + src + "' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + name + "</div></div>";
             }
             for (var i = 0; i < invitedCt; i++) {
                 var fbId = invited[i].split(":")[0];
                 var name = invited[i].split(":")[1];
+                var src = fbId.indexOf("p") == 0 ? "/Img/face" + Math.floor(Math.random() * 8) + ".png" : "https://graph.facebook.com/" + fbId + "/picture";
                 if(event.Going.indexOf(fbId) < 0)
-                    inviteHtml += "<div><img class='invitedFbImg' src='https://graph.facebook.com/" + fbId + "/picture' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + name + "</div></div>";
+                    inviteHtml += "<div><img class='invitedFbImg' src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + name + "</div></div>";
             }
             for (var i = goingCt; i < event.MaxParticipants; i++) {
                 inviteHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
@@ -362,6 +366,7 @@
                     event.FacebookId = event.Invited.replace(currentUser.FacebookId, "");
                     event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
                     Post("SendInvites", { evt: event });
+                    SendTextMessages(event);
                 }
             });
             Post("SaveEvent", { evt: event }, success);
@@ -413,7 +418,7 @@
                     invited += ":" + name;
                 }
                 if ($(this).attr("Phone")) {
-                    invited += "|" + $(this).attr("Phone");
+                    invited += "|p" + $(this).attr("Phone");
                     var name = $(this).find("div").html();
                     if (name.indexOf(" ") > 0)
                         name = name.substring(0, name.indexOf(" "));
@@ -572,11 +577,8 @@
 
                 if (isiOS)
                 {
-                    var url = "ios:AddressBookFromCreate" + GetReturnUrlParameters() + "&createEvent=" + JSON.stringify(GetCreateEvent());
-                    //if(getParameterByName("contactList"))
-                    //    url += "&contactList=" + getParameterByName("contactList")
-
-                    window.location = url;
+                    var event = JSON.stringify(GetCreateEvent());
+                    window.location = "ios:InviteFromCreate" + GetReturnUrlParameters() + "&createEvent=" + event;
                     return;
                 }
 
@@ -596,9 +598,7 @@
             });
 
             $("#DetailsInvitedBtn").click(function () {
-                OpenFromBottom("inviteDiv");
-                $("#Invite").html("Invite");
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                OpenDetailsInvite();
             });
 
             $("#filterFriendsTextbox").keyup(function () {
@@ -610,27 +610,29 @@
             });
         });
 
-        function PopulateFriends(friendList) {
-
+        function OpenDetailsInvite()
+        {
             if (isiOS)
             {
-                //var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
-                //for (var i = 0; i < friendList.length; i++) {
-                //    var friend = friendList[i];
-                //    html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
-                //}
-                //$("#inviteResults").html(html);
+                var event = JSON.stringify(currentEvent);
+                window.location = "ios:InviteFromDetails" + GetReturnUrlParameters() + "&currentEvent=" + event;
             }
             else
             {
-                var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
-                for (var i = 0; i < friendList.length; i++) {
-                    var friend = friendList[i];
-                    html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
-                }
-                $("#inviteResults").html(html);
+                OpenFromBottom("inviteDiv");
+                $("#Invite").html("Invite");
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
             }
+        }
 
+        function PopulateFriends(friendList) {
+
+            var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
+            for (var i = 0; i < friendList.length; i++) {
+                var friend = friendList[i];
+                html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
+            }
+            $("#inviteResults").html(html);
         }
 
         function FilterFriends() {
@@ -698,6 +700,27 @@
                 MessageBox(invited);
             }
             CloseToBottom("inviteDiv");
+        }
+
+        function SendTextMessages(event) {
+            if(isiOS)
+            {
+                var params = "?name=" + event.Name + "&referenceId=" + event.ReferenceId;
+                var phone = "";
+                $(event.Invited.split("|")).each(function () {
+                    var info = this.split(":");
+                    if(info.length == 2 && info[0].indexOf("p") == 0)
+                    {
+                        phone += info[0].substring(1) + ",";
+                    }
+                });
+                if(phone.length > 0)
+                {
+                    phone = phone.substring(0, phone.length - 1);
+                    params += "&phone=" + phone;
+                    window.location = "ios:SendSMS" + params;
+                }
+            }
         }
 
     </script>
@@ -1048,7 +1071,18 @@
                  $("#addDiv").show();
                  $("#addDiv").css({ top: "0" });
              }
-
+             else if(getParameterByName("goToEvent"))
+             {
+                 var eventId = getParameterByName("goToEvent");
+                 var fbInterval = setInterval(function () {
+                     if (currentUser) {
+                         clearInterval(fbInterval);
+                         Post("GetEvent", { id: eventId }, OpenDetails);
+                         $("#detailsDiv").show();
+                         $("#detailsDiv").css({ top: "0" });
+                     }
+                 }, 500);
+             }
          }
 
          function GetReturnUrlParameters()

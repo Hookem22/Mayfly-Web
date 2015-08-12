@@ -99,7 +99,7 @@ public partial class App_Default : System.Web.UI.Page
             notification.Save();
         }
 
-        return evt;
+        return Event.Get(evt.Id);
     }
 
     [WebMethod]
@@ -111,10 +111,10 @@ public partial class App_Default : System.Web.UI.Page
         foreach (string person in people)
         {
             string[] data = person.Split(':');
-            if (data.Length < 2 || string.IsNullOrEmpty(data[0]))
+            if (data.Length < 2 || string.IsNullOrEmpty(data[0]) || data[0].IndexOf("p") == 0)
                 continue;
 
-            Notification.Invite(evt, data[0]);
+            //Notification.Invite(evt, data[0]);
         }
     }
 
