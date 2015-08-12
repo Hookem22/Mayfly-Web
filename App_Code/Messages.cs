@@ -65,6 +65,7 @@ public class Messages : Base<Messages>
 
     public static void SendPushMessageToEvent(Messages message)
     {
+        return;
         Event evt = Event.Get(message.EventId);
         foreach(string person in evt.Going.Split('|'))
         {

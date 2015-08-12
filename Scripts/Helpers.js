@@ -121,6 +121,9 @@ function CloseToBottom(divId, withRefresh){
     $("#" + divId).animate({ top: "100%" }, 350, function () { $("#" + divId).hide() });
 }
 function Contains(fullString, sub) {
+    if (!fullString || !sub)
+        return false;
+
     return fullString.indexOf(sub) >= 0;
 }
 function ToLocalTime(dateTime) {

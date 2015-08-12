@@ -21,20 +21,20 @@
                 $("body").addClass("Mobile");
             }
 
-            var appBanner = '<meta name="apple-itunes-app" content="app-id=1009503264"/>';
-            var iOS = (navigator.userAgent.match(/iPad|iPhone|iPod/g) ? true : false);
-            if (document.URL.indexOf("?") > 0) {
-                if (document.URL.indexOf("?") > 0) {
-                    var referralId = document.URL.substr(document.URL.indexOf("?") + 1);
-                    appBanner = '<meta name="apple-itunes-app" content=\"app-id=1009503264, app-argument=fb397533583786525://?' + referralId + '\" />';
-                }
-                appUrl = "/App?" + document.URL.substr(document.URL.indexOf("?") + 1);
-            }
-            //else if (iOS) {
-            //    window.location = "https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8";
+            //var appBanner = '<meta name="apple-itunes-app" content="app-id=1009503264"/>';
+            //var iOS = (navigator.userAgent.match(/iPad|iPhone|iPod/g) ? true : false);
+            //if (document.URL.indexOf("?") > 0) {
+            //    if (document.URL.indexOf("?") > 0) {
+            //        var referralId = document.URL.substr(document.URL.indexOf("?") + 1);
+            //        appBanner = '<meta name="apple-itunes-app" content=\"app-id=1009503264, app-argument=fb397533583786525://?' + referralId + '\" />';
+            //    }
+            //    appUrl = "/App?" + document.URL.substr(document.URL.indexOf("?") + 1);
             //}
+            ////else if (iOS) {
+            ////    window.location = "https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8";
+            ////}
 
-            $('head').append(appBanner);
+            //$('head').append(appBanner);
 
             $("#loginLink").click(function () {
                 login();
@@ -120,12 +120,13 @@
     <div class="content">
         <h1 style="font-size:3.5em;font-weight:300;line-height:1.1;text-align:center;margin:.3em 0 0;">Find Your Tribe</h1>
         <h2 style="font-size:2em;font-weight: bold;text-align:center;margin:.2em 0 .4em;">Events near you today</h2>
-        <div class="links">
+<%--        <div class="links">
             <a href="https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8"><img src="Img/appStoreLogo.png" /></a>
             <div style="font-size:24px;margin: 11px 16px;">or</div>
             <a id="loginLink" href="#"><img src="Img/facebookLoginButton.png" /></a>
-        </div>
-        <img style="margin:1em 0 0 10%;width:80%;" src="Img/appcombined.png" />
+        </div>--%>
+        <a id="loginLink" href="#" style="left: 50%;position: absolute;margin-left: -124px;"><img src="Img/facebookLoginButton.png" /></a>
+        <img style="margin:4em 0 0 10%;width:80%;" src="Img/appcombined.png" />
 
     </div>
     </form>

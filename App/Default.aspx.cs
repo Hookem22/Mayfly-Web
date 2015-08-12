@@ -19,7 +19,7 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static Users GetUser(string facebookAccessToken)
+    public static Users LoginUser(string facebookAccessToken)
     {
         var client = new FacebookClient(facebookAccessToken);
         dynamic me = client.Get("me");

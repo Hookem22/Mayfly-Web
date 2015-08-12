@@ -41,6 +41,8 @@ public class Users : Base<Users>
             user.FirstName = me.first_name;
             user.Email = me.email;
             user.Save();
+
+            EmailService.SendWelcomeEmail(user.Email);
         }
         user.FirstName = me.first_name;
         return user;
@@ -49,9 +51,13 @@ public class Users : Base<Users>
     public static Users GetByFacebookId(string facebookId)
     {
         List<Users> users = GetByWhere(string.Format("(facebookid%20eq%20{0})", facebookId));
-        if (users.Count > 0)
+        if (users.Count > 0) {
+            if(!string.IsNullOrEmpty(users[0].Name) && users[0].Name.Contains(" "))
+                users[0].FirstName = users[0].Name.Substring(0, users[0].Name.IndexOf(" "));
+
             return users[0];
-        else
-            return null;
+        }
+            
+        return null;
     }
 }

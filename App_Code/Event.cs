@@ -76,6 +76,7 @@ public class Event : Base<Event>
 
             foreach (Event evt in events)
             {
+                evt.EventDescription = evt.EventDescription.Replace("\n", "<br/>");
                 var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
                 evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
 
@@ -106,17 +107,20 @@ public class Event : Base<Event>
 
     public static void PurgeDeleted(string latitude, string longitude)
     {
-        //List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
-        ////List<Event> events = GetByWhere(string.Format("(referenceid%20gt%20{0})", 275));
-        //foreach (Event ev in events)
-        //    ev.Delete();
+        List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        //List<Event> events = GetByWhere(string.Format("(referenceid%20gt%20{0})", 275));
+        foreach (Event ev in events)
+        {
+            if (ev.Name.ToLower().Contains("test"))
+                ev.Delete();
+        }
 
         GetByProc("purgedeletedevents", "");
     }
 
     public static void AddTestEvents(Event evt)
     {
-        for (int i = 1; i < 401; i++)
+        for (int i = 1; i < 201; i++)
         {
             Event ev = new Event();
             ev.Name = "Test" + i;

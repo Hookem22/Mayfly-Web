@@ -11,32 +11,20 @@
     <link href="/Styles/App.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
+    <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
     <script type="text/javascript">
         var isMobile;
+        var isiOS;
+        var isAndroid;
         var currentLat;
         var currentLng;
         var eventsResults = [];
         var currentEvent = {};
 
         $(document).ready(function () {
-            var mobParam = getParameterByName("id");
-            isMobile = mobilecheck() || tabletCheck() || mobParam == "m";
-            if (!isMobile) {
-                $("body").addClass("NonMobile");
-            }
-            else {
-                //$("#addMap").height($(document).height() - 475);
-            }
-
-            var fbInterval = setInterval(function () {
-                if ($("#FacebookId").val()) {
-                    clearInterval(fbInterval);
-                    navigator.geolocation.getCurrentPosition(LatLngReturn);
-                }
-            }, 500);
-
+            Init();
 
             $("#addBtn").click(function () {
                 OpenAdd();
@@ -77,6 +65,40 @@
             });
         });
 
+        function Init()
+        {
+            isiOS = getParameterByName("OS") == "iOS";
+            isAndroid = getParameterByName("OS") == "Android";
+            if (isiOS || isAndroid) {
+                AppInit();
+                return;
+            }
+
+            var mobParam = getParameterByName("id");
+            isMobile = mobilecheck() || tabletCheck() || mobParam == "m";
+            if (!isMobile) {
+                $("body").addClass("NonMobile");
+            }
+            else {
+                //$("#AddMap").height($(document).height() - 475);
+            }
+
+            var fbInterval = setInterval(function () {
+                if ($("#FacebookId").val() || fbAccessToken) {
+                    clearInterval(fbInterval);
+                    var lat = getParameterByName("lat");
+                    var lng = getParameterByName("lng");
+                    if (lat && lng) {
+                        currentLat = lat;
+                        currentLng = lng;
+                    }
+                    else {
+                        navigator.geolocation.getCurrentPosition(LatLngReturn);
+                    }
+                }
+            }, 500);
+        }
+
         function OpenAdd(isEdit) {
             OpenFromBottom("addDiv");
             if (!isEdit) {
@@ -84,10 +106,11 @@
                 $("#AddSaveBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
                 $("#addDiv .invitedFriends").html("");
-                $("#addMap").css("height", "165px").hide();
+                $("#AddMap").css("height", "165px").hide();
                 $("#inviteBtn").show();
                 $("#addDiv .invitedFriends").show();
                 $("#deleteEventBtn").hide();
+                SetPublic(false);
                 currentEvent = {};
                 currentLocation = {};
             }
@@ -99,14 +122,17 @@
                 $("#AddLocation").val(currentEvent.LocationName);
                 currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
                 $("#AddStartTime").val(ToLocalTime(currentEvent.StartTime));
-                $("#AddMin").val(currentEvent.MinParticipants);
+                var min = currentEvent.MinParticipants > 1 ? currentEvent.MinParticipants : "";
+                $("#AddMin").val(min);
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
                 $("#AddMax").val(max);
-                $("#addMap").css("height", "135px");
-                PlotMap("addMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
+                SetPublic(!currentEvent.isPrivate);
+                $("#AddMap").css("height", "135px");
+                PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
                 $("#inviteBtn").hide();
-                $("#deleteEventBtn").show();
+                $("#addDiv .invitedFriends").html("");
                 $("#addDiv .invitedFriends").hide();
+                $("#deleteEventBtn").show();
             }
         }
 
@@ -124,6 +150,7 @@
 
         function ReorderEvents(list)
         {
+            var bobList = [];
             var goingList = [];
             var invitedList = [];
             var otherList = [];
@@ -132,7 +159,9 @@
             for(var i = 0; i < list.length; i++)
             {
                 var event = list[i];
-                if (Contains(event.Going, fbId))
+                if(event.Invited && event.Invited.indexOf("10106610968977054") == 0)
+                    bobList.push(event);
+                else if (Contains(event.Going, fbId))
                     goingList.push(event);
                 else if (Contains(event.Invited, fbId))
                     invitedList.push(event);
@@ -140,7 +169,7 @@
                     otherList.push(event);
             }
 
-            var eventList = $.merge($.merge(goingList, invitedList), otherList);
+            var eventList = $.merge($.merge($.merge(bobList, goingList), invitedList), otherList);
             return eventList;
         }
 
@@ -152,12 +181,12 @@
             var html = "";
             for (var i = 0; i < eventResults.length; i++) {
                 var event = eventResults[i];
-                var isGoing = event.Going.indexOf(fbId) >= 0;
+                var isGoing = event.isGoing != null && event.Going.indexOf(fbId) >= 0;
                 var goingCt = event.Going.split("|").length;
                 if (!isGoing && event.MaxParticipants > 0 && goingCt >= event.MaxParticipants)
                     continue;
 
-                var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
+                var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;text-align:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
                 var time = ToLocalTime(event.StartTime);
                 eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
                 if (Contains(event.Going, fbId))
@@ -175,6 +204,49 @@
             $(".content").html(html);
         }
 
+        function OpenCreate(event)
+        {
+            $("#AddName").val(event.Name);
+            $("#AddDetails").val(event.EventDescription);
+            $("#AddLocation").val(event.LocationName);
+            
+            currentLocation.Name = event.LocationName;
+            currentLocation.Address = event.LocationAddress;
+            currentLocation.Latitude = event.LocationLatitude;
+            currentLocation.Longitude = event.LocationLongitude;
+            
+            SetPublic(!event.IsPrivate);
+            var min = event.MinParticipants ? event.MinParticipants : "";
+            $("#AddMin").val(min);
+            var max = event.MaxParticipants ? event.MaxParticipants : "";
+            $("#AddMax").val(max);
+
+            if (event.StartTime)
+                $("#AddStartTime").val(ToLocalTime(event.StartTime));
+
+            if (currentLocation.Name && currentLocation.Latitude && currentLocation.Longitude)
+            {
+                $("#AddMap").css("height", "165px").hide();
+                PlotMap("AddMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
+            }
+
+            var contacts = [];
+            $(event.Invited.split("|")).each(function() {
+                var info = this.split(":");
+                if (info.length == 2) {
+                    var friend = { name: info[1] };
+                    contacts.push(friend);
+                    if (info[0].indexOf("p") == 0)
+                        friend.phone = info[0].substring(1, info[0].length);
+                    else
+                        friend.facebookId = info[0];
+                }
+            });
+            
+            AddInvites(contacts);
+
+        }
+
         function OpenDetails(event) {
             if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId)) {
                 MessageBox("This event is private. You cannot join private events unless you are invited.");
@@ -185,7 +257,7 @@
             OpenFromBottom("detailsDiv");
 
             $("#DetailsName").html(event.Name);
-            if (event.IsPrivate && event.Going.indexOf(currentUser.FacebookId) == 0) {
+            if (/*event.IsPrivate &&*/ event.Invited && event.Invited.indexOf(currentUser.FacebookId) == 0) {
                 var edit = " - <span onclick='OpenAdd(true);' style='color:#4285F4;'>Edit</span>";
                 $("#DetailsName").append(edit);
             }
@@ -196,12 +268,26 @@
 
             UpdateDetailsGoing(event);
 
-            PlotMap("DetailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
-
+            setTimeout(function () {
+                var mapHt = $(window).height() -$("#DetailsMap").offset().top - 50;
+                if (mapHt < 165)
+                    mapHt = 165;
+                $("#DetailsMap").css("height", mapHt + "px");
+                PlotMap("DetailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
+            }, 400);
             if (Contains(event.Going, currentUser.FacebookId))
                 $("#DetailsJoinBtn").html("Unjoin");
             else
                 $("#DetailsJoinBtn").html("Join");
+
+            var messageSuccess = function (messages) {
+                $(messages).each(function () {
+                    if (this.Seconds < 60 * 30)
+                        $(".messageBtn").attr("src", "/Img/newmessage.png");
+                });
+            }
+            $(".messageBtn").attr("src", "/Img/message.png");
+            Post("GetMessages", { eventId: currentEvent.Id }, messageSuccess);
         }
 
         function UpdateDetailsGoing(event) {
@@ -257,61 +343,12 @@
             if (error)
                 return;
 
-            var now = new Date();
-            var startTime = new Date();
-            var time = $("#AddStartTime").val();
-            var hr = +time.substring(0, time.indexOf(":"));
-            time = time.substring(time.indexOf(":") + 1);
-            var min = +time.substring(0, time.indexOf(" "));
-            var AMPM = time.substring(time.length - 2, time.length);
-            if (AMPM == "AM" && hr == 12)
-                hr = 0;
-            if (AMPM == "PM" && hr != 12)
-                hr += 12;
-            startTime.setHours(hr);
-            startTime.setMinutes(min);
-            startTime.setSeconds(0);
+            
+            var event = GetCreateEvent();
 
-            if(now > startTime) {
+            if (new Date() > event.StartTime) {
                 $("#AddStartTime").addClass("error");
                 return;
-            }
-            var diffMinutes = parseInt((startTime - now)/(60*1000));
-            var cutoffDiff = 0;
-            if (diffMinutes > 29)
-                cutoffDiff = 15;
-            if (diffMinutes > 59)
-                cutoffDiff = 30;
-            if(diffMinutes > 179)
-                cutoffDiff = 60;
-
-            var MS_PER_MINUTE = 60000;
-            var cutoffTime = new Date(startTime - cutoffDiff * MS_PER_MINUTE);
-
-            var invited = currentUser.FacebookId + ":" + currentUser.FirstName;
-            $("#addDiv .invitedFriends div").each(function () {
-                if ($(this).attr("facebookid")) {
-                    invited += "|" + $(this).attr("facebookid");
-                    var name = $(this).find("div").html();
-                    if (name.indexOf(" ") > 0)
-                        name = name.substring(0, name.indexOf(" "));
-                    invited += ":" + name;
-                }
-            });
-
-            var max = +$("#AddMax").val();
-            if (max) max++;
-
-            var event = { Name: $("#AddName").val(), EventDescription: $("#AddDetails").val(), LocationName: currentLocation.Name,
-                LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
-                IsPrivate: $("#isPublicBtn .selected").html() == "Private", MinParticipants: +$("#AddMin").val() + 1, MaxParticipants: max, 
-                StartTime: startTime, CutoffTime: cutoffTime, Invited:invited, Going: currentUser.FacebookId + ":" + currentUser.FirstName, 
-                NotificationMessage: "Created: " + $("#AddName").val(), FacebookId: currentUser.FacebookId
-            };
-
-            if (currentEvent.Id) {
-                event.Id = currentEvent.Id;
-                event.NotificationMessage = "";
             }
 
             var success = (function(event) {
@@ -332,6 +369,83 @@
             CloseToBottom("addDiv");
         }
 
+        function GetCreateEvent() {
+            var startTime = "";
+            var cutoffTime = "";
+            if ($("#AddStartTime").val())
+            {
+                var now = new Date();
+                startTime = new Date();
+                var time = $("#AddStartTime").val();
+                var hr = +time.substring(0, time.indexOf(":"));
+                time = time.substring(time.indexOf(":") + 1);
+                var min = +time.substring(0, time.indexOf(" "));
+                var AMPM = time.substring(time.length - 2, time.length);
+                if (AMPM == "AM" && hr == 12)
+                    hr = 0;
+                if (AMPM == "PM" && hr != 12)
+                    hr += 12;
+                startTime.setHours(hr);
+                startTime.setMinutes(min);
+                startTime.setSeconds(0);
+
+                var diffMinutes = parseInt((startTime - now) / (60 * 1000));
+                var cutoffDiff = 0;
+                if (diffMinutes > 29)
+                    cutoffDiff = 15;
+                if (diffMinutes > 59)
+                    cutoffDiff = 30;
+                if (diffMinutes > 179)
+                    cutoffDiff = 60;
+
+                var MS_PER_MINUTE = 60000;
+                cutoffTime = new Date(startTime - cutoffDiff * MS_PER_MINUTE);
+            }
+
+
+            var invited = currentEvent.Invited ? currentEvent.Invited : currentUser.FacebookId + ":" + currentUser.FirstName;
+            $("#addDiv .invitedFriends div").each(function () {
+                if ($(this).attr("facebookid")) {
+                    invited += "|" + $(this).attr("facebookid");
+                    var name = $(this).find("div").html();
+                    if (name.indexOf(" ") > 0)
+                        name = name.substring(0, name.indexOf(" "));
+                    invited += ":" + name;
+                }
+                if ($(this).attr("Phone")) {
+                    invited += "|" + $(this).attr("Phone");
+                    var name = $(this).find("div").html();
+                    if (name.indexOf(" ") > 0)
+                        name = name.substring(0, name.indexOf(" "));
+                    invited += ":" + name;
+                }
+            });
+            if (!invited)
+                invited = "";
+
+            var going = currentEvent.Going ? currentEvent.Going : currentUser.FacebookId + ":" + currentUser.FirstName;
+            if (!going)
+                going = "";
+
+            var max = +$("#AddMax").val();
+            var min = +$("#AddMin").val();
+
+            var event = {
+                Name: $("#AddName").val(), EventDescription: $("#AddDetails").val(), LocationName: currentLocation.Name,
+                LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
+                IsPrivate: $("#isPublicBtn .selected").html() == "Private", MinParticipants: min, MaxParticipants: max,
+                StartTime: startTime, CutoffTime: cutoffTime, Invited: invited, Going: going,
+                NotificationMessage: "Created: " + $("#AddName").val(), FacebookId: currentUser.FacebookId
+            };
+
+            if (currentEvent.Id) {
+                event.Id = currentEvent.Id;
+                event.NotificationMessage = "";
+            }
+
+            return event;
+        }
+
         function PublicClick() {
             //MessageBox("Pow Wow currently does not have enough members near you to create public events. Invite your friends to enable public events.");
 
@@ -339,6 +453,15 @@
             $(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
                 $(".pillBtn div").not(".slider").toggleClass("selected");
             });
+        }
+
+        function SetPublic(isPublic)
+        {
+            var marginLeft = isPublic ? "0px" : "44%";
+            $(".pillBtn .slider").css({ "margin-left": marginLeft });
+            $(".pillBtn div").removeClass("selected");
+            var idx = isPublic ? 1 : 2;
+            $(".pillBtn div:eq(" + idx +")").addClass("selected");
         }
 
         function DeleteEvent() {
@@ -360,6 +483,12 @@
             $("#AddLocation").focus(function () {
                 $("#locationSearchTextbox").val("");
                 $("#locationResults").html("");
+                setTimeout(function () {
+                    $(document).scrollTop(0);
+                    $("#locationSearchTextbox").focus();
+                    $("#locationDiv").height($(document).height());
+                    
+                }, 400);
                 OpenFromBottom("locationDiv");
             });
 
@@ -373,7 +502,6 @@
 
             $("#locationResults").on("click", "div", function () {
                 var idx = $(this).attr("locationIdx");
-                console.log(idx);
                 AddLocation(idx);
             });
 
@@ -402,14 +530,14 @@
                 geocoder.geocode({ 'address': address }, function (results, status) {
                     if (status == google.maps.GeocoderStatus.OK) {
                         currentLocation = { Name: $("#locationSearchTextbox").val(), Address: $("#locationSearchTextbox").val(), Latitude: results[0].geometry.location.lat(), Longitude: results[0].geometry.location.lng() };
-                        PlotMap("addMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
+                        PlotMap("AddMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
                         $("#AddLocation").val(currentLocation.Name);
                     }
                 });
             }
             else {
                 currentLocation = locationResults[index];
-                PlotMap("addMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
+                PlotMap("AddMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
                 $("#AddLocation").val(currentLocation.Name);
             }
 
@@ -441,6 +569,17 @@
     <script type="text/javascript">
         $(document).ready(function () {
             $("#inviteBtn").click(function () {
+
+                if (isiOS)
+                {
+                    var url = "ios:AddressBookFromCreate" + GetReturnUrlParameters() + "&createEvent=" + JSON.stringify(GetCreateEvent());
+                    //if(getParameterByName("contactList"))
+                    //    url += "&contactList=" + getParameterByName("contactList")
+
+                    window.location = url;
+                    return;
+                }
+
                 OpenFromBottom("inviteDiv");
                 $("#Invite").html("Add");
                 Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
@@ -473,12 +612,25 @@
 
         function PopulateFriends(friendList) {
 
-            var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
-            for (var i = 0; i < friendList.length; i++) {
-                var friend = friendList[i];
-                html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
+            if (isiOS)
+            {
+                //var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
+                //for (var i = 0; i < friendList.length; i++) {
+                //    var friend = friendList[i];
+                //    html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
+                //}
+                //$("#inviteResults").html(html);
             }
-            $("#inviteResults").html(html);
+            else
+            {
+                var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
+                for (var i = 0; i < friendList.length; i++) {
+                    var friend = friendList[i];
+                    html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
+                }
+                $("#inviteResults").html(html);
+            }
+
         }
 
         function FilterFriends() {
@@ -491,18 +643,35 @@
             });
         }
 
-        function AddInvites() {
-            var html = "";
-            $("#inviteResults div.invited").each(function () {
-                var fbId = $(this).attr("facebookId");
-                var name = $(this).find("span").html();
-                if (Contains(name, " "))
-                    name = name.substring(0, name.indexOf(" "));
-                html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
-            });
+        function AddInvites(friendList) {
+            
+            if (isiOS)
+            {
+                var html = "";
+                for (var i = 0; i < friendList.length; i++)
+                {
+                    var friend = friendList[i];
+                    if(friend.facebookId) //Facebook user
+                        html += "<div facebookId='" + friend.facebookId + "' ><img src='https://graph.facebook.com/" + friend.facebookId + "/picture' /><div>" + friend.name + "</div></div>";
+                    else
+                        html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
+                }
+                $("#addDiv .invitedFriends").html(html);
+            }
+            else
+            {
+                var html = "";
+                $("#inviteResults div.invited").each(function () {
+                    var fbId = $(this).attr("facebookId");
+                    var name = $(this).find("span").html();
+                    if (Contains(name, " "))
+                        name = name.substring(0, name.indexOf(" "));
+                    html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
+                });
 
-            $("#addDiv .invitedFriends").html(html);
-            CloseToBottom("inviteDiv");
+                $("#addDiv .invitedFriends").html(html);
+                CloseToBottom("inviteDiv");
+            }
         }
 
         function SendInvites() {
@@ -536,7 +705,15 @@
     <!-- Messages -->
     <script type="text/javascript">
         $(document).ready(function () {
+            $("#sendText").focus(function () {
+                setTimeout(function () { $("#messageDiv").scrollTop($("#messageDiv").height()); }, 200)
+            });
 
+            $("#sendText").keypress(function (e) {
+                if (e.which == 13) {
+                    SendMessage();
+                }
+            });
         });
 
         function OpenMessages() {
@@ -545,6 +722,7 @@
             $("#messageDiv").show();
             $("#messageDiv").animate({ left: "0" }, 350);
             $("#MessageName").html(currentEvent.Name);
+            $(".messageBtn").attr("src", "/Img/message.png");
             LoadMessages();
         }
 
@@ -566,7 +744,7 @@
                 }
             }
             $("#MessageResults").html(html);
-            window.scrollTo(0, document.body.scrollHeight);
+            $("#messageDiv").scrollTop($("#messageDiv").height());
         }
 
         function SendMessage() {
@@ -600,6 +778,13 @@
                 var eventId = $(this).attr("eventid");
                 OpenEventFromNotification(eventId);
             });
+
+            $("#notificationDiv").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    CloseNotification();
+                }
+            });
+
         });
 
         function NotificationClick() {
@@ -702,31 +887,18 @@
                 $(".modal-backdrop").show();
                 $("#clockDiv").show();
                 $("#clockCircle").html("");
-                if (!$("#clockDiv .time").html().length) {
-                    var date = new Date;
-                    var min = date.getMinutes();
-                    if (min < 10)
-                        min = "0" + min;
-                    var hr = date.getHours();
-                    var AMPM = "AM";
-                    if (hr > 11)
-                        AMPM = "PM";
-                    if (hr > 12)
-                        hr -= 12;
-                    if (hr == 0)
-                        hr = 12;
 
-                    $(".ampm").each(function () {
-                        if ($(this).html() == AMPM)
-                            $(this).addClass("selected");
-                    });
+                var date = new Date;
+                var hr = date.getHours();
+                var AMPM = hr > 11 ? "PM" : "AM";
 
-                    $("#clockDiv .time").html(hr + ":" + min + " " + AMPM);
-                }
-                else {
-                    var time = $("#clockDiv .time").html();
-                    var hr = time.substring(0, time.indexOf(":"));
-                }
+                $(".ampm").removeClass("selected");
+                $(".ampm").each(function () {
+                    if ($(this).html() == AMPM)
+                        $(this).addClass("selected");
+                });
+
+                $("#clockDiv .time").html("--:-- " + AMPM);
 
                 var wd = $("#clockCircle").width();
                 $("#clockCircle").height(wd * .8);
@@ -738,15 +910,56 @@
                 for (var i = 1; i < 13; i++) {
                     var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
                     var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
-                    if (i == hr) {
-                        html += '<div class="selected hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
-                    }
-                    else {
-                        html += '<div class="hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
-                    }
-
+                    html += '<div class="hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
                 }
                 $("#clockCircle").append(html);
+
+
+                //if (!$("#clockDiv .time").html().length) {
+                //    var date = new Date;
+                //    var min = date.getMinutes();
+                //    if (min < 10)
+                //        min = "0" + min;
+                //    var hr = date.getHours();
+                //    var AMPM = "AM";
+                //    if (hr > 11)
+                //        AMPM = "PM";
+                //    if (hr > 12)
+                //        hr -= 12;
+                //    if (hr == 0)
+                //        hr = 12;
+
+                //    $(".ampm").each(function () {
+                //        if ($(this).html() == AMPM)
+                //            $(this).addClass("selected");
+                //    });
+
+                //    $("#clockDiv .time").html(hr + ":" + min + " " + AMPM);
+                //}
+                //else {
+                //    var time = $("#clockDiv .time").html();
+                //    var hr = time.substring(0, time.indexOf(":"));
+                //}
+
+                //var wd = $("#clockCircle").width();
+                //$("#clockCircle").height(wd * .8);
+
+                //var radius = (wd / 2) * .7;
+                //var html = "";
+                //var centerX = wd / 2;
+                //var centerY = wd / 2 + 60;
+                //for (var i = 1; i < 13; i++) {
+                //    var x = Math.cos(2 * Math.PI * ((i - 3) / 12)) * radius + centerX;
+                //    var y = Math.sin(2 * Math.PI * ((i - 3) / 12)) * radius + centerY;
+                //    if (i == hr) {
+                //        html += '<div class="selected hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
+                //    }
+                //    else {
+                //        html += '<div class="hour" style="position:absolute;left:' + x + 'px;top:' + y + 'px;">' + i + '</div>';
+                //    }
+
+                //}
+                //$("#clockCircle").append(html);
             }
 
             function HourClicked(hr) {
@@ -816,6 +1029,35 @@
             }
     </script>
 
+    <!-- Integrate with iOS / Android -->
+     <script type="text/javascript">
+         function AppInit()
+         {
+             var token = getParameterByName("fbAccessToken");
+             if (token)
+                 fbAccessToken = token;
+
+             currentLat = getParameterByName("lat");
+             currentLng = getParameterByName("lng");
+
+             if (getParameterByName("createEvent"))
+             {
+                 var event = JSON.parse(getParameterByName("createEvent"));
+                 OpenCreate(event);
+
+                 $("#addDiv").show();
+                 $("#addDiv").css({ top: "0" });
+             }
+
+         }
+
+         function GetReturnUrlParameters()
+         {
+             return "?OS=" + getParameterByName("OS") + "&fbAccessToken=" + fbAccessToken + "&lat=" + currentLat + "&lng=" + currentLng;
+         }
+
+     </script>
+
     <!-- Facebook -->
     <script type="text/javascript">
         var currentUser;
@@ -840,21 +1082,28 @@
                     $("#FacebookId").val(uid);
                     fbAccessToken = response.authResponse.accessToken;
 
-                    var success = (function (results) {
-                        currentUser = results;
-
-                        if (document.URL.indexOf("?") > 0) {
-                            var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
-                            Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
-                        }
-                    });
-                    Post("GetUser", { facebookAccessToken: fbAccessToken }, success);
+                    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
 
                 } else {
-                    window.location = "../";
+                    if (!fbAccessToken)
+                        window.location = "../";
+                    else
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
                 }
             });
         };
+
+        function LoginSuccess(results) {
+            currentUser = results;
+            $("#FacebookId").val(currentUser.FacebookId);
+            LoadEvents();
+            /*TODO: fix
+            if (document.URL.indexOf("?") > 0) {
+                var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
+                Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
+            }
+            */
+        }
 
         // Load the SDK Asynchronously
         (function (d) {
@@ -895,17 +1144,17 @@
             <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
             <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
             <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
-            <div style="float:left;margin:16px 0;">How Many People?</div>
+            <div style="float:left;margin:16px 0;">Total People?</div>
             <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
             <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
-            <div id="isPublicBtn" class="pillBtn" style="clear:both;">
+            <div id="isPublicBtn" class="pillBtn" style="margin-bottom:16px;clear:both;">
                 <div class="slider"></div>
                 <div style="margin: -25px 0 0 18%;float:left;">Public</div>
                 <div style="margin: -25px 18% 0 0;float:right;" class="selected">Private</div>
             </div>
-            <div id="inviteBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;">Invite Friends</div>
+            <div id="inviteBtn" style="text-align:center;color:#4285F4;margin: 0 0 8px;">Invite Friends</div>
             <div class="invitedFriends"></div>
-            <div id="addMap"></div>
+            <div id="AddMap" style="clear:both;"></div>
             <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
             </div>
         </div>
@@ -913,21 +1162,21 @@
             <div>
             <a onclick="CloseToBottom('detailsDiv', true);" style="position: absolute; left:5%;top:20px;color:#4285F4;">Done</a>
             <div id="DetailsName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
-            <img onclick="OpenMessages();" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
+            <img onclick="OpenMessages();" class="messageBtn" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>
             <div id="DetailsLocation" style="margin-bottom: 4px;"></div>
             <div id="DetailsStartTime" style="margin-bottom: 10px;"></div>
             <%--<div id="DetailsCutoffTime" style="margin-bottom: 4px;"></div>--%>
             <div id="DetailsHowMany" style="text-align:center;"></div>
-            <div id="DetailsInvitedFriends" class="invitedFriends" style="height:80px;position:absolute;overflow:hidden;"></div>
-            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 84px 0 14px;">Invite Friends</div>
+            <div id="DetailsInvitedFriends" class="invitedFriends" ></div>
+            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 84px 0 14px;clear: both;">Invite Friends</div>
             <div id="DetailsMap"></div>
             <div id="DetailsJoinBtn" class="bottomBtn" style="position:fixed;top:100%;margin-top: -42px;bottom:initial;">Join</div>
             </div>
         </div>
         <div id="messageDiv">
             <div>
-            <div style="left:0;right:0;position:fixed;background:white;border-bottom:1px solid #ccc;z-index:500;">
+            <div style="top: 0;left:0;right:0;position:fixed;background:white;border-bottom:1px solid #ccc;z-index:500;">
                 <a onclick="CloseMessages();" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
                 <div id="MessageName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
             </div>
