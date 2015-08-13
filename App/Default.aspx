@@ -332,7 +332,14 @@
                 var fbId = invited[i].split(":")[0];
                 var name = invited[i].split(":")[1];
                 var src = fbId.indexOf("p") == 0 ? "/Img/face" + Math.floor(Math.random() * 8) + ".png" : "https://graph.facebook.com/" + fbId + "/picture";
-                if(event.Going.indexOf(fbId) < 0)
+                var alreadyGoing = false;
+                if (fbId.indexOf("p") == 0) {
+                    for (var j = 0; j < goingCt; j++) {
+                        if (name == going[j].split(":")[1])
+                            alreadyGoing = true;
+                    }
+                }
+                if (event.Going.indexOf(fbId) < 0 && !alreadyGoing)
                     inviteHtml += "<div><img class='invitedFbImg' src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + name + "</div></div>";
             }
             for (var i = goingCt; i < event.MaxParticipants; i++) {
@@ -494,7 +501,7 @@
             }
 
             if ($("#DetailsJoinBtn").html() == "Join") {
-                currentEvent.Going = AddToString(currentEvent.Going, currentUser.FacebookId + ":" + currentUser.FirstName)
+                currentEvent.Going = AddToString(currentEvent.Going, currentUser.FacebookId + ":" + currentUser.FirstName);
 
                 currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
                 $("#DetailsJoinBtn").html("Unjoin");
@@ -532,19 +539,26 @@
             $("#AddLocation").focus(function () {
                 $("#locationSearchTextbox").val("");
                 $("#locationResults").html("");
-                setTimeout(function () {
-                    $(document).scrollTop(0);
-                    $("#locationSearchTextbox").focus();
-                    $("#locationDiv").height($(document).height());
+                $("#locationDiv").show();
+                $("#locationDiv").css({ top: "0" });
+                $("#locationSearchTextbox").focus();
+                //setTimeout(function () {
+                //    $("#locationSearchTextbox").focus();
                     
-                }, 400);
-                OpenFromBottom("locationDiv");
+                //}, 200);
+                //setTimeout(function () {
+                //    //$(document).scrollTop(0);
+                //    //$("#locationDiv").height($(document).height());
+                //}, 500);
+                //OpenFromBottom("locationDiv");
             });
 
             $("#locationSearchTextbox").keyup(function () {
                 var search = $("#locationSearchTextbox").val();
-                if (search.length < 3)
+                if (search.length < 3) {
+                    $("#locationResults").html("");
                     return;
+                }
 
                 Post("GetLocations", { searchName: search, latitude: currentLat, longitude: currentLng }, PopulateLocations);
             });
@@ -811,7 +825,7 @@
                 }
             }
             $("#MessageResults").html(html);
-            $("#messageDiv").scrollTop($("#messageDiv").height());
+            $("#MessageResults").scrollTop($("#MessageResults").height());
         }
 
         function SendMessage() {
@@ -1127,9 +1141,22 @@
              else if(getParameterByName("goToEvent"))
              {
                  var referenceId = getParameterByName("goToEvent");
-                 Post("GetEventByReference", { referenceId: referenceId }, OpenDetails);
-                 $("#detailsDiv").show();
-                 $("#detailsDiv").css({ top: "0" });
+                 if (getParameterByName("toMessaging")) {
+                     var messageSuccess = function (event) {
+                         currentEvent = event;
+                         $("#messageDiv").show();
+                         $("#messageDiv").css({ left: "0" });
+                         OpenMessages();
+                         OpenDetails(event);
+                     };
+                     Post("GetEventByReference", { referenceId: referenceId }, messageSuccess);
+                 }
+                 else
+                 {
+                     Post("GetEventByReference", { referenceId: referenceId }, OpenDetails);
+                     $("#detailsDiv").show();
+                     $("#detailsDiv").css({ top: "0" });
+                 }
                  HideLoading();
              }
              else if (getParameterByName("joinEvent")) {
@@ -1158,7 +1185,7 @@
 
          function GetReturnUrlParameters()
          {
-             return "?OS=" + getParameterByName("OS") + "&fbAccessToken=" + fbAccessToken + "&lat=" + currentLat + "&lng=" + currentLng;
+             return "?OS=" + getParameterByName("OS") + "&facebookId=" + currentUser.FacebookId + "&firstName=" + currentUser.FirstName + "&lat=" + currentLat + "&lng=" + currentLng;
          }
 
      </script>

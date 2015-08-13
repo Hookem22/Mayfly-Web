@@ -239,23 +239,22 @@ input.error, textarea.error
 }
 #messageDiv
 {
-    position: absolute;
-    overflow-y: scroll;
+    position: fixed;
     background: white;
-    padding: 0 0 80px;
-    top: 0;
     left: 100%;
     right: 0;
-    bottom: 0;
     display: none;
     z-index: 150;
 }
 #MessageResults
 {
-    position: absolute;
+    position: fixed;
+    overflow: scroll;
     padding: 65px 30px 80px;
     left: 0;
     right: 0;
+    bottom: 0;
+    top: 0;
     background-color: white;
 }
 #sendDiv
