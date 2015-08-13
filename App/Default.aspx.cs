@@ -38,6 +38,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static Event GetEventByReference(int referenceId)
+    {
+        return Event.GetByRefernce(referenceId);
+    }
+
+    [WebMethod]
     public static List<Event> GetEvents(string latitude, string longitude)
     {
         return Event.GetCurrent(latitude, longitude);

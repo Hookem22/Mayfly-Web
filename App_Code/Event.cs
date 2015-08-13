@@ -66,6 +66,17 @@ public class Event : Base<Event>
         return events;
     }
 
+    public static Event GetByRefernce(int referenceId)
+    {
+        List<Event> events = GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));
+        if (events.Count > 0)
+        {
+            return events[0];
+        }
+
+        return null;
+    }
+
     private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
     {
         try

@@ -135,3 +135,13 @@ function ToLocalTime(dateTime) {
     }
     return localTime;
 }
+function ShowLoading()
+{
+    $(".modal-backdrop").show();
+    $(".loading").show();
+}
+function HideLoading()
+{
+    $(".modal-backdrop").hide();
+    $(".loading").hide();
+}

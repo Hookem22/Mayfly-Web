@@ -26,13 +26,35 @@
         $(document).ready(function () {
             Init();
 
+            var scrollTimer;
+            $(".content").scroll(function () {
+                if (scrollTimer) {
+                    clearTimeout(scrollTimer);
+                }
+                scrollTimer = setTimeout(function () {
+                    if ($(".content").scrollTop() < 15) {
+                        ShowLoading();
+                        LoadEvents();
+                    }
+                    else if ($(".content").scrollTop() < 90) {
+                        $(".content").animate({ scrollTop: "90" }, 350);
+                    }
+                }, 100);
+            });
+
             $("#addBtn").click(function () {
                 OpenAdd();
             });
 
             $(".content").on("click", ".event", function () {
                 var event = eventResults[$(this).attr("index")];
-                if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId)) {
+                var invited = event.ReferenceId == getParameterByName("goToEvent");
+                if (!currentUser.FacebookId && !invited) {
+                    OpenFacebookLogin();
+                    return;
+                }
+
+                if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId) && !invited) {
                     MessageBox("This event is private. You cannot join private events unless you are invited.");
                     return;
                 }
@@ -45,24 +67,7 @@
             });
 
             $("#DetailsJoinBtn").click(function () {
-                if ($(this).html() == "Join") {
-                    currentEvent.Going = AddToString(currentEvent.Going, currentUser.FacebookId + ":" + currentUser.FirstName)
-
-                    currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
-                    $(this).html("Unjoin");
-                    var alert = currentUser.FirstName + " joined " + currentEvent.Name;
-                    var message = "";
-                    Post("SendJoinMessage", { alert: alert, message: message, facebookId: currentUser.FacebookId, evt: currentEvent });
-                }
-                else {
-                    currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.FacebookId);
-                    currentEvent.NotificationMessage = "Unjoined: " + currentEvent.Name;
-                    $(this).html("Join");
-                }
-
-                currentEvent.FacebookId = currentUser.FacebookId;
-                UpdateDetailsGoing(currentEvent);
-                Post("SaveEvent", { evt: currentEvent }, LoadEvents);
+                JoinEvent();
             });
             
             $("#deleteEventBtn").click(function () {
@@ -73,9 +78,14 @@
 
         function Init()
         {
+            ShowLoading();
+            if ($(window).height() > 550)
+                $(".content div").css("min-height", ($(window).height() - 135) + "px");
+
             isiOS = getParameterByName("OS") == "iOS";
             isAndroid = getParameterByName("OS") == "Android";
             if (isiOS || isAndroid) {
+                isMobile = true;
                 AppInit();
                 return;
             }
@@ -106,6 +116,11 @@
         }
 
         function OpenAdd(isEdit) {
+            if (!currentUser.FacebookId) {
+                OpenFacebookLogin();
+                return;
+            }
+
             OpenFromBottom("addDiv");
             if (!isEdit) {
                 $("#addHeader").html("Create Event");
@@ -165,11 +180,11 @@
             for(var i = 0; i < list.length; i++)
             {
                 var event = list[i];
-                if(event.Invited && event.Invited.indexOf("10106610968977054") == 0)
-                    bobList.push(event);
-                else if (Contains(event.Going, fbId))
+                //if(event.Invited && event.Invited.indexOf("10106610968977054") == 0)
+                //    bobList.push(event);
+                if (Contains(event.Going, fbId))
                     goingList.push(event);
-                else if (Contains(event.Invited, fbId))
+                else if (Contains(event.Invited, fbId) || event.ReferenceId == getParameterByName("goToEvent"))
                     invitedList.push(event);
                 else
                     otherList.push(event);
@@ -197,7 +212,7 @@
                 eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
                 if (Contains(event.Going, fbId))
                     eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
-                else if (Contains(event.Invited, fbId))
+                else if (Contains(event.Invited, fbId) || event.ReferenceId == getParameterByName("goToEvent"))
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/invited.png" />');
                 else if (event.IsPrivate)
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/lock.png" />');
@@ -207,7 +222,9 @@
                 html += eventHtml;
             }
 
-            $(".content").html(html);
+            $(".content div").html(html);
+            $(".content").scrollTop(90);
+            HideLoading();
         }
 
         function OpenCreate(event)
@@ -467,6 +484,33 @@
             $(".pillBtn div").removeClass("selected");
             var idx = isPublic ? 1 : 2;
             $(".pillBtn div:eq(" + idx +")").addClass("selected");
+        }
+
+        function JoinEvent()
+        {
+            if (!currentUser.FacebookId) {
+                OpenFacebookLogin();
+                return;
+            }
+
+            if ($("#DetailsJoinBtn").html() == "Join") {
+                currentEvent.Going = AddToString(currentEvent.Going, currentUser.FacebookId + ":" + currentUser.FirstName)
+
+                currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
+                $("#DetailsJoinBtn").html("Unjoin");
+                var alert = currentUser.FirstName + " joined " + currentEvent.Name;
+                var message = "";
+                Post("SendJoinMessage", { alert: alert, message: message, facebookId: currentUser.FacebookId, evt: currentEvent });
+            }
+            else {
+                currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.FacebookId);
+                currentEvent.NotificationMessage = "Unjoined: " + currentEvent.Name;
+                $("#DetailsJoinBtn").html("Join");
+            }
+
+            currentEvent.FacebookId = currentUser.FacebookId;
+            UpdateDetailsGoing(currentEvent);
+            Post("SaveEvent", { evt: currentEvent }, LoadEvents);
         }
 
         function DeleteEvent() {
@@ -1056,9 +1100,17 @@
      <script type="text/javascript">
          function AppInit()
          {
-             var token = getParameterByName("fbAccessToken");
-             if (token)
-                 fbAccessToken = token;
+             //var token = getParameterByName("fbAccessToken");
+             //if (token)
+             //    fbAccessToken = token;
+
+             currentUser = {};
+             if (getParameterByName("facebookId") && getParameterByName("facebookId") != "(null)")
+                 currentUser.FacebookId = getParameterByName("facebookId");
+             if (getParameterByName("firstName") && getParameterByName("firstName") != "(null)")
+                 currentUser.FirstName = getParameterByName("firstName");
+
+             $("#FacebookId").val(currentUser.FacebookId);
 
              currentLat = getParameterByName("lat");
              currentLng = getParameterByName("lng");
@@ -1070,18 +1122,37 @@
 
                  $("#addDiv").show();
                  $("#addDiv").css({ top: "0" });
+                 HideLoading();
              }
              else if(getParameterByName("goToEvent"))
              {
-                 var eventId = getParameterByName("goToEvent");
-                 var fbInterval = setInterval(function () {
-                     if (currentUser) {
-                         clearInterval(fbInterval);
-                         Post("GetEvent", { id: eventId }, OpenDetails);
-                         $("#detailsDiv").show();
-                         $("#detailsDiv").css({ top: "0" });
-                     }
-                 }, 500);
+                 var referenceId = getParameterByName("goToEvent");
+                 Post("GetEventByReference", { referenceId: referenceId }, OpenDetails);
+                 $("#detailsDiv").show();
+                 $("#detailsDiv").css({ top: "0" });
+                 HideLoading();
+             }
+             else if (getParameterByName("joinEvent")) {
+                 var referenceId = getParameterByName("joinEvent");
+                 var getSuccess = function (evt) {
+                     currentEvent = evt;
+                     JoinEvent();
+                     HideLoading();
+                 };
+                 Post("GetEventByReference", { referenceId: referenceId }, getSuccess)
+             }
+             else
+             {
+                 LoadEvents();
+             }
+         }
+
+
+         function FacebookLoginApp()
+         {
+             if(isiOS)
+             {
+                 window.location = "ios:FacebookLogin";
              }
          }
 
@@ -1098,33 +1169,38 @@
         var fbAccessToken;
 
         window.fbAsyncInit = function () {
-            FB.init({
-                appId: '397533583786525', // App ID
-                status: true, // check login status
-                cookie: true, // enable cookies to allow the server to access the session
-                xfbml: true  // parse XFBML
-            });
+            
+            var OS = getParameterByName("OS");
+            if (!OS)
+            {
+                FB.init({
+                    appId: '397533583786525', // App ID
+                    status: true, // check login status
+                    cookie: true, // enable cookies to allow the server to access the session
+                    xfbml: true  // parse XFBML
+                });
 
-            FB.getLoginStatus(function (response) {
-                if (response.status === 'connected') {
-                    // the user is logged in and has authenticated your
-                    // app, and response.authResponse supplies
-                    // the user's ID, a valid access token, a signed
-                    // request, and the time the access token 
-                    // and signed request each expire
-                    var uid = response.authResponse.userID;
-                    $("#FacebookId").val(uid);
-                    fbAccessToken = response.authResponse.accessToken;
+                FB.getLoginStatus(function (response) {
+                    if (response.status === 'connected') {
+                        // the user is logged in and has authenticated your
+                        // app, and response.authResponse supplies
+                        // the user's ID, a valid access token, a signed
+                        // request, and the time the access token 
+                        // and signed request each expire
+                        var uid = response.authResponse.userID;
+                        $("#FacebookId").val(uid);
+                        fbAccessToken = response.authResponse.accessToken;
 
-                    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-
-                } else {
-                    if (!fbAccessToken)
-                        window.location = "../";
-                    else
                         Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-                }
-            });
+
+                    } else {
+                        if (!fbAccessToken)
+                            window.location = "../";
+                        else
+                            Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                    }
+                });
+            }
         };
 
         function LoginSuccess(results) {
@@ -1137,6 +1213,11 @@
                 Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
             }
             */
+        }
+
+        function OpenFacebookLogin()
+        {
+            OpenFromBottom("facebookLoginDiv");
         }
 
         // Load the SDK Asynchronously
@@ -1155,6 +1236,7 @@
         <div id="fb-root"></div>
         <input type="hidden" id="FacebookId" runat="server" />
         <div class="modal-backdrop"></div>
+        <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
             <div>
                 <img class="title" src="/Img/title.png" />
@@ -1162,6 +1244,7 @@
             </div>
         </div>
         <div class="content">
+            <div style="min-height:500px;"></div>
             <%--<div class="event">
                 <img class="going" src="https://graph.facebook.com/10106153174286280/picture" />
                 <div style="float:left;"><span style="color:#4285F4;;">Test</span><div style="height:4px;"></div>2 miles away</div>
@@ -1239,6 +1322,10 @@
             </div>
         </div>
         <div id="notificationDiv"></div>
+        <div id="facebookLoginDiv">
+            <a onclick="CloseToBottom('facebookLoginDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
+            <a href="#" onclick="FacebookLoginApp();" style="top: 200px;position: absolute;left: 100px;;">Login</a>
+        </div>
         <div id="clockDiv">
             <div class="time"></div>
             <div id="clockCircle"></div>

@@ -67,6 +67,20 @@ input.error, textarea.error
     margin-top: 75px;
     display: none;
 }
+.loading
+{
+    position: absolute;
+    z-index: 1000;
+    left: 50%;
+    top: 50%;
+    margin-left: -30px;
+    margin-top: -30px;
+    display: none;
+}
+.loading img
+{
+    width: 60px;
+}
 .dialogClose
 {
     float: right;
@@ -132,6 +146,10 @@ input.error, textarea.error
 {
     background: #4285F4;
     text-align: center;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 20;
 }
 .title
 {
@@ -152,6 +170,7 @@ input.error, textarea.error
     bottom: 20px;
     left: 50%;
     margin-left: -25px;
+    z-index: 10;
 }
 #addBtn:hover
 {
@@ -160,6 +179,15 @@ input.error, textarea.error
 .content
 {
     margin: 0 auto;
+    padding: 155px 0 70px;
+    min-height: 350px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: scroll;
+    z-index: 1;
 }
 .event
 {
@@ -394,6 +422,18 @@ input.error, textarea.error
 {
     display: block;
 }
+#facebookLoginDiv
+{
+    position: fixed;
+    background: white;
+    padding: 0 20px 0;
+    top: 100%;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: none;
+    z-index: 3000;
+}
 #notificationDiv
 {
     position: fixed;
@@ -404,6 +444,7 @@ input.error, textarea.error
     left: 100%;
     bottom: 0;
     display: none;
+    z-index: 15;
 }
 #notificationDiv > div
 {
