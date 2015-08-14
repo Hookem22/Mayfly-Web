@@ -126,7 +126,7 @@
                 $("#addHeader").html("Create Event");
                 $("#AddSaveBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
-                $("#addDiv .invitedFriends").html("");
+                $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "165px").hide();
                 $("#inviteBtn").show();
                 $("#addDiv .invitedFriends").show();
@@ -151,7 +151,7 @@
                 $("#AddMap").css("height", "135px");
                 PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
                 $("#inviteBtn").hide();
-                $("#addDiv .invitedFriends").html("");
+                $("#addDiv .invitedFriendsScroll").html("");
                 $("#addDiv .invitedFriends").hide();
                 $("#deleteEventBtn").show();
             }
@@ -288,7 +288,7 @@
             UpdateDetailsGoing(event);
 
             setTimeout(function () {
-                var mapHt = $(window).height() -$("#DetailsMap").offset().top - 50;
+                var mapHt = $(window).height() -$("#DetailsMap").offset().top - 60;
                 if (mapHt < 165)
                     mapHt = 165;
                 $("#DetailsMap").css("height", mapHt + "px");
@@ -345,7 +345,10 @@
             for (var i = goingCt; i < event.MaxParticipants; i++) {
                 inviteHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
             }
-            $("#DetailsInvitedFriends").html(inviteHtml);
+            var totalCt = event.MaxParticipants || goingCt + invitedCt;
+            $("#DetailsInvitedFriends  .invitedFriendsScroll").css("width", ((totalCt * 70) + 25) + "px");
+
+            $("#DetailsInvitedFriends .invitedFriendsScroll").html(inviteHtml);
         }
 
         function SaveClick() {
@@ -433,7 +436,7 @@
 
 
             var invited = currentEvent.Invited ? currentEvent.Invited : currentUser.FacebookId + ":" + currentUser.FirstName;
-            $("#addDiv .invitedFriends div").each(function () {
+            $("#addDiv .invitedFriendsScroll div").each(function () {
                 if ($(this).attr("facebookid")) {
                     invited += "|" + $(this).attr("facebookid");
                     var name = $(this).find("div").html();
@@ -496,6 +499,8 @@
         function JoinEvent()
         {
             if (!currentUser.FacebookId) {
+                var title = currentEvent ? "Log In to Join " + currentEvent.Name + " and Discover Activities Around You" : "Log In to Join This Event";
+                $(".loginHeader").html(title);
                 OpenFacebookLogin();
                 return;
             }
@@ -716,7 +721,8 @@
                     else
                         html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
                 }
-                $("#addDiv .invitedFriends").html(html);
+                $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
+                $("#addDiv .invitedFriendsScroll").html(html);
             }
             else
             {
@@ -729,7 +735,8 @@
                     html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
                 });
 
-                $("#addDiv .invitedFriends").html(html);
+                $("#addDiv .invitedFriendsScroll").css("width", (($("#inviteResults div.invited").length * 70) + 25) + "px");
+                $("#addDiv .invitedFriendsScroll").html(html);
                 CloseToBottom("inviteDiv");
             }
         }
@@ -1281,9 +1288,9 @@
         <img id="addBtn" src="../Img/add.png" />
         <div id="addDiv">
             <div>
-            <a onclick="CloseToBottom('addDiv', true);" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
-            <div id="addHeader" style="font-size:1.1em;margin-top:18px;text-align: center;">Create Event</div>
-            <a id="AddSaveBtn" onclick="SaveClick();" style="position: absolute; right:5%;top:20px;color:#4285F4;font-weight: bold;">Create</a>
+            <a onclick="CloseToBottom('addDiv', true);" style="position: absolute; left:5%;top:25px;color:#4285F4;">Cancel</a>
+            <div id="addHeader" style="font-size:1.1em;margin-top:23px;text-align: center;">Create Event</div>
+            <a id="AddSaveBtn" onclick="SaveClick();" style="position: absolute; right:5%;top:25px;color:#4285F4;font-weight: bold;">Create</a>
             <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
             <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
             <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
@@ -1297,23 +1304,23 @@
                 <div style="margin: -25px 18% 0 0;float:right;" class="selected">Private</div>
             </div>
             <div id="inviteBtn" style="text-align:center;color:#4285F4;margin: 0 0 8px;">Invite Friends</div>
-            <div class="invitedFriends"></div>
+            <div class="invitedFriends"><div class="invitedFriendsScroll"></div></div>
             <div id="AddMap" style="clear:both;"></div>
             <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
             </div>
         </div>
         <div id="detailsDiv">
             <div>
-            <a onclick="CloseToBottom('detailsDiv', true);" style="position: absolute; left:5%;top:20px;color:#4285F4;">Done</a>
-            <div id="DetailsName" style="font-size:1.1em;margin:18px 0;text-align: center;"></div>
-            <img onclick="OpenMessages();" class="messageBtn" src="/Img/message.png" style="position: absolute; right:5%;top:20px;top:12px;height:32px;" />
+            <a onclick="CloseToBottom('detailsDiv', true);" style="position: absolute; left:5%;top:25px;color:#4285F4;">Done</a>
+            <div id="DetailsName" style="font-size:1.1em;margin:23px 0;text-align: center;"></div>
+            <img onclick="OpenMessages();" class="messageBtn" src="/Img/message.png" style="position: absolute; right:5%;top:18px;height:32px;" />
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>
             <div id="DetailsLocation" style="margin-bottom: 4px;"></div>
             <div id="DetailsStartTime" style="margin-bottom: 10px;"></div>
             <%--<div id="DetailsCutoffTime" style="margin-bottom: 4px;"></div>--%>
             <div id="DetailsHowMany" style="text-align:center;"></div>
-            <div id="DetailsInvitedFriends" class="invitedFriends" ></div>
-            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 84px 0 14px;clear: both;">Invite Friends</div>
+            <div id="DetailsInvitedFriends" class="invitedFriends" ><div class="invitedFriendsScroll"></div></div>
+            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 10px 0 18px;clear: both;">Invite Friends</div>
             <div id="DetailsMap"></div>
             <div id="DetailsJoinBtn" class="bottomBtn" style="position:fixed;top:100%;margin-top: -42px;bottom:initial;">Join</div>
             </div>
@@ -1350,8 +1357,13 @@
         </div>
         <div id="notificationDiv"></div>
         <div id="facebookLoginDiv">
-            <a onclick="CloseToBottom('facebookLoginDiv');" style="position: absolute; left:5%;top:20px;color:#4285F4;">Cancel</a>
-            <a href="#" onclick="FacebookLoginApp();" style="top: 200px;position: absolute;left: 100px;;">Login</a>
+            <a onclick="CloseToBottom('facebookLoginDiv');" style="position: absolute; left:5%;top:30px;color:#4285F4;">Cancel</a>
+            <div class="loginHeader" style="margin:60px 20px 0;text-align: center;font-size: 20px;line-height: 28px;">Log In to Discover Activities Near You Today</div>
+            <img src="../Img/appScreenshot.png" style="margin: 12px auto;height: 55%;display:block;" />
+            <div style="text-align: center;position: absolute;width: 100%;top: 100%;margin-top: -80px;">
+                <div onclick="FacebookLoginApp();" style="display:block;margin:0 auto;width: 80%;background-color:#3B5998;color:white;padding: 10px 0;border-radius: 5px;">Log In with Facebook</div>
+                <div style="margin-top: 6px;font-size: 14px;">We don't post anything to Facebook</div>
+            </div>
         </div>
         <div id="clockDiv">
             <div class="time"></div>
