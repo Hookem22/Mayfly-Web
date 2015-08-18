@@ -84,9 +84,16 @@
 
             isiOS = getParameterByName("OS") == "iOS";
             isAndroid = getParameterByName("OS") == "Android";
-            if (isiOS || isAndroid) {
+
+            if (isiOS) {
                 isMobile = true;
-                AppInit();
+                iOSInit();
+                return;
+            }
+            else if (isAndroid)
+            {
+                isMobile = true;
+                AndroidInit();
                 return;
             }
 
@@ -642,12 +649,22 @@
                 {
                     var event = JSON.stringify(GetCreateEvent());
                     window.location = "ios:InviteFromCreate" + GetReturnUrlParameters() + "&createEvent=" + event;
-                    return;
                 }
-
-                OpenFromBottom("inviteDiv");
-                $("#Invite").html("Add");
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                else if (isAndroid)
+                {
+                    if (typeof androidAppProxy !== "undefined") {
+                        androidAppProxy.getContacts("Message from JavaScript");
+                    } else {
+                        alert("Running outside Android app");
+                    }
+                }
+                else
+                {
+                    OpenFromBottom("inviteDiv");
+                    $("#Invite").html("Add");
+                    if (!$("#inviteResults").html())
+                        Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                }
             });
 
             $("#Invite").click(function () {
@@ -684,18 +701,44 @@
             {
                 OpenFromBottom("inviteDiv");
                 $("#Invite").html("Invite");
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                if (!$("#inviteResults").html())
+                    Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
             }
         }
 
         function PopulateFriends(friendList) {
-
             var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
             for (var i = 0; i < friendList.length; i++) {
                 var friend = friendList[i];
                 html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
             }
             $("#inviteResults").html(html);
+        }
+
+        function AndroidContacts(contactString) {
+            var contacts = contactString.split("||");
+            var contactArray = [];
+            for (var i = 0; i < contacts.length; i++) {
+                var contact = contacts[i].split("|");
+                var contactObject = {};
+                if (contact && contact[0] && contact[1]) {
+                    contactObject.Name = contact[1];
+                    contactObject.Phone = contact[0];
+                    contactArray.push(contactObject);
+                }                   
+            }
+            contactArray.sort(function (a, b) {
+                return a.Name.localeCompare(b.Name);
+            });
+
+            var html = "<div style='color:white;background:#AAAAAA;'>Contacts</div>";
+            for (var i = 0; i < contactArray.length; i++) {
+                html += '<div phone="' + contactArray[i].Phone + '"><span>' + contactArray[i].Name + '</span><img src="/Img/check.png" /></div>';
+            }
+            $("#contactResults").html(html);
+
+            if (fbAccessToken && !$("#inviteResults").html())
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
         }
 
         function FilterFriends() {
@@ -1119,7 +1162,7 @@
 
     <!-- Integrate with iOS / Android -->
      <script type="text/javascript">
-         function AppInit()
+         function iOSInit()
          {
              //var token = getParameterByName("fbAccessToken");
              //if (token)
@@ -1181,13 +1224,22 @@
              }
          }
 
-
-         function FacebookLoginApp()
+         function AndroidInit()
          {
-             if(isiOS)
-             {
-                 window.location = "ios:FacebookLogin";
-             }
+             currentUser = {};
+             if (getParameterByName("facebookId") && getParameterByName("facebookId") != "(null)")
+                 currentUser.FacebookId = getParameterByName("facebookId");
+             if (getParameterByName("firstName") && getParameterByName("firstName") != "(null)")
+                 currentUser.FirstName = getParameterByName("firstName");
+
+            var lat = getParameterByName("lat");
+            var lng = getParameterByName("lng");
+            if (lat && lng) {
+                currentLat = lat;
+                currentLng = lng;
+                if (!getParameterByName("fbAccessToken"))
+                    LoadEvents();
+            }
          }
 
          function GetReturnUrlParameters()
@@ -1204,17 +1256,21 @@
 
         window.fbAsyncInit = function () {
             
-            var OS = getParameterByName("OS");
-            if (!OS)
-            {
-                FB.init({
-                    appId: '397533583786525', // App ID
-                    status: true, // check login status
-                    cookie: true, // enable cookies to allow the server to access the session
-                    xfbml: true  // parse XFBML
-                });
+            FB.init({
+                appId: '397533583786525', // App ID
+                status: true, // check login status
+                cookie: true, // enable cookies to allow the server to access the session
+                xfbml: true  // parse XFBML
+            });
 
+            fbAccessToken = getParameterByName("fbAccessToken");
+            if (fbAccessToken) {
+                Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+            }
+            else
+            {
                 FB.getLoginStatus(function (response) {
+
                     if (response.status === 'connected') {
                         // the user is logged in and has authenticated your
                         // app, and response.authResponse supplies
@@ -1228,10 +1284,10 @@
                         Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
 
                     } else {
-                        if (!fbAccessToken)
-                            window.location = "../";
-                        else
-                            Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                        //if (!fbAccessToken)
+                        //    window.location = "../";
+                        //else
+                        //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
                     }
                 });
             }
@@ -1252,6 +1308,37 @@
         function OpenFacebookLogin()
         {
             OpenFromBottom("facebookLoginDiv");
+        }
+
+        function FacebookLogin() {
+            if (isiOS) {
+                window.location = "ios:FacebookLogin";
+            }
+            else if(isAndroid)
+            {
+
+            }
+            else
+            {
+                FB.login(function (response) {
+                    if (response.authResponse) {
+                        var uid = response.authResponse.userID;
+                        $("#FacebookId").val(uid);
+                        fbAccessToken = response.authResponse.accessToken;
+
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                        CloseToBottom('facebookLoginDiv');
+                    } else {
+                        console.log('User cancelled login or did not fully authorize.');
+                    }
+                });
+            }
+        }
+
+        function FacebookLogout() {
+            FB.logout(function (response) {
+                // user is now logged out
+            });
         }
 
         // Load the SDK Asynchronously
@@ -1352,7 +1439,8 @@
             <div style="font-size:1.1em;margin-top:18px;text-align: center;">Recipients</div>
             <a id="Invite" style="position: absolute; right:5%;top:20px;color:#4285F4;">Add</a>
             <input id="filterFriendsTextbox" type="text" placeholder="Search" style="margin:12px 0;" />
-            <div id="inviteResults"></div>
+            <div id="inviteResults" class="addressBookList"></div>
+            <div id="contactResults" class="addressBookList"></div>
             </div>
         </div>
         <div id="notificationDiv"></div>
@@ -1361,7 +1449,7 @@
             <div class="loginHeader" style="margin:60px 20px 0;text-align: center;font-size: 20px;line-height: 28px;">Log In to Discover Activities Near You Today</div>
             <img src="../Img/appScreenshot.png" style="margin: 12px auto;height: 55%;display:block;" />
             <div style="text-align: center;position: absolute;width: 100%;top: 100%;margin-top: -80px;">
-                <div onclick="FacebookLoginApp();" style="display:block;margin:0 auto;width: 80%;background-color:#3B5998;color:white;padding: 10px 0;border-radius: 5px;">Log In with Facebook</div>
+                <div onclick="FacebookLogin();" style="display:block;margin:0 auto;width: 80%;background-color:#3B5998;color:white;padding: 10px 0;border-radius: 5px;">Log In with Facebook</div>
                 <div style="margin-top: 6px;font-size: 14px;">We don't post anything to Facebook</div>
             </div>
         </div>

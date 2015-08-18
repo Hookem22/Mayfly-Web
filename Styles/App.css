@@ -415,20 +415,20 @@ input.error, textarea.error
     display: none;
     z-index: 3000;
 }
-#inviteResults > div
+.addressBookList > div
 {
     padding: 4px 16px;
     border-bottom: 1px solid #D8D8D8;
     background-color: white;
 }
-#inviteResults img
+.addressBookList img
 {
     height: 20px;
     float: right;
     margin: -2px 15px 0 0;
     display: none;
 }
-#inviteResults div.invited img
+.addressBookList div.invited img
 {
     display: block;
 }
