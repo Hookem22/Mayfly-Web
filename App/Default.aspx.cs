@@ -111,7 +111,7 @@ public partial class App_Default : System.Web.UI.Page
     [WebMethod]
     public static void SendInvites(Event evt)
     {
-        evt.Save();
+        //evt.Save();
         
         string[] people = evt.FacebookId.Split('|');
         foreach (string person in people)

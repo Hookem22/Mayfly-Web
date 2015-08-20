@@ -318,6 +318,7 @@
         }
 
         function UpdateDetailsGoing(event) {
+            console.log(event);
             var going = event.Going.split("|");
             var goingCt = going.length == 1 && !going[0] ? 0 : going.length;
 
@@ -441,7 +442,7 @@
             }
 
 
-            var invited = currentEvent.Invited ? currentEvent.Invited : currentUser.FacebookId + ":" + currentUser.FirstName;
+            var invited = currentEvent.Invited || currentUser.FacebookId + ":" + currentUser.FirstName;
             $("#addDiv .invitedFriendsScroll div").each(function () {
                 if ($(this).attr("facebookId")) {
                     invited += "|" + $(this).attr("facebookId");
@@ -829,14 +830,14 @@
         
         function SendInvitesFromAddressBook()
         {
-            var event = currentEvent;
+            var event = jQuery.extend({}, currentEvent);
             event.FacebookId = "";
             $("#inviteResults div.invited").each(function () {
                 var fbId = $(this).attr("facebookId");
                 var name = $(this).find("span").html();
                 if (Contains(name, " "))
                     name = name.substring(0, name.indexOf(" "));
-                event.FacebookId += fbId + ":" + name + "|";
+                event.FacebookId = AddToString(event.FacebookId, fbId + ":" + name);
             });
 
             $("#contactResults div.invited").each(function () {
@@ -844,10 +845,13 @@
                 var name = $(this).find("span").html();
                 if (Contains(name, " "))
                     name = name.substring(0, name.indexOf(" "));
-                event.FacebookId += "p" + phone + ":" + name + "|";
+                event.FacebookId = AddToString(event.FacebookId, "p" + phone + ":" + name);
             });
 
-            currentEvent.Invited = AddToString(event.Invited, event.FacebookId);
+            $(event.FacebookId.split("|")).each(function () {
+                currentEvent.Invited = AddToString(currentEvent.Invited, this);
+            });
+            
             Post("SaveEvent", { evt: currentEvent }, UpdateDetailsGoing);
 
             event.Invited = event.FacebookId;
@@ -869,15 +873,14 @@
                 }
             });
 
-            if(phoneList)
-                GetBranchLink(event, phoneList);
+            if (phoneList) {
+                var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
+                GetBranchLink(event, phoneList, message);
+            }
+                
         }
 
-        function SendInviteText(event, phoneList, branchLink) {
-            //Get branch link
-            console.log(event);
-            console.log(phoneList);
-            MessageBox(branchLink);
+        function SendText(phoneList, message) {
 
             if (isiOS)
             {
@@ -899,7 +902,11 @@
             }
             else if(isAndroid)
             {
-
+                if (typeof androidAppProxy !== "undefined") {
+                    androidAppProxy.sendSMS(phoneList, message);
+                } else {
+                    console.log("Running outside Android app");
+                }
             }
         }
 
@@ -1432,7 +1439,7 @@
             // callback to handle err or data
         });
 
-        function GetBranchLink(event, phoneList)
+        function GetBranchLink(event, phoneList, message)
         {
             branch.link({
                 channel: isiOS ? "iOS" : isAndroid ? "Android" : "Web",
@@ -1443,12 +1450,13 @@
                     ReferenceId: event.ReferenceId
                 }
             }, function (err, link) {
-                SendInviteText(event, phoneList, link);
+                message = message.replace("{Branch}", link);
+                SendText(phoneList, message);
                 //console.log(err, link);
             });
         }
 
-        function SendSMS()
+        function SendBranchSMS()
         {
             branch.sendSMS(
                 '7135015344',
