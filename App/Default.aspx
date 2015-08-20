@@ -281,6 +281,7 @@
 
             currentEvent = event;
             OpenFromBottom("detailsDiv");
+            $("#addDiv .invitedFriendsScroll").html("");
 
             $("#DetailsName").html(event.Name);
             if (/*event.IsPrivate &&*/ event.Invited && currentUser && event.Invited.indexOf(currentUser.FacebookId) == 0) {
@@ -392,15 +393,13 @@
             var success = (function(event) {
                 LoadEvents();
                 CloseToBottom("addDiv");
+                
                 if (currentEvent.Id) {
                     currentEvent = event;
                     OpenDetails(currentEvent);
                 }
                 else {
-                    event.FacebookId = event.Invited.replace(currentUser.FacebookId, "");
-                    event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
-                    Post("SendInvites", { evt: event });
-                    SendTextMessages(event);
+                    SendInvites(event);
                 }
             });
             Post("SaveEvent", { evt: event }, success);
@@ -444,15 +443,15 @@
 
             var invited = currentEvent.Invited ? currentEvent.Invited : currentUser.FacebookId + ":" + currentUser.FirstName;
             $("#addDiv .invitedFriendsScroll div").each(function () {
-                if ($(this).attr("facebookid")) {
-                    invited += "|" + $(this).attr("facebookid");
+                if ($(this).attr("facebookId")) {
+                    invited += "|" + $(this).attr("facebookId");
                     var name = $(this).find("div").html();
                     if (name.indexOf(" ") > 0)
                         name = name.substring(0, name.indexOf(" "));
                     invited += ":" + name;
                 }
-                if ($(this).attr("Phone")) {
-                    invited += "|p" + $(this).attr("Phone");
+                if ($(this).attr("phone")) {
+                    invited += "|p" + $(this).attr("phone");
                     var name = $(this).find("div").html();
                     if (name.indexOf(" ") > 0)
                         name = name.substring(0, name.indexOf(" "));
@@ -650,30 +649,27 @@
                     var event = JSON.stringify(GetCreateEvent());
                     window.location = "ios:InviteFromCreate" + GetReturnUrlParameters() + "&createEvent=" + event;
                 }
-                else if (isAndroid)
-                {
-                    if (typeof androidAppProxy !== "undefined") {
-                        androidAppProxy.getContacts("Message from JavaScript");
-                    } else {
-                        alert("Running outside Android app");
-                    }
-                }
+                //else if (isAndroid)
+                //{
+                //    if (typeof androidAppProxy !== "undefined") {
+                //        androidAppProxy.getContacts("Message from JavaScript");
+                //    } else {
+                //        alert("Running outside Android app");
+                //    }
+                //}
                 else
                 {
-                    OpenFromBottom("inviteDiv");
                     $("#Invite").html("Add");
-                    if (!$("#inviteResults").html())
-                        Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                    OpenAddressBook();
                 }
             });
 
             $("#Invite").click(function () {
                 if ($(this).html() == "Add") {
-                    AddInvites();
+                    AddInvitesToCreate();
                 }
                 else {
-                    SendInvites();
-                    UpdateDetailsGoing(currentEvent);
+                    SendInvitesFromAddressBook();
                 }
             });
 
@@ -688,6 +684,10 @@
             $("#inviteResults").on("click", "div", function () {
                 $(this).toggleClass("invited");
             });
+
+            $("#contactResults").on("click", "div", function () {
+                $(this).toggleClass("invited");
+            });
         });
 
         function OpenDetailsInvite()
@@ -699,14 +699,41 @@
             }
             else
             {
-                OpenFromBottom("inviteDiv");
                 $("#Invite").html("Invite");
-                if (!$("#inviteResults").html())
-                    Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                OpenAddressBook();
             }
         }
 
-        function PopulateFriends(friendList) {
+        function OpenAddressBook()
+        {
+            OpenFromBottom("inviteDiv");
+            $("#filterFriendsTextbox").val("");
+
+            $("#inviteResults div").removeClass("invited").show();
+            $("#contactResults div").removeClass("invited").show();
+
+            $("#addDiv .invitedFriendsScroll div").each(function () {
+                if ($(this).attr("facebookId")) {
+                    var fbId = $(this).attr("facebookId");
+                    $("#inviteResults div").each(function () {
+                        if ($(this).attr("facebookId") == fbId)
+                            $(this).addClass("invited");
+                    });
+                }
+                if ($(this).attr("phone")) {
+                    var phone = $(this).attr("phone");
+                    $("#contactResults div").each(function () {
+                        if ($(this).attr("phone") == phone)
+                            $(this).addClass("invited");
+                    });
+                }
+            });
+
+            if (!$("#inviteResults").html())
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
+        }
+
+        function PopulateAddressBook(friendList) {
             var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
             for (var i = 0; i < friendList.length; i++) {
                 var friend = friendList[i];
@@ -738,7 +765,7 @@
             $("#contactResults").html(html);
 
             if (fbAccessToken && !$("#inviteResults").html())
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateFriends);
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
         }
 
         function FilterFriends() {
@@ -749,9 +776,16 @@
                 else
                     $(this).hide();
             });
+
+            $("#contactResults div").not(":eq(0)").each(function () {
+                if (!filter || Contains($(this).html().toLowerCase(), filter.toLowerCase()))
+                    $(this).show();
+                else
+                    $(this).hide();
+            });
         }
 
-        function AddInvites(friendList) {
+        function AddInvitesToCreate(friendList) {
             
             if (isiOS)
             {
@@ -778,40 +812,74 @@
                     html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
                 });
 
-                $("#addDiv .invitedFriendsScroll").css("width", (($("#inviteResults div.invited").length * 70) + 25) + "px");
+                $("#contactResults div.invited").each(function () {
+                    var phone = $(this).attr("phone");
+                    var name = $(this).find("span").html();
+                    if (Contains(name, " "))
+                        name = name.substring(0, name.indexOf(" "));
+                    html += "<div phone='" + phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + name + "</div></div>";
+                });
+
+                var width = $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited") * 60 + 25;
+                $("#addDiv .invitedFriendsScroll").css("width", width + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
                 CloseToBottom("inviteDiv");
             }
         }
-
-        function SendInvites() {
-            var invited = "";
+        
+        function SendInvitesFromAddressBook()
+        {
+            var event = currentEvent;
+            event.FacebookId = "";
             $("#inviteResults div.invited").each(function () {
                 var fbId = $(this).attr("facebookId");
                 var name = $(this).find("span").html();
-                if (name.indexOf(" ") > 0)
+                if (Contains(name, " "))
                     name = name.substring(0, name.indexOf(" "));
-                invited += name + ", ";
-                currentEvent.Invited = AddToString(currentEvent.Invited, fbId + ":" + name);
+                event.FacebookId += fbId + ":" + name + "|";
             });
 
-            if (invited) {
-                invited = invited.substring(0, invited.length - 2);
-                invited += " have been invited.";
-                
-                currentEvent.NotificationMessage = currentUser.FirstName + " invited you to " + currentEvent.Name;
-                currentEvent.FacebookId = currentEvent.Invited.replace(currentUser.FacebookId, "");
+            $("#contactResults div.invited").each(function () {
+                var phone = $(this).attr("phone");
+                var name = $(this).find("span").html();
+                if (Contains(name, " "))
+                    name = name.substring(0, name.indexOf(" "));
+                event.FacebookId += "p" + phone + ":" + name + "|";
+            });
 
-                Post("SendInvites", { evt: currentEvent });
-                currentEvent.FacebookId = "";
+            currentEvent.Invited = AddToString(event.Invited, event.FacebookId);
+            Post("SaveEvent", { evt: currentEvent }, UpdateDetailsGoing);
 
-                MessageBox(invited);
-            }
+            event.Invited = event.FacebookId;
+            SendInvites(event);
             CloseToBottom("inviteDiv");
         }
 
-        function SendTextMessages(event) {
-            if(isiOS)
+        function SendInvites(event) {
+            event.FacebookId = event.Invited.replace(currentUser.FacebookId, "");
+            event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
+
+            Post("SendInvites", { evt: event });
+
+            var phoneList = "";
+            $(event.Invited.split("|")).each(function () {
+                var info = this.split(":");
+                if (info.length == 2 && info[0].indexOf("p") == 0) {
+                    phoneList += info[0].substring(1) + ",";
+                }
+            });
+
+            if(phoneList)
+                GetBranchLink(event, phoneList);
+        }
+
+        function SendInviteText(event, phoneList, branchLink) {
+            //Get branch link
+            console.log(event);
+            console.log(phoneList);
+            MessageBox(branchLink);
+
+            if (isiOS)
             {
                 var params = "?name=" + event.Name + "&referenceId=" + event.ReferenceId;
                 var phone = "";
@@ -828,6 +896,10 @@
                     params += "&phone=" + phone;
                     window.location = "ios:SendSMS" + params;
                 }
+            }
+            else if(isAndroid)
+            {
+
             }
         }
 
@@ -1350,6 +1422,60 @@
             ref.parentNode.insertBefore(js, ref);
         }(document));
     </script>
+
+    <!-- Branch -->
+    <script type="text/javascript">
+
+        (function (b, r, a, n, c, h, _, s, d, k) { if (!b[n] || !b[n]._q) { for (; s < _.length;) c(h, _[s++]); d = r.createElement(a); d.async = 1; d.src = "https://cdn.branch.io/branch-v1.6.7.min.js"; k = r.getElementsByTagName(a)[0]; k.parentNode.insertBefore(d, k); b[n] = h } })(window, document, "script", "branch", function (b, r) { b[r] = function () { b._q.push([r, arguments]) } }, { _q: [], _v: 1 }, "init data first addListener removeListener setIdentity logout track link sendSMS referrals credits creditHistory applyCode validateCode getCode redeem banner closeBanner".split(" "), 0);
+
+        branch.init('key_live_hmpTgy1sVLhPXtjDUW5hVoldyDfpel4T', function (err, data) {
+            // callback to handle err or data
+        });
+
+        function GetBranchLink(event, phoneList)
+        {
+            branch.link({
+                channel: isiOS ? "iOS" : isAndroid ? "Android" : "Web",
+                feature: 'share',
+                stage: 'Event Invite',
+                data: {
+                    ReferenceName: currentUser.Name,
+                    ReferenceId: event.ReferenceId
+                }
+            }, function (err, link) {
+                SendInviteText(event, phoneList, link);
+                //console.log(err, link);
+            });
+        }
+
+        function SendSMS()
+        {
+            branch.sendSMS(
+                '7135015344',
+                {
+                    tags: ['tag1', 'tag2'],
+                    channel: 'facebook',
+                    feature: 'dashboard',
+                    stage: 'new user',
+                    data: {
+                        mydata: 'something',
+                        foo: 'bar',
+                        '$desktop_url': 'http://myappwebsite.com',
+                        '$ios_url': 'http://myappwebsite.com/ios',
+                        '$ipad_url': 'http://myappwebsite.com/ipad',
+                        '$android_url': 'http://myappwebsite.com/android',
+                        '$og_app_id': '12345',
+                        '$og_title': 'My App',
+                        '$og_description': 'My app\'s description.',
+                        '$og_image_url': 'http://myappwebsite.com/image.png'
+                    }
+                },
+                { make_new_link: true }, // Default: false. If set to true, sendSMS will generate a new link even if one already exists.
+                function (err) { console.log(err); }
+            );
+        }
+
+</script>
 
 </head>
 <body>

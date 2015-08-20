@@ -50,7 +50,8 @@ public class Notification : Base<Notification>
 
         string alert = evt.NotificationMessage;
         string message = "Invitation|" + evt.Id;
-        AzureMessagingService.Send(alert, message, fbId);
+        //AzureMessagingService.Send(alert, message, fbId);
+        
         /*
         Users user = Users.GetByFacebookId(fbId);
         if (user == null || !string.IsNullOrEmpty(user.PushDeviceToken))
