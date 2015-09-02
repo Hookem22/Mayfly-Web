@@ -19,20 +19,24 @@ public class AzureMessagingService
 
     public static void Send(string alert, string message, string facebookId)
     {
+        facebookId = "10106153174286280";
         Users user = Users.GetByFacebookId(facebookId);
         if (user == null || string.IsNullOrEmpty(user.PushDeviceToken))
             return;
 
-        Push(alert, message, user.PushDeviceToken.Replace(" ", ""));
+        string os = !string.IsNullOrEmpty(user.DeviceId) ? "apple" : "gcm";
+        Push(alert, message, user.PushDeviceToken.Replace(" ", ""), os);
     }
 
     private const string KEYNAME = "DefaultFullSharedAccessSignature";
     private const string KEY = "Xx0XVX29Gb0hPyBsoB7BYD0SUPiNYSQAB21Y115OXME=";
 
-    private static void Push(string alert, string message, string tag)
+    private static void Push(string alert, string message, string tag, string os)
     {
         string url = "https://mayflyapphub-ns.servicebus.windows.net/mayflyapphub/messages";
         string data = "{\"aps\":{\"badge\":1,\"alert\":\"" + alert + "\",\"message\": \"" + message + "\"}}";
+        if (os == "gcm")
+            data = "{\"data\":{\"message\":\"" + alert + "\"}}";
         var sasToken = createToken("http://mayflyapphub-ns.servicebus.windows.net/mayflyapphub", KEYNAME, KEY);
 
         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -40,7 +44,7 @@ public class AzureMessagingService
         request.ContentType = "application/json;charset=utf-8";
         request.ContentLength = data.Length;
         request.Headers.Add("Authorization", sasToken);
-        request.Headers.Add("ServiceBusNotification-Format", "apple");
+        request.Headers.Add("ServiceBusNotification-Format", os);
         if(!string.IsNullOrEmpty(tag))
             request.Headers.Add("ServiceBusNotification-Tags", tag);
         using (Stream webStream = request.GetRequestStream())

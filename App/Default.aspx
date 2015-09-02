@@ -645,10 +645,12 @@
         $(document).ready(function () {
             $("#inviteBtn").click(function () {
 
-                if (isiOS)
+                $("#Invite").html("Add");
+                if (isiOS && !$("#contactResults").html())
                 {
-                    var event = JSON.stringify(GetCreateEvent());
-                    window.location = "ios:InviteFromCreate" + GetReturnUrlParameters() + "&createEvent=" + event;
+                    window.location = "ios:GetContacts";
+                    //var event = JSON.stringify(GetCreateEvent());
+                    //window.location = "ios:InviteFromCreate" + GetReturnUrlParameters() + "&createEvent=" + event;
                 }
                 //else if (isAndroid)
                 //{
@@ -660,9 +662,9 @@
                 //}
                 else
                 {
-                    $("#Invite").html("Add");
                     OpenAddressBook();
                 }
+
             });
 
             $("#Invite").click(function () {
@@ -693,10 +695,9 @@
 
         function OpenDetailsInvite()
         {
-            if (isiOS)
+            if (isiOS && !$("#contactResults").html())
             {
-                var event = JSON.stringify(currentEvent);
-                window.location = "ios:InviteFromDetails" + GetReturnUrlParameters() + "&currentEvent=" + event;
+                window.location = "ios:GetContacts";
             }
             else
             {
@@ -767,6 +768,39 @@
 
             if (fbAccessToken && !$("#inviteResults").html())
                 Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
+        }
+
+        function iOSContacts(contactString) {
+            var contacts = contactString.split("||");
+            var contactArray = [];
+            for (var i = 0; i < contacts.length; i++) {
+                var contact = contacts[i].split("|");
+                var contactObject = {};
+                if (contact && contact[0] && contact[1]) {
+                    contactObject.Name = contact[1];
+                    contactObject.Phone = contact[0];
+                    contactArray.push(contactObject);
+                }
+            }
+            contactArray.sort(function (a, b) {
+                return a.Name.localeCompare(b.Name);
+            });
+
+            var html = "<div style='color:white;background:#AAAAAA;'>Contacts</div>";
+            for (var i = 0; i < contactArray.length; i++) {
+                html += '<div phone="' + contactArray[i].Phone + '"><span>' + contactArray[i].Name + '</span><img src="/Img/check.png" /></div>';
+            }
+            $("#contactResults").html(html);
+
+            if (fbAccessToken && !$("#inviteResults").html()) {
+                var sucess = function (friendList) {
+                    PopulateAddressBook(friendList);
+                    OpenAddressBook();
+                }
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, sucess);
+            }
+            else
+                OpenAddressBook();
         }
 
         function FilterFriends() {
@@ -1343,33 +1377,35 @@
             });
 
             fbAccessToken = getParameterByName("fbAccessToken");
+            var deviceId = getParameterByName("deviceId");
+            var pushDeviceToken = getParameterByName("pushDeviceToken");
             if (fbAccessToken) {
-                Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
             }
-            else
-            {
-                FB.getLoginStatus(function (response) {
+            //else
+            //{
+            //    FB.getLoginStatus(function (response) {
 
-                    if (response.status === 'connected') {
-                        // the user is logged in and has authenticated your
-                        // app, and response.authResponse supplies
-                        // the user's ID, a valid access token, a signed
-                        // request, and the time the access token 
-                        // and signed request each expire
-                        var uid = response.authResponse.userID;
-                        $("#FacebookId").val(uid);
-                        fbAccessToken = response.authResponse.accessToken;
+            //        if (response.status === 'connected') {
+            //            // the user is logged in and has authenticated your
+            //            // app, and response.authResponse supplies
+            //            // the user's ID, a valid access token, a signed
+            //            // request, and the time the access token 
+            //            // and signed request each expire
+            //            var uid = response.authResponse.userID;
+            //            $("#FacebookId").val(uid);
+            //            fbAccessToken = response.authResponse.accessToken;
 
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+            //            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
 
-                    } else {
-                        //if (!fbAccessToken)
-                        //    window.location = "../";
-                        //else
-                        //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-                    }
-                });
-            }
+            //        } else {
+            //            //if (!fbAccessToken)
+            //            //    window.location = "../";
+            //            //else
+            //            //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+            //        }
+            //    });
+            //}
         };
 
         function LoginSuccess(results) {
@@ -1395,7 +1431,8 @@
             }
             else if(isAndroid)
             {
-
+                if (typeof androidAppProxy !== "undefined")
+                    androidAppProxy.AndroidFacebookLogin();
             }
             else
             {
@@ -1404,8 +1441,10 @@
                         var uid = response.authResponse.userID;
                         $("#FacebookId").val(uid);
                         fbAccessToken = response.authResponse.accessToken;
+                        var deviceId = getParameterByName("deviceId");
+                        var pushDeviceToken = getParameterByName("pushDeviceToken");
 
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
                         CloseToBottom('facebookLoginDiv');
                     } else {
                         console.log('User cancelled login or did not fully authorize.');

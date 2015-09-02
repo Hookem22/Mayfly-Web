@@ -28,9 +28,11 @@ public class Users : Base<Users>
 
     public string Email { get; set; }
 
+    public DateTime? LastSignedIn { get; set; }
+
     #endregion
 
-    public static Users Login(dynamic me)
+    public static Users Login(dynamic me, string deviceId, string pushDeviceToken)
     {
         Users user = GetByFacebookId(me.id);
         if(user == null)
@@ -40,11 +42,20 @@ public class Users : Base<Users>
             user.Name = me.name;
             user.FirstName = me.first_name;
             user.Email = me.email;
+            user.DeviceId = deviceId;
+            user.PushDeviceToken = pushDeviceToken;
+            user.LastSignedIn = DateTime.Now;
             user.Save();
 
             EmailService.SendWelcomeEmail(user.Email);
         }
+        else
+        {
+            user.LastSignedIn = DateTime.Now;
+            user.Save();
+        }
         user.FirstName = me.first_name;
+
         return user;
     }
 
