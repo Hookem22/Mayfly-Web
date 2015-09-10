@@ -106,20 +106,34 @@
                 //$("#AddMap").height($(document).height() - 475);
             }
 
-            var fbInterval = setInterval(function () {
-                if ($("#FacebookId").val() || fbAccessToken) {
-                    clearInterval(fbInterval);
-                    var lat = getParameterByName("lat");
-                    var lng = getParameterByName("lng");
-                    if (lat && lng) {
-                        currentLat = lat;
-                        currentLng = lng;
-                    }
-                    else {
-                        navigator.geolocation.getCurrentPosition(LatLngReturn);
-                    }
-                }
-            }, 500);
+            //var fbInterval = setInterval(function () {
+            //    if ($("#FacebookId").val() || fbAccessToken) {
+            //        clearInterval(fbInterval);
+            //        var lat = getParameterByName("lat");
+            //        var lng = getParameterByName("lng");
+            //        if (lat && lng) {
+            //            currentLat = lat;
+            //            currentLng = lng;
+            //        }
+            //        else {
+            //            navigator.geolocation.getCurrentPosition(LatLngReturn);
+            //        }
+            //    }
+            //}, 500);
+        }
+
+        function ReceiveLocation(lat, lng)
+        {
+            currentLat = lat;
+            currentLng = lng;
+            LoadEvents();
+        }
+
+        function GoToEvent(referenceId)
+        {
+            Post("GetEventByReference", { referenceId: referenceId }, OpenDetails);
+            $("#detailsDiv").show();
+            $("#detailsDiv").css({ top: "0" });
         }
 
         function OpenAdd(isEdit) {
@@ -695,13 +709,13 @@
 
         function OpenDetailsInvite()
         {
+            $("#Invite").html("Invite");
             if (isiOS && !$("#contactResults").html())
             {
                 window.location = "ios:GetContacts";
             }
             else
             {
-                $("#Invite").html("Invite");
                 OpenAddressBook();
             }
         }
@@ -820,24 +834,24 @@
             });
         }
 
-        function AddInvitesToCreate(friendList) {
+        function AddInvitesToCreate() {
             
-            if (isiOS)
-            {
-                var html = "";
-                for (var i = 0; i < friendList.length; i++)
-                {
-                    var friend = friendList[i];
-                    if(friend.facebookId) //Facebook user
-                        html += "<div facebookId='" + friend.facebookId + "' ><img src='https://graph.facebook.com/" + friend.facebookId + "/picture' /><div>" + friend.name + "</div></div>";
-                    else
-                        html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
-                }
-                $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
-                $("#addDiv .invitedFriendsScroll").html(html);
-            }
-            else
-            {
+            //if (isiOS)
+            //{
+            //    var html = "";
+            //    for (var i = 0; i < friendList.length; i++)
+            //    {
+            //        var friend = friendList[i];
+            //        if(friend.facebookId) //Facebook user
+            //            html += "<div facebookId='" + friend.facebookId + "' ><img src='https://graph.facebook.com/" + friend.facebookId + "/picture' /><div>" + friend.name + "</div></div>";
+            //        else
+            //            html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
+            //    }
+            //    $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
+            //    $("#addDiv .invitedFriendsScroll").html(html);
+            //}
+            //else
+            //{
                 var html = "";
                 $("#inviteResults div.invited").each(function () {
                     var fbId = $(this).attr("facebookId");
@@ -859,7 +873,7 @@
                 $("#addDiv .invitedFriendsScroll").css("width", width + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
                 CloseToBottom("inviteDiv");
-            }
+            //}
         }
         
         function SendInvitesFromAddressBook()
@@ -908,6 +922,7 @@
             });
 
             if (phoneList) {
+                phoneList = phoneList.substring(0, phoneList.length - 1);
                 var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
                 GetBranchLink(event, phoneList, message);
             }
@@ -918,21 +933,8 @@
 
             if (isiOS)
             {
-                var params = "?name=" + event.Name + "&referenceId=" + event.ReferenceId;
-                var phone = "";
-                $(event.Invited.split("|")).each(function () {
-                    var info = this.split(":");
-                    if(info.length == 2 && info[0].indexOf("p") == 0)
-                    {
-                        phone += info[0].substring(1) + ",";
-                    }
-                });
-                if(phone.length > 0)
-                {
-                    phone = phone.substring(0, phone.length - 1);
-                    params += "&phone=" + phone;
-                    window.location = "ios:SendSMS" + params;
-                }
+                var params = "?phone=" + phoneList + "&message=" + message;
+                window.location = "ios:SendSMS" + params;
             }
             else if(isAndroid)
             {
@@ -1021,6 +1023,11 @@
             $("#notificationDiv").on("click", "div", function () {
                 var eventId = $(this).attr("eventid");
                 OpenEventFromNotification(eventId);
+            });
+
+            $("body").on("click", ".content", function () {
+                if($("#notificationDiv").is(':visible'))
+                    CloseNotification();
             });
 
             $("#notificationDiv").swipe({
@@ -1331,7 +1338,7 @@
                  };
                  Post("GetEventByReference", { referenceId: referenceId }, getSuccess)
              }
-             else
+             else if(currentLat && currentLng)
              {
                  LoadEvents();
              }
@@ -1350,8 +1357,8 @@
             if (lat && lng) {
                 currentLat = lat;
                 currentLng = lng;
-                if (!getParameterByName("fbAccessToken"))
-                    LoadEvents();
+                //if (!getParameterByName("fbAccessToken"))
+                LoadEvents();
             }
          }
 
@@ -1382,36 +1389,37 @@
             if (fbAccessToken) {
                 Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
             }
-            //else
-            //{
-            //    FB.getLoginStatus(function (response) {
+            else
+            {
+                FB.getLoginStatus(function (response) {
 
-            //        if (response.status === 'connected') {
-            //            // the user is logged in and has authenticated your
-            //            // app, and response.authResponse supplies
-            //            // the user's ID, a valid access token, a signed
-            //            // request, and the time the access token 
-            //            // and signed request each expire
-            //            var uid = response.authResponse.userID;
-            //            $("#FacebookId").val(uid);
-            //            fbAccessToken = response.authResponse.accessToken;
+                    if (response.status === 'connected') {
+                        // the user is logged in and has authenticated your
+                        // app, and response.authResponse supplies
+                        // the user's ID, a valid access token, a signed
+                        // request, and the time the access token 
+                        // and signed request each expire
+                        var uid = response.authResponse.userID;
+                        $("#FacebookId").val(uid);
+                        fbAccessToken = response.authResponse.accessToken;
 
-            //            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
 
-            //        } else {
-            //            //if (!fbAccessToken)
-            //            //    window.location = "../";
-            //            //else
-            //            //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-            //        }
-            //    });
-            //}
+                    } else {
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+                        //if (!fbAccessToken)
+                        //    window.location = "../";
+                        //else
+                        //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                    }
+                });
+            }
         };
 
         function LoginSuccess(results) {
             currentUser = results;
             $("#FacebookId").val(currentUser.FacebookId);
-            LoadEvents();
+            //LoadEvents();
             /*TODO: fix
             if (document.URL.indexOf("?") > 0) {
                 var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
@@ -1495,32 +1503,32 @@
             });
         }
 
-        function SendBranchSMS()
-        {
-            branch.sendSMS(
-                '7135015344',
-                {
-                    tags: ['tag1', 'tag2'],
-                    channel: 'facebook',
-                    feature: 'dashboard',
-                    stage: 'new user',
-                    data: {
-                        mydata: 'something',
-                        foo: 'bar',
-                        '$desktop_url': 'http://myappwebsite.com',
-                        '$ios_url': 'http://myappwebsite.com/ios',
-                        '$ipad_url': 'http://myappwebsite.com/ipad',
-                        '$android_url': 'http://myappwebsite.com/android',
-                        '$og_app_id': '12345',
-                        '$og_title': 'My App',
-                        '$og_description': 'My app\'s description.',
-                        '$og_image_url': 'http://myappwebsite.com/image.png'
-                    }
-                },
-                { make_new_link: true }, // Default: false. If set to true, sendSMS will generate a new link even if one already exists.
-                function (err) { console.log(err); }
-            );
-        }
+        //function SendBranchSMS()
+        //{
+        //    branch.sendSMS(
+        //        '7135015344',
+        //        {
+        //            tags: ['tag1', 'tag2'],
+        //            channel: 'facebook',
+        //            feature: 'dashboard',
+        //            stage: 'new user',
+        //            data: {
+        //                mydata: 'something',
+        //                foo: 'bar',
+        //                '$desktop_url': 'http://myappwebsite.com',
+        //                '$ios_url': 'http://myappwebsite.com/ios',
+        //                '$ipad_url': 'http://myappwebsite.com/ipad',
+        //                '$android_url': 'http://myappwebsite.com/android',
+        //                '$og_app_id': '12345',
+        //                '$og_title': 'My App',
+        //                '$og_description': 'My app\'s description.',
+        //                '$og_image_url': 'http://myappwebsite.com/image.png'
+        //            }
+        //        },
+        //        { make_new_link: true }, // Default: false. If set to true, sendSMS will generate a new link even if one already exists.
+        //        function (err) { console.log(err); }
+        //    );
+        //}
 
 </script>
 

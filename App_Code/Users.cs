@@ -49,6 +49,13 @@ public class Users : Base<Users>
 
             EmailService.SendWelcomeEmail(user.Email);
         }
+        else if(user.PushDeviceToken != pushDeviceToken && !string.IsNullOrEmpty(pushDeviceToken))
+        {
+            user.DeviceId = deviceId;
+            user.PushDeviceToken = pushDeviceToken;
+            user.LastSignedIn = DateTime.Now;
+            user.Save();
+        }
         else
         {
             user.LastSignedIn = DateTime.Now;

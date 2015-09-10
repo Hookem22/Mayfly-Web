@@ -1,4 +1,6 @@
-﻿
+﻿::-webkit-scrollbar { 
+    display: none; 
+}
 .NonMobile .content
 {
     max-width: 400px;
