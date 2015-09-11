@@ -55,7 +55,7 @@ public class Event : Base<Event>
     public string NotificationMessage { get; set; }
 
     [NonSave]
-    public string FacebookId { get; set; }
+    public string UserId { get; set; }
 
     #endregion
 

@@ -19,16 +19,21 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static Users LoginUser(string facebookAccessToken, string deviceId, string pushDeviceToken)
+    public static Users LoginUser(string facebookAccessToken, string deviceId, string pushDeviceToken, string email, string password)
     {
-        var client = new FacebookClient(facebookAccessToken);
-        dynamic me = client.Get("me");
+        dynamic me = null;
+        if (!string.IsNullOrEmpty(facebookAccessToken))
+        {
+            var client = new FacebookClient(facebookAccessToken);
+            me = client.Get("me");
+        }
+        return Users.Login(me, deviceId, pushDeviceToken, email, password);
+    }
 
-        Users user = null;
-        if (me != null)
-            user = Users.Login(me, deviceId, pushDeviceToken);
-
-        return user;
+    [WebMethod]
+    public static Users SignUpUser(Users user)
+    {
+        return user.SignUpUser();
     }
 
     [WebMethod]
@@ -50,15 +55,15 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static Notification GetReferredNotification(string referenceId, string facebookId)
+    public static Notification GetReferredNotification(string referenceId, string userId)
     {
-        return Notification.ReferredEvent(referenceId, facebookId);
+        return Notification.ReferredEvent(referenceId, userId);
     }
 
     [WebMethod]
-    public static List<Notification> GetNotifications(string facebookId)
+    public static List<Notification> GetNotifications(string userId)
     {
-        return Notification.GetByFacebookId(facebookId);
+        return Notification.GetByUserId(userId);
     }
 
     [WebMethod]
@@ -101,7 +106,7 @@ public partial class App_Default : System.Web.UI.Page
 
         if(!string.IsNullOrEmpty(evt.NotificationMessage))
         {
-            Notification notification = new Notification(evt.Id, evt.FacebookId, evt.NotificationMessage);
+            Notification notification = new Notification(evt.Id, evt.UserId, evt.NotificationMessage);
             notification.Save();
         }
 
@@ -109,20 +114,27 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static void SendInvites(Event evt)
+    public static Users SaveUser(Users user)
     {
-        //evt.Save();
-        
-        string[] people = evt.FacebookId.Split('|');
-        foreach (string person in people)
-        {
-            string[] data = person.Split(':');
-            if (data.Length < 2 || string.IsNullOrEmpty(data[0]) || data[0].IndexOf("p") == 0)
-                continue;
-
-            Notification.Invite(evt, data[0]);
-        }
+        user.Save();
+        return user;
     }
+
+    //[WebMethod]
+    //public static void SendInvites(Event evt)
+    //{
+    //    //evt.Save();
+        
+    //    string[] people = evt.FacebookId.Split('|');
+    //    foreach (string person in people)
+    //    {s
+    //        string[] data = person.Split(':');
+    //        if (data.Length < 2 || string.IsNullOrEmpty(data[0]) || data[0].IndexOf("p") == 0)
+    //            continue;
+
+    //        Notification.Invite(evt, data[0]);
+    //    }
+    //}
 
     [WebMethod]
     public static void SendMessage(Messages message)

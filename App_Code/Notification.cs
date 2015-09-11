@@ -13,10 +13,10 @@ public class Notification : Base<Notification>
 
     }
 
-    public Notification(string eventId, string facebookId, string message) : base("Notification")
+    public Notification(string eventId, string userId, string message) : base("Notification")
     {
         EventId = eventId;
-        FacebookId = facebookId;
+        UserId = userId;
         Message = message;
     }
 
@@ -26,7 +26,7 @@ public class Notification : Base<Notification>
 
     public string Message { get; set; }
 
-    public string FacebookId { get; set; }
+    public string UserId { get; set; }
 
     [NonSave]
     public int? Seconds { get; set; }
@@ -36,21 +36,21 @@ public class Notification : Base<Notification>
 
     #endregion
 
-    public static List<Notification> GetByFacebookId(string facebookId)
+    public static List<Notification> GetByUserId(string userId)
     {
-        List<Notification> notifications = GetByProc("getnotifications", string.Format("facebookid={0}", facebookId));
+        List<Notification> notifications = GetByProc("getnotifications", string.Format("userid={0}", userId));
         AddHelperProperties(notifications);
         return notifications;
     }
 
-    public static void Invite(Event evt, string fbId)
+    public static void Invite(Event evt, string userId)
     {
-        Notification notification = new Notification(evt.Id, fbId, evt.NotificationMessage);
+        Notification notification = new Notification(evt.Id, userId, evt.NotificationMessage);
         notification.Save();
 
         string alert = evt.NotificationMessage;
         string message = "Invitation|" + evt.Id;
-        AzureMessagingService.Send(alert, message, fbId);
+        AzureMessagingService.Send(alert, message, userId);
         
         /*
         Users user = Users.GetByFacebookId(fbId);
@@ -59,18 +59,18 @@ public class Notification : Base<Notification>
          */ 
     }
 
-    public static Notification ReferredEvent(string referenceId, string facebookId)
+    public static Notification ReferredEvent(string referenceId, string userId)
     {
         List<Event> events = Event.GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));
         if (events.Count == 1)
         {
             Event evt = events[0];
-            List<Notification> notifications = Notification.GetByWhere(string.Format("(eventid%20eq%20'{0}')%20and%20(facebookid%20eq%20'{1}')", evt.Id, facebookId));
+            List<Notification> notifications = Notification.GetByWhere(string.Format("(eventid%20eq%20'{0}')%20and%20(userid%20eq%20'{1}')", evt.Id, userId));
             if (notifications.Count > 0)
                 return notifications[0];
             else
             {
-                Notification notification = new Notification(evt.Id, facebookId, "Invited: " + evt.Name);
+                Notification notification = new Notification(evt.Id, userId, "Invited: " + evt.Name);
                 notification.Save();
 
                 return notification;

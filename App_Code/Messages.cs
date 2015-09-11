@@ -23,7 +23,7 @@ public class Messages : Base<Messages>
 
     public DateTime SentDate { get; set; }
 
-    public string FacebookId { get; set; }
+    public string UserId { get; set; }
 
     [NonSave]
     public int? Seconds { get; set; }
@@ -71,14 +71,14 @@ public class Messages : Base<Messages>
             if (!person.Contains(":"))
                 continue;
 
-            string fbId = person.Split(':')[0];
-            if (fbId == message.FacebookId)
+            string userId = person.Split(':')[0];
+            if (userId == message.UserId)
                 continue;
 
 
             string alert = evt.Name + ": " + message.Message;
             string messageText = "New Message|" + evt.Id;
-            AzureMessagingService.Send(alert, messageText, fbId);
+            AzureMessagingService.Send(alert, messageText, userId);
         }
     }
 }

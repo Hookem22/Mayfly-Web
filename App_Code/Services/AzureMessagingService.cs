@@ -17,10 +17,10 @@ using System.Text;
 public class AzureMessagingService
 {
 
-    public static void Send(string alert, string message, string facebookId)
+    public static void Send(string alert, string message, string userId)
     {
-        facebookId = "10106153174286280";
-        Users user = Users.GetByFacebookId(facebookId);
+        //facebookId = "10106153174286280";
+        Users user = Users.Get(userId);
         if (user == null || string.IsNullOrEmpty(user.PushDeviceToken))
             return;
 

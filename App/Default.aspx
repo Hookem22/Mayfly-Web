@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=7" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -22,6 +22,7 @@
         var currentLng;
         var eventsResults = [];
         var currentEvent = {};
+        var currentUser;
 
         $(document).ready(function () {
             Init();
@@ -49,12 +50,12 @@
             $(".content").on("click", ".event", function () {
                 var event = eventResults[$(this).attr("index")];
                 var invited = event.ReferenceId == getParameterByName("goToEvent");
-                if (!currentUser.FacebookId && !invited) {
-                    OpenFacebookLogin();
+                if (!currentUser || (!currentUser.Id && !invited)) {
+                    OpenLogin();
                     return;
                 }
 
-                if (event.IsPrivate && !Contains(event.Going, currentUser.FacebookId) && !Contains(event.Invited, currentUser.FacebookId) && !invited) {
+                if (event.IsPrivate && !Contains(event.Going, currentUser.Id) && !Contains(event.Invited, currentUser.Id) && !invited) {
                     MessageBox("This event is private. You cannot join private events unless you are invited.");
                     return;
                 }
@@ -85,48 +86,55 @@
             isiOS = getParameterByName("OS") == "iOS";
             isAndroid = getParameterByName("OS") == "Android";
 
-            if (isiOS) {
-                isMobile = true;
-                iOSInit();
-                return;
-            }
-            else if (isAndroid)
-            {
-                isMobile = true;
-                AndroidInit();
-                return;
-            }
-
             var mobParam = getParameterByName("id");
             isMobile = mobilecheck() || tabletCheck() || mobParam == "m";
+
+            if (isiOS || isAndroid || isMobile) {
+
+                currentUser = {};
+                var fbAccessToken = getParameterByName("fbAccessToken");
+                var deviceId = getParameterByName("deviceId");
+                var pushDeviceToken = getParameterByName("pushDeviceToken");
+                if(fbAccessToken || pushDeviceToken)
+                    Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: "", password: "" }, LoginSuccess);
+
+                currentLat = +getParameterByName("lat");
+                currentLng = +getParameterByName("lng");
+
+            }
+
             if (!isMobile) {
                 $("body").addClass("NonMobile");
             }
-            else {
-                //$("#AddMap").height($(document).height() - 475);
-            }
 
-            //var fbInterval = setInterval(function () {
-            //    if ($("#FacebookId").val() || fbAccessToken) {
-            //        clearInterval(fbInterval);
-            //        var lat = getParameterByName("lat");
-            //        var lng = getParameterByName("lng");
-            //        if (lat && lng) {
-            //            currentLat = lat;
-            //            currentLng = lng;
-            //        }
-            //        else {
-            //            navigator.geolocation.getCurrentPosition(LatLngReturn);
-            //        }
-            //    }
-            //}, 500);
+        }
+
+        function LoginSuccess(results) {
+            currentUser = results;
+
+            if (currentLat && currentLng) {
+                LoadEvents();
+            }
+            else if (currentUser && currentUser.Latitude && currentUser.Longitude)
+                ReceiveLocation(currentUser.Latitude, currentUser.Longitude);
         }
 
         function ReceiveLocation(lat, lng)
         {
-            currentLat = lat;
-            currentLng = lng;
-            LoadEvents();
+            if (!(currentLat && currentLng && Math.abs(currentLat - (+lat)) < 1 && Math.abs(currentLng - (+lng)) < 1))
+            {
+                currentLat = +lat;
+                currentLng = +lng;
+                ShowLoading();
+                LoadEvents();
+            }
+
+            if(currentUser && currentUser.Id)
+            {
+                currentUser.Latitude = currentLat;
+                currentUser.Longitude = currentLng;
+                Post("SaveUser", { user: currentUser });
+            }
         }
 
         function GoToEvent(referenceId)
@@ -137,8 +145,8 @@
         }
 
         function OpenAdd(isEdit) {
-            if (!currentUser.FacebookId) {
-                OpenFacebookLogin();
+            if (!currentUser || !currentUser.Id) {
+                OpenLogin();
                 return;
             }
 
@@ -192,26 +200,26 @@
 
         function ReorderEvents(list)
         {
-            var bobList = [];
+            if (!currentUser || !currentUser.Id)
+                return list;
+
+            var id = currentUser.Id;
             var goingList = [];
             var invitedList = [];
             var otherList = [];
 
-            var fbId = $("#FacebookId").val();
             for(var i = 0; i < list.length; i++)
             {
                 var event = list[i];
-                //if(event.Invited && event.Invited.indexOf("10106610968977054") == 0)
-                //    bobList.push(event);
-                if (Contains(event.Going, fbId))
+                if (Contains(event.Going, id))
                     goingList.push(event);
-                else if (Contains(event.Invited, fbId) || event.ReferenceId == getParameterByName("goToEvent"))
+                else if (Contains(event.Invited, id) || event.ReferenceId == getParameterByName("goToEvent"))
                     invitedList.push(event);
                 else
                     otherList.push(event);
             }
 
-            var eventList = $.merge($.merge($.merge(bobList, goingList), invitedList), otherList);
+            var eventList = $.merge($.merge(goingList, invitedList), otherList);
             return eventList;
         }
 
@@ -219,11 +227,12 @@
         {
             eventResults = ReorderEvents(results);
 
-            var fbId = $("#FacebookId").val();
+            var id = currentUser ? currentUser.Id : "";
+            var fbId = currentUser ? currentUser.FacebookId : "";
             var html = "";
             for (var i = 0; i < eventResults.length; i++) {
                 var event = eventResults[i];
-                var isGoing = event.isGoing != null && event.Going.indexOf(fbId) >= 0;
+                var isGoing = event.isGoing != null && event.Going.indexOf(id) >= 0;
                 var goingCt = event.Going.split("|").length;
                 if (!isGoing && event.MaxParticipants > 0 && goingCt >= event.MaxParticipants)
                     continue;
@@ -231,9 +240,13 @@
                 var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;text-align:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
                 var time = ToLocalTime(event.StartTime);
                 eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
-                if (Contains(event.Going, fbId))
-                    eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
-                else if (Contains(event.Invited, fbId) || event.ReferenceId == getParameterByName("goToEvent"))
+                if (Contains(event.Going, id)) {
+                    if(fbId)
+                        eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
+                    else
+                        eventHtml = eventHtml.replace("{img}", '<img src="../Img/face' + Math.floor(Math.random() * 8) + '.png" />');
+                }
+                else if (Contains(event.Invited, id) || event.ReferenceId == getParameterByName("goToEvent"))
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/invited.png" />');
                 else if (event.IsPrivate)
                     eventHtml = eventHtml.replace("{img}", '<img src="../Img/lock.png" />');
@@ -298,7 +311,7 @@
             $("#addDiv .invitedFriendsScroll").html("");
 
             $("#DetailsName").html(event.Name);
-            if (/*event.IsPrivate &&*/ event.Invited && currentUser && event.Invited.indexOf(currentUser.FacebookId) == 0) {
+            if (/*event.IsPrivate &&*/ event.Invited && currentUser && event.Invited.indexOf(currentUser.Id) == 0) {
                 var edit = " - <span onclick='OpenAdd(true);' style='color:#4285F4;'>Edit</span>";
                 $("#DetailsName").append(edit);
             }
@@ -316,7 +329,7 @@
                 $("#DetailsMap").css("height", mapHt + "px");
                 PlotMap("DetailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
             }, 400);
-            if (Contains(event.Going, currentUser.FacebookId))
+            if (Contains(event.Going, currentUser.Id))
                 $("#DetailsJoinBtn").html("Unjoin");
             else
                 $("#DetailsJoinBtn").html("Join");
@@ -332,7 +345,6 @@
         }
 
         function UpdateDetailsGoing(event) {
-            console.log(event);
             var going = event.Going.split("|");
             var goingCt = going.length == 1 && !going[0] ? 0 : going.length;
 
@@ -456,29 +468,8 @@
             }
 
 
-            var invited = currentEvent.Invited || currentUser.FacebookId + ":" + currentUser.FirstName;
-            $("#addDiv .invitedFriendsScroll div").each(function () {
-                if ($(this).attr("facebookId")) {
-                    invited += "|" + $(this).attr("facebookId");
-                    var name = $(this).find("div").html();
-                    if (name.indexOf(" ") > 0)
-                        name = name.substring(0, name.indexOf(" "));
-                    invited += ":" + name;
-                }
-                if ($(this).attr("phone")) {
-                    invited += "|p" + $(this).attr("phone");
-                    var name = $(this).find("div").html();
-                    if (name.indexOf(" ") > 0)
-                        name = name.substring(0, name.indexOf(" "));
-                    invited += ":" + name;
-                }
-            });
-            if (!invited)
-                invited = "";
-
-            var going = currentEvent.Going ? currentEvent.Going : currentUser.FacebookId + ":" + currentUser.FirstName;
-            if (!going)
-                going = "";
+            var invited = currentEvent.Invited || currentUser.Id + ":" + currentUser.FirstName;
+            var going = currentEvent.Going ? currentEvent.Going : currentUser.Id + ":" + currentUser.FirstName;
 
             var max = +$("#AddMax").val();
             var min = +$("#AddMin").val();
@@ -488,7 +479,7 @@
                 LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
                 IsPrivate: $("#isPublicBtn .selected").html() == "Private", MinParticipants: min, MaxParticipants: max,
                 StartTime: startTime, CutoffTime: cutoffTime, Invited: invited, Going: going,
-                NotificationMessage: "Created: " + $("#AddName").val(), FacebookId: currentUser.FacebookId
+                NotificationMessage: "Created: " + $("#AddName").val(), UserId: currentUser.Id
             };
 
             if (currentEvent.Id) {
@@ -519,29 +510,29 @@
 
         function JoinEvent()
         {
-            if (!currentUser.FacebookId) {
+            if (!currentUser || !currentUser.Id) {
                 var title = currentEvent ? "Log In to Join " + currentEvent.Name + " and Discover Activities Around You" : "Log In to Join This Event";
                 $(".loginHeader").html(title);
-                OpenFacebookLogin();
+                OpenLogin();
                 return;
             }
 
             if ($("#DetailsJoinBtn").html() == "Join") {
-                currentEvent.Going = AddToString(currentEvent.Going, currentUser.FacebookId + ":" + currentUser.FirstName);
+                currentEvent.Going = AddToString(currentEvent.Going, currentUser.Id + ":" + currentUser.FirstName);
 
                 currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
                 $("#DetailsJoinBtn").html("Unjoin");
                 var alert = currentUser.FirstName + " joined " + currentEvent.Name;
                 var message = "";
-                Post("SendJoinMessage", { alert: alert, message: message, facebookId: currentUser.FacebookId, evt: currentEvent });
+                //Post("SendJoinMessage", { alert: alert, message: message, facebookId: currentUser.FacebookId, evt: currentEvent });
             }
             else {
-                currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.FacebookId);
+                currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.Id);
                 currentEvent.NotificationMessage = "Unjoined: " + currentEvent.Name;
                 $("#DetailsJoinBtn").html("Join");
             }
 
-            currentEvent.FacebookId = currentUser.FacebookId;
+            currentEvent.UserId = currentUser.UserId;
             UpdateDetailsGoing(currentEvent);
             Post("SaveEvent", { evt: currentEvent }, LoadEvents);
         }
@@ -552,6 +543,139 @@
                 CloseToBottom('detailsDiv', true);
             }
             Post("DeleteEvent", { evt: currentEvent }, success);
+        }
+
+    </script>
+
+    <!-- Login -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#loginSignupEmailPlaceholder").click(function () {
+                $("#loginSignupEmailTextBox").focus();
+            });
+
+            $(".loginSignupHeader .backarrow").click(function () {
+                CloseToBottom("loginSignupDiv");
+            });
+
+            $("#loginSignupEmailTextBox").keyup(function () {
+                if($(this).val())
+                {
+                    $(".loginOrDiv").hide();
+                    $("#facebookLoginBtn").hide();
+                    $(".loginLineDiv").show();
+                    $("#signupNextBtn").show();
+                    $("#loginSignupEmailPlaceholder").hide();
+                }
+                else
+                {
+                    $(".loginOrDiv").show();
+                    $("#facebookLoginBtn").show();
+                    $(".loginLineDiv").hide();
+                    $("#signupNextBtn").hide();
+                    $("#loginSignupEmailPlaceholder").show();
+                }
+            });
+
+            $("#signupNextBtn").click(function () {
+                $("#signupDiv").show().animate({ left: "0" }, 500);
+                $("#signupEmailTextBox").val($("#loginSignupEmailTextBox").val());
+                $("#signupNameTextBox").focus();
+            });
+
+            $(".signupHeader .backarrow").click(function () {
+                $("#signupDiv").animate({ left: "150%" }, 500, function () { $("#signupDiv").hide(); });
+            });
+
+            $("#loginTabHeader").click(function () {
+                $("#loginDiv").show().animate({ left: "0" }, 500);
+                $("#loginEmailTextBox").focus();
+            });
+
+            $(".loginHeader .backarrow").click(function () {
+                $("#loginDiv").animate({ left: "150%" }, 500, function () { $("#loginDiv").hide(); });
+            });
+
+            $("#signupBtn").click(function () {
+                var error = false;
+                $("#signupContentDiv input").removeClass("error");
+                if (!$("#signupEmailTextBox").val()) {
+                    $("#signupEmailTextBox").addClass("error");
+                    error = true;
+                }
+                if (!$("#signupNameTextBox").val()) {
+                    $("#signupNameTextBox").addClass("error");
+                    error = true;
+                }
+                if (!$("#signupPasswordTextBox").val()) {
+                    $("#signupPasswordTextBox").addClass("error");
+                    error = true;
+                }
+                if (error)
+                    return;
+
+                var name = $("#signupNameTextBox").val();
+                var firstName = name.indexOf(" ") > 0 ? name.substring(0, name.indexOf(" ")) : name;
+
+                var deviceId = getParameterByName("deviceId");
+                var pushDeviceToken = getParameterByName("pushDeviceToken");
+
+                var user = {
+                    Name: name, FirstName: firstName, Email: $("#signupEmailTextBox").val(), Password: $("#signupPasswordTextBox").val(),
+                    DeviceId: deviceId, PushDeviceToken: pushDeviceToken, Latitude: currentLat, Longitude: currentLng
+                };
+
+                Post("SignUpUser", { user: user }, LoginSuccess);
+                $("#signupDiv").css({ left: "150%" }).hide();
+                CloseToBottom("loginSignupDiv");
+            });
+
+            $("#loginBtn").click(function () {
+                var error = false;
+                $("#loginContentDiv input").removeClass("error");
+                if (!$("#loginEmailTextBox").val()) {
+                    $("#loginEmailTextBox").addClass("error");
+                    error = true;
+                }
+                if (!$("#loginPasswordTextBox").val()) {
+                    $("#loginPasswordTextBox").addClass("error");
+                    error = true;
+                }
+                if (error)
+                    return;
+
+                var deviceId = getParameterByName("deviceId");
+                var pushDeviceToken = getParameterByName("pushDeviceToken");
+
+                var success = function (user) {
+                    if(!user)
+                        MessageBox("Email or Password is incorrect")
+                    else {
+                        $("#loginDiv").css({ left: "150%" }).hide();
+                        CloseToBottom("loginSignupDiv");
+                        LoginSuccess(user);
+                    }
+                }
+
+                Post("LoginUser", { facebookAccessToken: "", deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: $("#loginEmailTextBox").val(), password: $("#loginPasswordTextBox").val() }, success);
+
+            });
+
+            $(".facebookLoginBtn").click(function () {
+                if (isiOS) {
+                    window.location = "ios:FacebookLogin";
+                }
+                else if (isAndroid) {
+                    if (typeof androidAppProxy !== "undefined")
+                        androidAppProxy.AndroidFacebookLogin();
+                }
+            });
+
+        });
+
+        function OpenLogin() {
+            $("#loginSignupDiv").css({ top: 0 }).show();
+            $("#loginSignupEmailTextBox").focus();
         }
 
     </script>
@@ -654,300 +778,6 @@
 
     </script>
 
-    <!-- Friends / Address Book -->
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $("#inviteBtn").click(function () {
-
-                $("#Invite").html("Add");
-                if (isiOS && !$("#contactResults").html())
-                {
-                    window.location = "ios:GetContacts";
-                    //var event = JSON.stringify(GetCreateEvent());
-                    //window.location = "ios:InviteFromCreate" + GetReturnUrlParameters() + "&createEvent=" + event;
-                }
-                //else if (isAndroid)
-                //{
-                //    if (typeof androidAppProxy !== "undefined") {
-                //        androidAppProxy.getContacts("Message from JavaScript");
-                //    } else {
-                //        alert("Running outside Android app");
-                //    }
-                //}
-                else
-                {
-                    OpenAddressBook();
-                }
-
-            });
-
-            $("#Invite").click(function () {
-                if ($(this).html() == "Add") {
-                    AddInvitesToCreate();
-                }
-                else {
-                    SendInvitesFromAddressBook();
-                }
-            });
-
-            $("#DetailsInvitedBtn").click(function () {
-                OpenDetailsInvite();
-            });
-
-            $("#filterFriendsTextbox").keyup(function () {
-                FilterFriends();
-            });
-
-            $("#inviteResults").on("click", "div", function () {
-                $(this).toggleClass("invited");
-            });
-
-            $("#contactResults").on("click", "div", function () {
-                $(this).toggleClass("invited");
-            });
-        });
-
-        function OpenDetailsInvite()
-        {
-            $("#Invite").html("Invite");
-            if (isiOS && !$("#contactResults").html())
-            {
-                window.location = "ios:GetContacts";
-            }
-            else
-            {
-                OpenAddressBook();
-            }
-        }
-
-        function OpenAddressBook()
-        {
-            OpenFromBottom("inviteDiv");
-            $("#filterFriendsTextbox").val("");
-
-            $("#inviteResults div").removeClass("invited").show();
-            $("#contactResults div").removeClass("invited").show();
-
-            $("#addDiv .invitedFriendsScroll div").each(function () {
-                if ($(this).attr("facebookId")) {
-                    var fbId = $(this).attr("facebookId");
-                    $("#inviteResults div").each(function () {
-                        if ($(this).attr("facebookId") == fbId)
-                            $(this).addClass("invited");
-                    });
-                }
-                if ($(this).attr("phone")) {
-                    var phone = $(this).attr("phone");
-                    $("#contactResults div").each(function () {
-                        if ($(this).attr("phone") == phone)
-                            $(this).addClass("invited");
-                    });
-                }
-            });
-
-            if (!$("#inviteResults").html())
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
-        }
-
-        function PopulateAddressBook(friendList) {
-            var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
-            for (var i = 0; i < friendList.length; i++) {
-                var friend = friendList[i];
-                html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
-            }
-            $("#inviteResults").html(html);
-        }
-
-        function AndroidContacts(contactString) {
-            var contacts = contactString.split("||");
-            var contactArray = [];
-            for (var i = 0; i < contacts.length; i++) {
-                var contact = contacts[i].split("|");
-                var contactObject = {};
-                if (contact && contact[0] && contact[1]) {
-                    contactObject.Name = contact[1];
-                    contactObject.Phone = contact[0];
-                    contactArray.push(contactObject);
-                }                   
-            }
-            contactArray.sort(function (a, b) {
-                return a.Name.localeCompare(b.Name);
-            });
-
-            var html = "<div style='color:white;background:#AAAAAA;'>Contacts</div>";
-            for (var i = 0; i < contactArray.length; i++) {
-                html += '<div phone="' + contactArray[i].Phone + '"><span>' + contactArray[i].Name + '</span><img src="/Img/check.png" /></div>';
-            }
-            $("#contactResults").html(html);
-
-            if (fbAccessToken && !$("#inviteResults").html())
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
-        }
-
-        function iOSContacts(contactString) {
-            var contacts = contactString.split("||");
-            var contactArray = [];
-            for (var i = 0; i < contacts.length; i++) {
-                var contact = contacts[i].split("|");
-                var contactObject = {};
-                if (contact && contact[0] && contact[1]) {
-                    contactObject.Name = contact[1];
-                    contactObject.Phone = contact[0];
-                    contactArray.push(contactObject);
-                }
-            }
-            contactArray.sort(function (a, b) {
-                return a.Name.localeCompare(b.Name);
-            });
-
-            var html = "<div style='color:white;background:#AAAAAA;'>Contacts</div>";
-            for (var i = 0; i < contactArray.length; i++) {
-                html += '<div phone="' + contactArray[i].Phone + '"><span>' + contactArray[i].Name + '</span><img src="/Img/check.png" /></div>';
-            }
-            $("#contactResults").html(html);
-
-            if (fbAccessToken && !$("#inviteResults").html()) {
-                var sucess = function (friendList) {
-                    PopulateAddressBook(friendList);
-                    OpenAddressBook();
-                }
-                Post("GetFriends", { facebookAccessToken: fbAccessToken }, sucess);
-            }
-            else
-                OpenAddressBook();
-        }
-
-        function FilterFriends() {
-            var filter = $("#filterFriendsTextbox").val();
-            $("#inviteResults div").not(":eq(0)").each(function () {
-                if (!filter || Contains($(this).html().toLowerCase(), filter.toLowerCase()))
-                    $(this).show();
-                else
-                    $(this).hide();
-            });
-
-            $("#contactResults div").not(":eq(0)").each(function () {
-                if (!filter || Contains($(this).html().toLowerCase(), filter.toLowerCase()))
-                    $(this).show();
-                else
-                    $(this).hide();
-            });
-        }
-
-        function AddInvitesToCreate() {
-            
-            //if (isiOS)
-            //{
-            //    var html = "";
-            //    for (var i = 0; i < friendList.length; i++)
-            //    {
-            //        var friend = friendList[i];
-            //        if(friend.facebookId) //Facebook user
-            //            html += "<div facebookId='" + friend.facebookId + "' ><img src='https://graph.facebook.com/" + friend.facebookId + "/picture' /><div>" + friend.name + "</div></div>";
-            //        else
-            //            html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
-            //    }
-            //    $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
-            //    $("#addDiv .invitedFriendsScroll").html(html);
-            //}
-            //else
-            //{
-                var html = "";
-                $("#inviteResults div.invited").each(function () {
-                    var fbId = $(this).attr("facebookId");
-                    var name = $(this).find("span").html();
-                    if (Contains(name, " "))
-                        name = name.substring(0, name.indexOf(" "));
-                    html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
-                });
-
-                $("#contactResults div.invited").each(function () {
-                    var phone = $(this).attr("phone");
-                    var name = $(this).find("span").html();
-                    if (Contains(name, " "))
-                        name = name.substring(0, name.indexOf(" "));
-                    html += "<div phone='" + phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + name + "</div></div>";
-                });
-
-                var width = $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited") * 60 + 25;
-                $("#addDiv .invitedFriendsScroll").css("width", width + "px");
-                $("#addDiv .invitedFriendsScroll").html(html);
-                CloseToBottom("inviteDiv");
-            //}
-        }
-        
-        function SendInvitesFromAddressBook()
-        {
-            var event = jQuery.extend({}, currentEvent);
-            event.FacebookId = "";
-            $("#inviteResults div.invited").each(function () {
-                var fbId = $(this).attr("facebookId");
-                var name = $(this).find("span").html();
-                if (Contains(name, " "))
-                    name = name.substring(0, name.indexOf(" "));
-                event.FacebookId = AddToString(event.FacebookId, fbId + ":" + name);
-            });
-
-            $("#contactResults div.invited").each(function () {
-                var phone = $(this).attr("phone");
-                var name = $(this).find("span").html();
-                if (Contains(name, " "))
-                    name = name.substring(0, name.indexOf(" "));
-                event.FacebookId = AddToString(event.FacebookId, "p" + phone + ":" + name);
-            });
-
-            $(event.FacebookId.split("|")).each(function () {
-                currentEvent.Invited = AddToString(currentEvent.Invited, this);
-            });
-            
-            Post("SaveEvent", { evt: currentEvent }, UpdateDetailsGoing);
-
-            event.Invited = event.FacebookId;
-            SendInvites(event);
-            CloseToBottom("inviteDiv");
-        }
-
-        function SendInvites(event) {
-            event.FacebookId = event.Invited.replace(currentUser.FacebookId, "");
-            event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
-
-            Post("SendInvites", { evt: event });
-
-            var phoneList = "";
-            $(event.Invited.split("|")).each(function () {
-                var info = this.split(":");
-                if (info.length == 2 && info[0].indexOf("p") == 0) {
-                    phoneList += info[0].substring(1) + ",";
-                }
-            });
-
-            if (phoneList) {
-                phoneList = phoneList.substring(0, phoneList.length - 1);
-                var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
-                GetBranchLink(event, phoneList, message);
-            }
-                
-        }
-
-        function SendText(phoneList, message) {
-
-            if (isiOS)
-            {
-                var params = "?phone=" + phoneList + "&message=" + message;
-                window.location = "ios:SendSMS" + params;
-            }
-            else if(isAndroid)
-            {
-                if (typeof androidAppProxy !== "undefined") {
-                    androidAppProxy.sendSMS(phoneList, message);
-                } else {
-                    console.log("Running outside Android app");
-                }
-            }
-        }
-
-    </script>
-
     <!-- Messages -->
     <script type="text/javascript">
         $(document).ready(function () {
@@ -980,7 +810,7 @@
             var html = "";
             for (var i = 0; i < messages.length; i++) {
                 var message = messages[i];
-                if (Contains(message.FacebookId, currentUser.FacebookId)) {
+                if (Contains(message.Id, currentUser.Id)) {
                     var messageHtml = "<div style='float:right;clear:both;margin-top: 8px;'>{SinceSent}</div><div class='meMessage'>{Message}</div>";
                     html += messageHtml.replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
                 }
@@ -998,7 +828,7 @@
             if(!text)
                 return;
             
-            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, FacebookId: currentUser.FacebookId };
+            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id };
             Post("SendMessage", { message: message }, LoadMessages);
             $("#messageDiv input").val("");
         }
@@ -1046,7 +876,7 @@
         }
 
         function LoadNotifications() {
-            Post("GetNotifications", { facebookId: $("#FacebookId").val() }, PopulateNotifications);
+            Post("GetNotifications", { userId: currentUser.Id }, PopulateNotifications);
         }
 
         function PopulateNotifications(results) {
@@ -1280,201 +1110,112 @@
             }
     </script>
 
-    <!-- Integrate with iOS / Android -->
-     <script type="text/javascript">
-         function iOSInit()
-         {
-             //var token = getParameterByName("fbAccessToken");
-             //if (token)
-             //    fbAccessToken = token;
-
-             currentUser = {};
-             if (getParameterByName("facebookId") && getParameterByName("facebookId") != "(null)")
-                 currentUser.FacebookId = getParameterByName("facebookId");
-             if (getParameterByName("firstName") && getParameterByName("firstName") != "(null)")
-                 currentUser.FirstName = getParameterByName("firstName");
-
-             $("#FacebookId").val(currentUser.FacebookId);
-
-             currentLat = getParameterByName("lat");
-             currentLng = getParameterByName("lng");
-
-             if (getParameterByName("createEvent"))
-             {
-                 var event = JSON.parse(getParameterByName("createEvent"));
-                 OpenCreate(event);
-
-                 $("#addDiv").show();
-                 $("#addDiv").css({ top: "0" });
-                 HideLoading();
-             }
-             else if(getParameterByName("goToEvent"))
-             {
-                 var referenceId = getParameterByName("goToEvent");
-                 if (getParameterByName("toMessaging")) {
-                     var messageSuccess = function (event) {
-                         currentEvent = event;
-                         $("#messageDiv").show();
-                         $("#messageDiv").css({ left: "0" });
-                         OpenMessages();
-                         OpenDetails(event);
-                     };
-                     Post("GetEventByReference", { referenceId: referenceId }, messageSuccess);
-                 }
-                 else
-                 {
-                     Post("GetEventByReference", { referenceId: referenceId }, OpenDetails);
-                     $("#detailsDiv").show();
-                     $("#detailsDiv").css({ top: "0" });
-                 }
-                 HideLoading();
-             }
-             else if (getParameterByName("joinEvent")) {
-                 var referenceId = getParameterByName("joinEvent");
-                 var getSuccess = function (evt) {
-                     currentEvent = evt;
-                     JoinEvent();
-                     HideLoading();
-                 };
-                 Post("GetEventByReference", { referenceId: referenceId }, getSuccess)
-             }
-             else if(currentLat && currentLng)
-             {
-                 LoadEvents();
-             }
-         }
-
-         function AndroidInit()
-         {
-             currentUser = {};
-             if (getParameterByName("facebookId") && getParameterByName("facebookId") != "(null)")
-                 currentUser.FacebookId = getParameterByName("facebookId");
-             if (getParameterByName("firstName") && getParameterByName("firstName") != "(null)")
-                 currentUser.FirstName = getParameterByName("firstName");
-
-            var lat = getParameterByName("lat");
-            var lng = getParameterByName("lng");
-            if (lat && lng) {
-                currentLat = lat;
-                currentLng = lng;
-                //if (!getParameterByName("fbAccessToken"))
-                LoadEvents();
-            }
-         }
-
-         function GetReturnUrlParameters()
-         {
-             return "?OS=" + getParameterByName("OS") + "&facebookId=" + currentUser.FacebookId + "&firstName=" + currentUser.FirstName + "&lat=" + currentLat + "&lng=" + currentLng;
-         }
-
-     </script>
-
     <!-- Facebook -->
     <script type="text/javascript">
-        var currentUser;
-        var fbAccessToken;
+        //var currentUser;
+        //var fbAccessToken;
 
-        window.fbAsyncInit = function () {
+        //window.fbAsyncInit = function () {
             
-            FB.init({
-                appId: '397533583786525', // App ID
-                status: true, // check login status
-                cookie: true, // enable cookies to allow the server to access the session
-                xfbml: true  // parse XFBML
-            });
+        //    FB.init({
+        //        appId: '397533583786525', // App ID
+        //        status: true, // check login status
+        //        cookie: true, // enable cookies to allow the server to access the session
+        //        xfbml: true  // parse XFBML
+        //    });
 
-            fbAccessToken = getParameterByName("fbAccessToken");
-            var deviceId = getParameterByName("deviceId");
-            var pushDeviceToken = getParameterByName("pushDeviceToken");
-            if (fbAccessToken) {
-                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-            }
-            else
-            {
-                FB.getLoginStatus(function (response) {
+        //    fbAccessToken = getParameterByName("fbAccessToken");
+        //    var deviceId = getParameterByName("deviceId");
+        //    var pushDeviceToken = getParameterByName("pushDeviceToken");
+        //    if (fbAccessToken) {
+        //        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+        //    }
+        //    else
+        //    {
+        //        FB.getLoginStatus(function (response) {
 
-                    if (response.status === 'connected') {
-                        // the user is logged in and has authenticated your
-                        // app, and response.authResponse supplies
-                        // the user's ID, a valid access token, a signed
-                        // request, and the time the access token 
-                        // and signed request each expire
-                        var uid = response.authResponse.userID;
-                        $("#FacebookId").val(uid);
-                        fbAccessToken = response.authResponse.accessToken;
+        //            if (response.status === 'connected') {
+        //                // the user is logged in and has authenticated your
+        //                // app, and response.authResponse supplies
+        //                // the user's ID, a valid access token, a signed
+        //                // request, and the time the access token 
+        //                // and signed request each expire
+        //                var uid = response.authResponse.userID;
+        //                $("#FacebookId").val(uid);
+        //                fbAccessToken = response.authResponse.accessToken;
 
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+        //                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
 
-                    } else {
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-                        //if (!fbAccessToken)
-                        //    window.location = "../";
-                        //else
-                        //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-                    }
-                });
-            }
-        };
+        //            } else {
+        //                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+        //                //if (!fbAccessToken)
+        //                //    window.location = "../";
+        //                //else
+        //                //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+        //            }
+        //        });
+        //    }
+        //};
 
-        function LoginSuccess(results) {
-            currentUser = results;
-            $("#FacebookId").val(currentUser.FacebookId);
-            //LoadEvents();
-            /*TODO: fix
-            if (document.URL.indexOf("?") > 0) {
-                var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
-                Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
-            }
-            */
-        }
+        //function LoginSuccess(results) {
+        //    currentUser = results;
+        //    $("#FacebookId").val(currentUser.FacebookId);
+        //    //LoadEvents();
+        //    /*TODO: fix
+        //    if (document.URL.indexOf("?") > 0) {
+        //        var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
+        //        Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
+        //    }
+        //    */
+        //}
 
-        function OpenFacebookLogin()
-        {
-            OpenFromBottom("facebookLoginDiv");
-        }
+        //function OpenFacebookLogin()
+        //{
+        //    OpenFromBottom("facebookLoginDiv");
+        //}
 
-        function FacebookLogin() {
-            if (isiOS) {
-                window.location = "ios:FacebookLogin";
-            }
-            else if(isAndroid)
-            {
-                if (typeof androidAppProxy !== "undefined")
-                    androidAppProxy.AndroidFacebookLogin();
-            }
-            else
-            {
-                FB.login(function (response) {
-                    if (response.authResponse) {
-                        var uid = response.authResponse.userID;
-                        $("#FacebookId").val(uid);
-                        fbAccessToken = response.authResponse.accessToken;
-                        var deviceId = getParameterByName("deviceId");
-                        var pushDeviceToken = getParameterByName("pushDeviceToken");
+        //function FacebookLogin() {
+        //    if (isiOS) {
+        //        window.location = "ios:FacebookLogin";
+        //    }
+        //    else if(isAndroid)
+        //    {
+        //        if (typeof androidAppProxy !== "undefined")
+        //            androidAppProxy.AndroidFacebookLogin();
+        //    }
+        //    else
+        //    {
+        //        FB.login(function (response) {
+        //            if (response.authResponse) {
+        //                var uid = response.authResponse.userID;
+        //                $("#FacebookId").val(uid);
+        //                fbAccessToken = response.authResponse.accessToken;
+        //                var deviceId = getParameterByName("deviceId");
+        //                var pushDeviceToken = getParameterByName("pushDeviceToken");
 
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-                        CloseToBottom('facebookLoginDiv');
-                    } else {
-                        console.log('User cancelled login or did not fully authorize.');
-                    }
-                });
-            }
-        }
+        //                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+        //                CloseToBottom('facebookLoginDiv');
+        //            } else {
+        //                console.log('User cancelled login or did not fully authorize.');
+        //            }
+        //        });
+        //    }
+        //}
 
-        function FacebookLogout() {
-            FB.logout(function (response) {
-                // user is now logged out
-            });
-        }
+        //function FacebookLogout() {
+        //    FB.logout(function (response) {
+        //        // user is now logged out
+        //    });
+        //}
 
-        // Load the SDK Asynchronously
-        (function (d) {
-            var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
-            if (d.getElementById(id)) { return; }
-            js = d.createElement('script'); js.id = id; js.async = true;
-            js.src = "//connect.facebook.net/en_US/all.js";
-            ref.parentNode.insertBefore(js, ref);
-        }(document));
+        //// Load the SDK Asynchronously
+        //(function (d) {
+        //    var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+        //    if (d.getElementById(id)) { return; }
+        //    js = d.createElement('script'); js.id = id; js.async = true;
+        //    js.src = "//connect.facebook.net/en_US/all.js";
+        //    ref.parentNode.insertBefore(js, ref);
+        //}(document));
     </script>
 
     <!-- Branch -->
@@ -1547,11 +1288,6 @@
         </div>
         <div class="content">
             <div style="min-height:500px;"></div>
-            <%--<div class="event">
-                <img class="going" src="https://graph.facebook.com/10106153174286280/picture" />
-                <div style="float:left;"><span style="color:#4285F4;;">Test</span><div style="height:4px;"></div>2 miles away</div>
-                <div style="float:right;">11:37 PM<div style="height:4px;"></div>1 of 3</div>
-            </div>--%>
         </div>
         <img id="addBtn" src="../Img/add.png" />
         <div id="addDiv">
@@ -1625,13 +1361,46 @@
             </div>
         </div>
         <div id="notificationDiv"></div>
-        <div id="facebookLoginDiv">
-            <a onclick="CloseToBottom('facebookLoginDiv');" style="position: absolute; left:5%;top:30px;color:#4285F4;">Cancel</a>
-            <div class="loginHeader" style="margin:60px 20px 0;text-align: center;font-size: 20px;line-height: 28px;">Log In to Discover Activities Near You Today</div>
-            <img src="../Img/appScreenshot.png" style="margin: 12px auto;height: 55%;display:block;" />
-            <div style="text-align: center;position: absolute;width: 100%;top: 100%;margin-top: -80px;">
-                <div onclick="FacebookLogin();" style="display:block;margin:0 auto;width: 80%;background-color:#3B5998;color:white;padding: 10px 0;border-radius: 5px;">Log In with Facebook</div>
-                <div style="margin-top: 6px;font-size: 14px;">We don't post anything to Facebook</div>
+        <div id="loginSignupDiv">
+            <div class="loginSignupHeader">
+                <img class="backarrow" src="/Img/whitebackarrow.png" />
+                <img class="title" src="/Img/title.png" />
+                <div class="subtitle">Sign up to discover activities<br /> near you today.</div>
+                <div id="signupTabHeader" class="loginTabHeaders selected">SIGN UP<div class="arrowUp"></div></div>
+                <div id="loginTabHeader" class="loginTabHeaders" style="left: 50%;">LOG IN<div class="arrowUp"></div></div>
+            </div>
+            <div id="signupTab">
+                <input id="loginSignupEmailTextBox" /><div id="loginSignupEmailPlaceholder" >Enter your email</div>
+                <div class="loginOrDiv" style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 38%;"></div><div class="loginOrDiv" style="float:left;width:13.8%;text-align: center;color:#B5B5B5">OR</div><div class="loginOrDiv" style="float:right;border-top:1px solid #B5B5B5;margin:8px 5% 0 0;width: 38%;"></div>
+                <div id="facebookLoginBtn" class="facebookLoginBtn" style="clear: both;text-align: center;color:#4285F4;"><img src="../Img/fbIcon.png" style="height: 20px;margin: 8px 10px 0 0;vertical-align: bottom;" />Sign up with Facebook</div>
+                <div class="loginLineDiv" style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 90%;margin-bottom: 12px;display:none;"></div>
+                <div id="signupNextBtn" style="text-align: center;color:#4285F4;font-size:20px;display:none;">Next</div>
+            </div>
+        </div>
+        <div id="signupDiv">
+            <div class="signupHeader">
+                <img class="backarrow" src="/Img/whitebackarrow.png" />
+                <img class="title" src="/Img/title.png" />
+            </div>
+            <div id="signupContentDiv">
+                <img src="../Img/grayenvelope.png" /><input id="signupEmailTextBox" placeholder="Your email" />
+                <img src="../Img/grayface.png" style="margin-top: 2px;" /><input id="signupNameTextBox" placeholder="Your name" />
+                <img src="../Img/graylock.png" style="margin-top: 0;" /><input id="signupPasswordTextBox" type="password" placeholder="Password" />
+                <div id="signupBtn">Sign Up</div>
+            </div>
+        </div>
+        <div id="loginDiv">
+            <div class="loginHeader">
+                <img class="backarrow" src="/Img/whitebackarrow.png" />
+                <img class="title" src="/Img/title.png" />
+            </div>
+            <div id="loginContentDiv">
+                <img src="../Img/grayenvelope.png" /><input id="loginEmailTextBox" placeholder="Your email" />
+                <img src="../Img/graylock.png" /><input id="loginPasswordTextBox" type="password" placeholder="Password" />
+                <div id="loginBtn" style="margin-bottom:12px;">Log In</div>
+                <div style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 38%;"></div><div style="float:left;width:13.8%;text-align: center;color:#B5B5B5">OR</div><div style="float:right;border-top:1px solid #B5B5B5;margin:8px 5% 0 0;width: 38%;"></div>
+                <div class="facebookLoginBtn" style="clear: both;text-align: center;color:#4285F4;"><img src="../Img/fbIcon.png" style="height: 20px;margin: 8px 10px 0 0;vertical-align: bottom;float: none;" />Log in with Facebook</div>
+
             </div>
         </div>
         <div id="clockDiv">
