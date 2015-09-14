@@ -101,6 +101,9 @@
                 currentLat = +getParameterByName("lat");
                 currentLng = +getParameterByName("lng");
 
+                if (currentLat && currentLng)
+                    LoadEvents();
+
             }
 
             if (!isMobile) {
@@ -555,7 +558,7 @@
             });
 
             $(".loginSignupHeader .backarrow").click(function () {
-                CloseToBottom("loginSignupDiv");
+                $("#loginSignupDiv").hide();
             });
 
             $("#loginSignupEmailTextBox").keyup(function () {
@@ -578,22 +581,31 @@
             });
 
             $("#signupNextBtn").click(function () {
-                $("#signupDiv").show().animate({ left: "0" }, 500);
+                $("#signupDiv").show().animate({ left: "0" }, 0);
                 $("#signupEmailTextBox").val($("#loginSignupEmailTextBox").val());
                 $("#signupNameTextBox").focus();
             });
 
             $(".signupHeader .backarrow").click(function () {
-                $("#signupDiv").animate({ left: "150%" }, 500, function () { $("#signupDiv").hide(); });
+                $("#signupDiv").animate({ left: "150%" }, 0, function () { $("#signupDiv").hide(); });
             });
 
             $("#loginTabHeader").click(function () {
-                $("#loginDiv").show().animate({ left: "0" }, 500);
+                $("#loginDiv").show().animate({ left: "0" }, 0);
                 $("#loginEmailTextBox").focus();
             });
 
             $(".loginHeader .backarrow").click(function () {
-                $("#loginDiv").animate({ left: "150%" }, 500, function () { $("#loginDiv").hide(); });
+                $("#loginDiv").animate({ left: "150%" }, 0, function () { $("#loginDiv").hide(); });
+            });
+
+            $("#forgotPasswordBtn").click(function () {
+                $("#forgotPasswordDiv").show();
+                $("#forgotPasswordEmailTextBox").focus();
+            });
+
+            $(".forgotPasswordHeader .backarrow").click(function () {
+                $("#forgotPasswordDiv").hide(); 
             });
 
             $("#signupBtn").click(function () {
@@ -669,6 +681,18 @@
                     if (typeof androidAppProxy !== "undefined")
                         androidAppProxy.AndroidFacebookLogin();
                 }
+            });
+
+            $("#forgotPasswordSendBtn").click(function () {
+                var success = function (result) {
+                    $("#forgotPasswordDiv").hide();
+                    $("#loginDiv").animate({ left: "150%" }, 0, function () { $("#loginDiv").hide(); });
+                    CloseToBottom("loginSignupDiv");
+                    if (result)
+                        MessageBox(result);
+                };
+
+                Post("ForgotPassword", { email: $("#forgotPasswordEmailTextBox").val() }, success);
             });
 
         });
@@ -1397,10 +1421,21 @@
             <div id="loginContentDiv">
                 <img src="../Img/grayenvelope.png" /><input id="loginEmailTextBox" placeholder="Your email" />
                 <img src="../Img/graylock.png" /><input id="loginPasswordTextBox" type="password" placeholder="Password" />
+                <div id="forgotPasswordBtn">Forgot?</div>
                 <div id="loginBtn" style="margin-bottom:12px;">Log In</div>
                 <div style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 38%;"></div><div style="float:left;width:13.8%;text-align: center;color:#B5B5B5">OR</div><div style="float:right;border-top:1px solid #B5B5B5;margin:8px 5% 0 0;width: 38%;"></div>
                 <div class="facebookLoginBtn" style="clear: both;text-align: center;color:#4285F4;"><img src="../Img/fbIcon.png" style="height: 20px;margin: 8px 10px 0 0;vertical-align: bottom;float: none;" />Log in with Facebook</div>
 
+            </div>
+        </div>
+        <div id="forgotPasswordDiv">
+            <div class="forgotPasswordHeader">
+                <img class="backarrow" src="/Img/whitebackarrow.png" />
+                <img class="title" src="/Img/title.png" />
+            </div>
+            <div id="forgotPasswordContentDiv">
+                <img src="../Img/grayenvelope.png" /><input id="forgotPasswordEmailTextBox" placeholder="Your email" />
+                <div id="forgotPasswordSendBtn" style="margin-bottom:12px;">Send Password</div>
             </div>
         </div>
         <div id="clockDiv">

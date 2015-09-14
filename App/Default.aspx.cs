@@ -37,6 +37,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static string ForgotPassword(string email)
+    {
+        return Users.ForgotPassword(email);
+    }
+
+    [WebMethod]
     public static Event GetEvent(string id)
     {
         return Event.Get(id);

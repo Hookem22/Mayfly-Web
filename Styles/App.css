@@ -662,6 +662,90 @@ input.error, textarea.error
     border-radius: 5px;
     font-size: 20px;
 }
+#forgotPasswordBtn
+{
+    position: absolute;
+    color: #4285F4;
+    right: 10%;
+    margin-top: -31px;
+}
+#forgotPasswordDiv
+{
+    position: absolute;
+    background: white;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3002;
+    display: none;
+}
+.forgotPasswordHeader
+{
+    background: #4285F4;
+    text-align: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top:0;
+    bottom: 190px;
+}
+.forgotPasswordHeader .backarrow
+{
+    height: 28px;
+    position: absolute;
+    left: 5%;
+    bottom: 24px;
+}
+.forgotPasswordHeader .title
+{
+    height: 40px;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    margin-left: -89px;
+    bottom: 20px;
+}
+#forgotPasswordContentDiv
+{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 16px;
+}
+#forgotPasswordContentDiv img
+{
+    height: 36px;
+    margin: 4px 0 4px 5%;
+    clear: both;
+    float: left;
+}
+#forgotPasswordContentDiv input
+{
+    border: 1px solid transparent;
+    font-size: 20px;
+    margin: 6px 0;
+    width: 70%;
+    border-radius: 5px;
+    padding: 4px 10px;
+}
+#forgotPasswordContentDiv input:focus {
+    outline: none !important;
+}
+#forgotPasswordContentDiv input.error {
+    border: 1px solid #D8000C;
+}
+#forgotPasswordSendBtn
+{
+    margin: 20px 12% 0;
+    padding: 10px;
+    text-align: center;
+    background: #4285F4;
+    color: white;
+    border-radius: 5px;
+    font-size: 20px;
+}
+
 
 #notificationDiv
 {

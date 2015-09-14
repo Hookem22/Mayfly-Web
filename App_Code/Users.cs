@@ -113,6 +113,22 @@ public class Users : Base<Users>
         return this;
     }
 
+    public static string ForgotPassword(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+            return "No user found with this email.";
+
+        Users user = Users.GetByEmail(email);
+        if (user == null || string.IsNullOrEmpty(user.Password))
+            return "No user found with this email.";
+
+        string body = "Your Pow Wow password is : " + Decrypt(ENCRYPT_KEY, user.Password, true);
+        EmailService emailService = new EmailService("PowWow@JoinPowWow.com", user.Email, "Your Pow Wow Password", body);
+        emailService.Send();
+
+        return "Your password has been sent to your email.";
+    }
+
     public static Users GetByFacebookId(string facebookId)
     {
         List<Users> users = GetByWhere(string.Format("(facebookid%20eq%20{0})", facebookId));
