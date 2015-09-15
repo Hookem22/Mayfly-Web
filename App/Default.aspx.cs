@@ -67,6 +67,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static List<Group> GetGroups(string userId)
+    {
+        return Group.Get();
+    }
+
+    [WebMethod]
     public static List<Notification> GetNotifications(string userId)
     {
         return Notification.GetByUserId(userId);

@@ -156,10 +156,24 @@ input.error, textarea.error
     height: 40px;
     margin: 20px 0 10px;
 }
+#menuBtn
+{    
+    height: 34px;
+    margin: 25px 0 14px;
+    position: absolute;
+    left: 5%;
+}
 #notificationBtn
 {
     height: 40px;
     margin: 24px 0 14px;
+    position: absolute;
+    right: 3%;
+}
+#searchBtn
+{
+    height: 40px;
+    margin: 22px 0 14px;
     position: absolute;
     right: 5%;
 }
@@ -746,6 +760,33 @@ input.error, textarea.error
     font-size: 20px;
 }
 
+#menuDiv
+{
+    position: fixed;
+    overflow-y: scroll;
+    background: #32394A;
+    color: white;
+    width: 75%;
+    top: 74px;
+    left: -75%;
+    bottom: 0;
+    z-index: 15;
+    display: none;
+}
+.menuHeader
+{
+    background-color: #434A5E;
+    padding: 6px 18px;
+    color: #9CA4B3;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.menuHeader img
+{
+    height: 20px;
+    margin: 0 4px -4px 0;
+}
 
 #notificationDiv
 {

@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=7" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=3" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -103,6 +103,8 @@
 
                 if (currentLat && currentLng)
                     LoadEvents();
+                //else
+                //    navigator.geolocation.getCurrentPosition(LatLngReturn);
 
             }
 
@@ -115,11 +117,10 @@
         function LoginSuccess(results) {
             currentUser = results;
 
-            if (currentLat && currentLng) {
-                LoadEvents();
-            }
-            else if (currentUser && currentUser.Latitude && currentUser.Longitude)
+            if (currentUser && currentUser.Latitude && currentUser.Longitude)
                 ReceiveLocation(currentUser.Latitude, currentUser.Longitude);
+            if (currentUser)
+                LoadGroups();
         }
 
         function ReceiveLocation(lat, lng)
@@ -193,6 +194,7 @@
         {
             currentLat = position.coords.latitude;
             currentLng = position.coords.longitude;
+            MessageBox(currentLat + "," + currentLng);
             LoadEvents();
         }
 
@@ -704,6 +706,108 @@
 
     </script>
 
+    <!-- Menu -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#menuBtn").click(function () {
+                MenuClick();
+            });
+
+            $("body").on("click", ".content", function () {
+                if ($("#menuDiv").is(':visible'))
+                    CloseMenu();
+            });
+
+            $("#menuDiv").swipe({
+                swipeLeft: function (event, direction, distance, duration, fingerCount) {
+                    CloseMenu();
+                }
+            });
+
+            $("#myNotificationsDiv").on("click", "div", function () {
+                var eventId = $(this).attr("eventid");
+                OpenEventFromNotification(eventId);
+            });
+
+        });
+
+        function LoadGroups()
+        {
+            Post("GetGroups", { userId: currentUser.Id }, PopulateGroups);
+        }
+
+        function PopulateGroups(results) {
+            var html = "";
+            for (var i = 0; i < results.length; i++) {
+                var group = results[i];
+                var groupHtml = '<div groupid="{groupId}" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;"><span>{Name}</span></div>';
+                groupHtml = groupHtml.replace("{groupId}", group.Id).replace("{Name}", group.Name);
+                html += groupHtml;
+            }
+
+            $("#myGroupsDiv").html(html);
+        }
+
+        function LoadNotifications() {
+            Post("GetNotifications", { userId: currentUser.Id }, PopulateNotifications);
+        }
+
+        function PopulateNotifications(results) {
+            var html = "";
+            for (var i = 0; i < results.length; i++) {
+                var notification = results[i];
+                var notificationHtml = '<div eventid="{eventId}" style="padding:8px 4px 8px 16px;border-bottom:1px solid #3F4552;"><span style="font-weight:bold;">{Message}</span><div style="padding-top:2px;">{SinceSent}</div></div>';
+                notificationHtml = notificationHtml.replace("{eventId}", notification.EventId).replace("{Message}", notification.Message).replace("{SinceSent}", notification.SinceSent);
+                html += notificationHtml;
+            }
+
+            $("#myNotificationsDiv").html(html);
+        }
+
+
+        function MenuClick() {
+            if ($("#menuDiv").is(':visible'))
+                CloseMenu();
+            else
+                OpenMenu();
+        }
+
+        function OpenMenu() {
+            LoadNotifications();
+
+            $("#menuDiv").show();
+            if (isMobile)
+            {
+                $("#menuDiv").animate({ left: "0" }, 350);
+                $(".content").animate({ left: "75%", right: "-75%" }, 350);
+            }
+            else
+                $("#menuDiv").animate({ "margin-left": "300px" }, 350);
+        }
+
+        function CloseMenu() {
+            if (isMobile) {
+                $("#menuDiv").animate({ left: "-75%" }, 350, function () {
+                    $("#menuDiv").hide();
+                });
+                $(".content").animate({ left: "0", right: "0" }, 350 );
+            }
+            else {
+                $("#menuDiv").animate({ "margin-left": "0" }, 350, function () {
+                    $("#menuDiv").hide();
+                });
+            }
+        }
+
+        function OpenEventFromNotification(eventId) {
+            var success = function (event) {
+                OpenDetails(event);
+                setTimeout(CloseMenu, 500);
+            };
+            Post("GetEvent", { id: eventId }, success);
+        }
+    </script>
+
     <!-- Location -->
     <script type="text/javascript">
         var locationResults = [];
@@ -868,7 +972,7 @@
     </script>
 
     <!-- Notifications -->
-    <script type="text/javascript">
+    <%--<script type="text/javascript">
         $(document).ready(function () {
             $("#notificationBtn").click(function () {
                 NotificationClick();
@@ -947,7 +1051,7 @@
             $(".goBtn").html("Go");
             ActionMessageBox(notification.Message, OpenEventFromNotification, notification.EventId);
         }
-    </script>
+    </script>--%>
 
     <!-- Clock -->
     <script type="text/javascript">
@@ -1135,112 +1239,112 @@
     </script>
 
     <!-- Facebook -->
-    <script type="text/javascript">
-        //var currentUser;
-        //var fbAccessToken;
+    <%--<script type="text/javascript">
+        var currentUser;
+        var fbAccessToken;
 
-        //window.fbAsyncInit = function () {
+        window.fbAsyncInit = function () {
             
-        //    FB.init({
-        //        appId: '397533583786525', // App ID
-        //        status: true, // check login status
-        //        cookie: true, // enable cookies to allow the server to access the session
-        //        xfbml: true  // parse XFBML
-        //    });
+            FB.init({
+                appId: '397533583786525', // App ID
+                status: true, // check login status
+                cookie: true, // enable cookies to allow the server to access the session
+                xfbml: true  // parse XFBML
+            });
 
-        //    fbAccessToken = getParameterByName("fbAccessToken");
-        //    var deviceId = getParameterByName("deviceId");
-        //    var pushDeviceToken = getParameterByName("pushDeviceToken");
-        //    if (fbAccessToken) {
-        //        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-        //    }
-        //    else
-        //    {
-        //        FB.getLoginStatus(function (response) {
+            fbAccessToken = getParameterByName("fbAccessToken");
+            var deviceId = getParameterByName("deviceId");
+            var pushDeviceToken = getParameterByName("pushDeviceToken");
+            if (fbAccessToken) {
+                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+            }
+            else
+            {
+                FB.getLoginStatus(function (response) {
 
-        //            if (response.status === 'connected') {
-        //                // the user is logged in and has authenticated your
-        //                // app, and response.authResponse supplies
-        //                // the user's ID, a valid access token, a signed
-        //                // request, and the time the access token 
-        //                // and signed request each expire
-        //                var uid = response.authResponse.userID;
-        //                $("#FacebookId").val(uid);
-        //                fbAccessToken = response.authResponse.accessToken;
+                    if (response.status === 'connected') {
+                        // the user is logged in and has authenticated your
+                        // app, and response.authResponse supplies
+                        // the user's ID, a valid access token, a signed
+                        // request, and the time the access token 
+                        // and signed request each expire
+                        var uid = response.authResponse.userID;
+                        $("#FacebookId").val(uid);
+                        fbAccessToken = response.authResponse.accessToken;
 
-        //                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
 
-        //            } else {
-        //                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-        //                //if (!fbAccessToken)
-        //                //    window.location = "../";
-        //                //else
-        //                //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-        //            }
-        //        });
-        //    }
-        //};
+                    } else {
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+                        //if (!fbAccessToken)
+                        //    window.location = "../";
+                        //else
+                        //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
+                    }
+                });
+            }
+        };
 
-        //function LoginSuccess(results) {
-        //    currentUser = results;
-        //    $("#FacebookId").val(currentUser.FacebookId);
-        //    //LoadEvents();
-        //    /*TODO: fix
-        //    if (document.URL.indexOf("?") > 0) {
-        //        var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
-        //        Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
-        //    }
-        //    */
-        //}
+        function LoginSuccess(results) {
+            currentUser = results;
+            $("#FacebookId").val(currentUser.FacebookId);
+            //LoadEvents();
+            /*TODO: fix
+            if (document.URL.indexOf("?") > 0) {
+                var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
+                Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
+            }
+            */
+        }
 
-        //function OpenFacebookLogin()
-        //{
-        //    OpenFromBottom("facebookLoginDiv");
-        //}
+        function OpenFacebookLogin()
+        {
+            OpenFromBottom("facebookLoginDiv");
+        }
 
-        //function FacebookLogin() {
-        //    if (isiOS) {
-        //        window.location = "ios:FacebookLogin";
-        //    }
-        //    else if(isAndroid)
-        //    {
-        //        if (typeof androidAppProxy !== "undefined")
-        //            androidAppProxy.AndroidFacebookLogin();
-        //    }
-        //    else
-        //    {
-        //        FB.login(function (response) {
-        //            if (response.authResponse) {
-        //                var uid = response.authResponse.userID;
-        //                $("#FacebookId").val(uid);
-        //                fbAccessToken = response.authResponse.accessToken;
-        //                var deviceId = getParameterByName("deviceId");
-        //                var pushDeviceToken = getParameterByName("pushDeviceToken");
+        function FacebookLogin() {
+            if (isiOS) {
+                window.location = "ios:FacebookLogin";
+            }
+            else if(isAndroid)
+            {
+                if (typeof androidAppProxy !== "undefined")
+                    androidAppProxy.AndroidFacebookLogin();
+            }
+            else
+            {
+                FB.login(function (response) {
+                    if (response.authResponse) {
+                        var uid = response.authResponse.userID;
+                        $("#FacebookId").val(uid);
+                        fbAccessToken = response.authResponse.accessToken;
+                        var deviceId = getParameterByName("deviceId");
+                        var pushDeviceToken = getParameterByName("pushDeviceToken");
 
-        //                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-        //                CloseToBottom('facebookLoginDiv');
-        //            } else {
-        //                console.log('User cancelled login or did not fully authorize.');
-        //            }
-        //        });
-        //    }
-        //}
+                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+                        CloseToBottom('facebookLoginDiv');
+                    } else {
+                        console.log('User cancelled login or did not fully authorize.');
+                    }
+                });
+            }
+        }
 
-        //function FacebookLogout() {
-        //    FB.logout(function (response) {
-        //        // user is now logged out
-        //    });
-        //}
+        function FacebookLogout() {
+            FB.logout(function (response) {
+                // user is now logged out
+            });
+        }
 
-        //// Load the SDK Asynchronously
-        //(function (d) {
-        //    var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
-        //    if (d.getElementById(id)) { return; }
-        //    js = d.createElement('script'); js.id = id; js.async = true;
-        //    js.src = "//connect.facebook.net/en_US/all.js";
-        //    ref.parentNode.insertBefore(js, ref);
-        //}(document));
-    </script>
+        // Load the SDK Asynchronously
+        (function (d) {
+            var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+            if (d.getElementById(id)) { return; }
+            js = d.createElement('script'); js.id = id; js.async = true;
+            js.src = "//connect.facebook.net/en_US/all.js";
+            ref.parentNode.insertBefore(js, ref);
+        }(document));
+    </script>--%>
 
     <!-- Branch -->
     <script type="text/javascript">
@@ -1306,14 +1410,21 @@
         <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
             <div>
+                <img id="menuBtn" src="/Img/whiteMenu.png" />
                 <img class="title" src="/Img/title.png" />
-                <img id="notificationBtn" src="/Img/bell.png" />
+                <img id="searchBtn" src="/Img/whiteSearch.png" />
             </div>
         </div>
         <div class="content">
             <div style="min-height:500px;"></div>
         </div>
         <img id="addBtn" src="../Img/add.png" />
+        <div id="menuDiv">
+            <div class="menuHeader" style="border-top: none;padding-top:10px;">MY GROUPS</div>
+            <div id="myGroupsDiv"></div>
+            <div class="menuHeader" >NOTIFICATIONS</div>
+            <div id="myNotificationsDiv"></div>
+        </div>
         <div id="addDiv">
             <div>
             <a onclick="CloseToBottom('addDiv', true);" style="position: absolute; left:5%;top:25px;color:#4285F4;">Cancel</a>
@@ -1326,13 +1437,6 @@
             <div style="float:left;margin:16px 0;">Total People?</div>
             <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
             <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
-            <div id="isPublicBtn" class="pillBtn" style="margin-bottom:16px;clear:both;">
-                <div class="slider"></div>
-                <div style="margin: -25px 0 0 18%;float:left;">Public</div>
-                <div style="margin: -25px 18% 0 0;float:right;" class="selected">Private</div>
-            </div>
-            <div id="inviteBtn" style="text-align:center;color:#4285F4;margin: 0 0 8px;">Invite Friends</div>
-            <div class="invitedFriends"><div class="invitedFriendsScroll"></div></div>
             <div id="AddMap" style="clear:both;"></div>
             <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
             </div>
@@ -1345,10 +1449,8 @@
             <div id="DetailsDetails" style="margin-bottom:12px;"></div>
             <div id="DetailsLocation" style="margin-bottom: 4px;"></div>
             <div id="DetailsStartTime" style="margin-bottom: 10px;"></div>
-            <%--<div id="DetailsCutoffTime" style="margin-bottom: 4px;"></div>--%>
             <div id="DetailsHowMany" style="text-align:center;"></div>
             <div id="DetailsInvitedFriends" class="invitedFriends" ><div class="invitedFriendsScroll"></div></div>
-            <div id="DetailsInvitedBtn" style="text-align:center;color:#4285F4;margin: 10px 0 18px;clear: both;">Invite Friends</div>
             <div id="DetailsMap"></div>
             <div id="DetailsJoinBtn" class="bottomBtn" style="position:fixed;top:100%;margin-top: -42px;bottom:initial;">Join</div>
             </div>
@@ -1384,7 +1486,6 @@
             <div id="contactResults" class="addressBookList"></div>
             </div>
         </div>
-        <div id="notificationDiv"></div>
         <div id="loginSignupDiv">
             <div class="loginSignupHeader">
                 <img class="backarrow" src="/Img/whitebackarrow.png" />
