@@ -67,9 +67,15 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static List<Group> GetGroups(string userId)
+    public static List<Group> GetMyGroups(string userId)
     {
-        return Group.Get();
+        return Group.GetByUserId(userId);
+    }
+
+    [WebMethod]
+    public static List<Group> GetGroups(string latitude, string longitude)
+    {
+        return Group.Get(latitude, longitude);
     }
 
     [WebMethod]
