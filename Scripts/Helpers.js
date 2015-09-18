@@ -69,16 +69,21 @@ function MessageBox(message)
 var goFunction;
 var goParam;
 
-function ActionMessageBox(message, go, param) {
+function ActionMessageBox(message, go, param, yesBtn, noBtn) {
     $("#ActionMessageBox .messageContent").html(message);
     $("#ActionMessageBox").show();
     $(".modal-backdrop").show();
+
+    var yes = yesBtn || "Ok";
+    var no = noBtn || "Cancel";
+    $("#ActionMessageBox .yesBtn").html(yes);
+    $("#ActionMessageBox .noBtn").html(no);
 
     goFunction = go;
     goParam = param;
 }
 $(function () {
-    $("#ActionMessageBox .goBtn").click(function() {
+    $("#ActionMessageBox .yesBtn").click(function() {
         goFunction(goParam);
         CloseMessageBox();
     });
@@ -144,4 +149,30 @@ function HideLoading()
 {
     $(".modal-backdrop").hide();
     $(".loading").hide();
+}
+
+function IsGoing(going, userId)
+{
+    if (!going)
+        return false;
+    for (var i = 0; i < going.length; i++) {
+        if (going[i].UserId == userId)
+            return true;
+    }
+    return false;
+}
+function IsAdmin(going, userId) {
+    for (var i = 0; i < going.length; i++) {
+        if (going[i].UserId == userId)
+            return going[i].IsAdmin;
+    }
+    return false;
+}
+function RemoveByUserId(list, userId)
+{
+    for (var i = list.length - 1; i >= 0; i--) {
+        if (list[i].UserId == userId)
+            list.splice(i, 1);
+    }
+    return list;
 }

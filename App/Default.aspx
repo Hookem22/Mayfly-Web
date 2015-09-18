@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=6" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -20,7 +20,7 @@
         var isAndroid;
         var currentLat;
         var currentLng;
-        var eventsResults = [];
+        var eventResults = [];
         var currentEvent = {};
         var currentUser;
 
@@ -67,6 +67,14 @@
             $(".screenHeader .backArrow").click(function () {
                 $(this).closest(".screen").hide();
             });
+
+            $("#addDiv .backArrow").click(function () {
+                LoadEvents();
+            });
+
+            $("#detailsDiv .backArrow").click(function () {
+                LoadEvents();
+            });
         });
 
         function Init()
@@ -103,7 +111,9 @@
             if (!isMobile) {
                 $("body").addClass("NonMobile");
             }
-
+            if (isiOS) {
+                $("body").addClass("ios");
+            }
         }
 
         function LoginSuccess(results) {
@@ -162,7 +172,7 @@
                 $("#addDiv .screenTitle").html("Edit Event");
                 $("#AddName").val(currentEvent.Name);
                 $("#addDiv .bottomBtn").html("Save");
-                $("#AddDetails").val(currentEvent.EventDescription);
+                $("#AddDetails").val(currentEvent.Description);
                 $("#AddLocation").val(currentEvent.LocationName);
                 currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
                 $("#AddStartTime").val(ToLocalTime(currentEvent.StartTime));
@@ -186,7 +196,8 @@
 
         function LoadEvents()
         {
-            Post("GetEvents", { latitude: currentLat, longitude: currentLng }, PopulateEvents);
+            var getGoing = currentUser != null && currentUser.Id != null && currentUser.Id != "";
+            Post("GetEvents", { latitude: currentLat, longitude: currentLng, getGoing: getGoing }, PopulateEvents);
         }
 
         function ReorderEvents(list)
@@ -196,21 +207,18 @@
 
             var id = currentUser.Id;
             var goingList = [];
-            var invitedList = [];
             var otherList = [];
 
             for(var i = 0; i < list.length; i++)
             {
                 var event = list[i];
-                if (Contains(event.Going, id))
+                if (IsGoing(event.Going, id))
                     goingList.push(event);
-                else if (Contains(event.Invited, id) || event.ReferenceId == getParameterByName("goToEvent"))
-                    invitedList.push(event);
                 else
                     otherList.push(event);
             }
 
-            var eventList = $.merge($.merge(goingList, invitedList), otherList);
+            var eventList = $.merge(goingList, otherList);
             return eventList;
         }
 
@@ -223,15 +231,15 @@
             var html = "";
             for (var i = 0; i < eventResults.length; i++) {
                 var event = eventResults[i];
-                var isGoing = event.isGoing != null && event.Going.indexOf(id) >= 0;
-                var goingCt = event.Going.split("|").length;
+                var isGoing = IsGoing(event.Going, id);
+                var goingCt = eventResults[0].Going.length;
                 if (!isGoing && event.MaxParticipants > 0 && goingCt >= event.MaxParticipants)
                     continue;
 
                 var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;text-align:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
                 var time = ToLocalTime(event.StartTime);
-                eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", event.HowManyGoing);
-                if (Contains(event.Going, id)) {
+                eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", HowManyGoing(event));
+                if (isGoing) {
                     if(fbId)
                         eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
                     else
@@ -266,14 +274,13 @@
             });
 
             $("#deleteEventBtn").click(function () {
-                $(".goBtn").html("Ok");
                 ActionMessageBox("This will delete this event. Continue?", DeleteEvent);
             });
         });
 
         function OpenCreate(event) {
             $("#AddName").val(event.Name);
-            $("#AddDetails").val(event.EventDescription);
+            $("#AddDetails").val(event.Description);
             $("#AddLocation").val(event.LocationName);
 
             currentLocation.Name = event.LocationName;
@@ -342,7 +349,6 @@
 
         function GetCreateEvent() {
             var startTime = "";
-            var cutoffTime = "";
             if ($("#AddStartTime").val()) {
                 var now = new Date();
                 startTime = new Date();
@@ -358,38 +364,25 @@
                 startTime.setHours(hr);
                 startTime.setMinutes(min);
                 startTime.setSeconds(0);
-
-                var diffMinutes = parseInt((startTime - now) / (60 * 1000));
-                var cutoffDiff = 0;
-                if (diffMinutes > 29)
-                    cutoffDiff = 15;
-                if (diffMinutes > 59)
-                    cutoffDiff = 30;
-                if (diffMinutes > 179)
-                    cutoffDiff = 60;
-
-                var MS_PER_MINUTE = 60000;
-                cutoffTime = new Date(startTime - cutoffDiff * MS_PER_MINUTE);
             }
-
-
-            var invited = currentEvent.Invited || currentUser.Id + ":" + currentUser.FirstName;
-            var going = currentEvent.Going ? currentEvent.Going : currentUser.Id + ":" + currentUser.FirstName;
 
             var max = +$("#AddMax").val();
             var min = +$("#AddMin").val();
 
+            var groupId = "TODO";
+
             var event = {
-                Name: $("#AddName").val(), EventDescription: $("#AddDetails").val(), LocationName: currentLocation.Name,
+                Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
                 LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
-                IsPrivate: false, MinParticipants: min, MaxParticipants: max,
-                StartTime: startTime, CutoffTime: cutoffTime, Invited: invited, Going: going,
+                MinParticipants: min, MaxParticipants: max, StartTime: startTime,
                 NotificationMessage: "Created: " + $("#AddName").val(), UserId: currentUser.Id
             };
 
             if (currentEvent.Id) {
                 event.Id = currentEvent.Id;
                 event.NotificationMessage = "";
+                event.UserId = "";
+                event.Going = currentEvent.Going;
             }
 
             return event;
@@ -425,8 +418,11 @@
                 OpenAdd(true);
             });
 
-            $("#DetailsJoinBtn").click(function () {
-                JoinEvent();
+            $("#joinBtn").click(function () {
+                if (!IsGoing(currentEvent.Going, currentUser.Id))
+                    JoinEvent();
+                else
+                    ActionMessageBox("Unjoin " + currentEvent.Name + "?", UnjoinEvent, null, "Yes", "No");
             });
         });
 
@@ -440,7 +436,7 @@
             var subheaderHtml = ToLocalTime(event.StartTime) + " - " + event.LocationName;
             $("#detailsDiv #detailsInfo").html(subheaderHtml);
 
-            var descHtml = event.EventDescription;
+            var descHtml = event.Description;
             if (descHtml.length > 200) {
                 descHtml = descHtml.substring(0, 200) + " ... ";
                 descHtml += "<a class='readMore'>Read More</a>";
@@ -457,14 +453,17 @@
                 $("#detailsMap").css("height", mapHt + "px");
                 PlotMap("detailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
             }, 400);
-            //Going
-            if (Contains(event.Going, currentUser.Id))
+
+            if (IsGoing(event.Going, currentUser.Id)) {
                 $("#joinBtn").html("GOING");
-            else
+                $("#joinBtn").addClass("selected");
+            }
+            else {
                 $("#joinBtn").html("+ JOIN");
+                $("#joinBtn").removeClass("selected");
+            }
             
-            //Admin
-            if (event.Going.indexOf(currentUser.Id) == 0)
+            if (IsAdmin(event.Going, currentUser.Id))
                 $(".detailMenuBtn").show();
             else
                 $(".detailMenuBtn").hide();
@@ -480,73 +479,76 @@
         }
 
         function UpdateDetailsGoing(event) {
-            var going = event.Going.split("|");
-            var goingCt = going.length == 1 && !going[0] ? 0 : going.length;
 
-            var invited = event.Invited.split("|");
-            var invitedCt = invited.length == 1 && !invited[0] ? 0 : invited.length;
-
-            var howMany = "Going " + goingCt;
-            if (event.HowManyGoing)
-                howMany += " (" + event.HowManyGoing + ")";
+            var howMany = "Going " + event.Going.length;
+            if (HowManyGoing(event))
+                howMany += " (" + HowManyGoing(event) + ")";
             $("#detailsHowMany").html(howMany);
 
-            var inviteHtml = "";
-            for (var i = 0; i < goingCt; i++) {
-                var fbId = "p" + going[i].split(":")[0];
-                var name = going[i].split(":")[1];
-                var src = fbId.indexOf("p") == 0 ? "/Img/face" + Math.floor(Math.random() * 8) + ".png" : "https://graph.facebook.com/" + fbId + "/picture";
-                inviteHtml += "<div><img src='" + src + "' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + name + "</div></div>";
-            }
-            for (var i = 0; i < invitedCt; i++) {
-                var fbId = "p" + invited[i].split(":")[0];
-                var name = invited[i].split(":")[1];
-                var src = fbId.indexOf("p") == 0 ? "/Img/face" + Math.floor(Math.random() * 8) + ".png" : "https://graph.facebook.com/" + fbId + "/picture";
-                var alreadyGoing = false;
-                if (fbId.indexOf("p") == 0) {
-                    for (var j = 0; j < goingCt; j++) {
-                        if (name == going[j].split(":")[1])
-                            alreadyGoing = true;
-                    }
+            var goingHtml = "";
+            for (var i = 0; i < event.Going.length; i++) {
+                var user = event.Going[i];
+                if(user.FacebookId) {
+                    var src = "https://graph.facebook.com/" + user.FacebookId + "/picture";
+                    goingHtml += "<div><img src='" + src + "' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + user.FirstName + "</div></div>";
                 }
-                if (event.Going.indexOf(fbId) < 0 && !alreadyGoing)
-                    inviteHtml += "<div><img class='invitedFbImg' src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + name + "</div></div>";
-            }
-            for (var i = goingCt; i < event.MaxParticipants; i++) {
-                inviteHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
-            }
-            var totalCt = event.MaxParticipants || goingCt + invitedCt;
-            $("#detailsInvitedFriends  .invitedFriendsScroll").css("width", ((totalCt * 70) + 25) + "px");
+                else {
+                    var src = "/Img/face" + Math.floor(Math.random() * 8) + ".png";
+                    goingHtml += "<div class='nonFb'><img src='" + src + "' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + user.FirstName + "</div></div>";
+                }
 
-            $("#detailsInvitedFriends .invitedFriendsScroll").html(inviteHtml);
+            }
+            for (var i = event.Going.length; i < event.MaxParticipants; i++) {
+                goingHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
+            }
+            var width = ((event.MaxParticipants - event.Going.length) * 64) + (event.Going.length * 70) + 10;
+            $("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
+
+            $("#detailsInvitedFriends .invitedFriendsScroll").html(goingHtml);
+        }
+
+        function HowManyGoing(event)
+        {
+            var howManyGoing = "";
+            if (event.MinParticipants > 1 && event.MaxParticipants > 0)
+                howManyGoing = "Min: " + event.MinParticipants + " Max: " + event.MaxParticipants;
+            else if (event.MinParticipants > 1)
+                howManyGoing = "Min: " + event.MinParticipants;
+            else if (event.MaxParticipants > 0)
+                "Max: " + event.MaxParticipants;
+
+            return howManyGoing;
         }
 
         function JoinEvent() {
             if (!currentUser || !currentUser.Id) {
-                var title = currentEvent ? "Log In to Join " + currentEvent.Name + " and Discover Activities Around You" : "Log In to Join This Event";
-                $(".loginHeader").html(title);
                 OpenLogin();
                 return;
             }
 
-            if ($("#DetailsJoinBtn").html() == "Join") {
-                currentEvent.Going = AddToString(currentEvent.Going, currentUser.Id + ":" + currentUser.FirstName);
+            $("#joinBtn").html("GOING");
+            $("#joinBtn").addClass("selected");
 
-                currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
-                $("#DetailsJoinBtn").html("Unjoin");
-                var alert = currentUser.FirstName + " joined " + currentEvent.Name;
-                var message = "";
-                //Post("SendJoinMessage", { alert: alert, message: message, facebookId: currentUser.FacebookId, evt: currentEvent });
-            }
-            else {
-                currentEvent.Going = RemoveFromString(currentEvent.Going, currentUser.Id);
-                currentEvent.NotificationMessage = "Unjoined: " + currentEvent.Name;
-                $("#DetailsJoinBtn").html("Join");
-            }
-
-            currentEvent.UserId = currentUser.UserId;
+            currentEvent.NotificationMessage = "Joined: " + currentEvent.Name;
+            currentEvent.UserId = currentUser.Id;
+            var going = { EventId: currentEvent.Id, UserId: currentUser.Id, FacebookId: currentUser.FacebookId, FirstName: currentUser.FirstName, IsAdmin: false };
+            currentEvent.Going.push(going);
             UpdateDetailsGoing(currentEvent);
-            Post("SaveEvent", { evt: currentEvent }, LoadEvents);
+
+            Post("JoinEvent", { evt: currentEvent }, LoadEvents);
+        }
+
+        function UnjoinEvent()
+        {
+            $("#joinBtn").html("+ JOIN");
+            $("#joinBtn").removeClass("selected");
+
+            currentEvent.NotificationMessage = "Unjoined: " + currentEvent.Name;
+            currentEvent.UserId = currentUser.Id;
+            RemoveByUserId(currentEvent.Going, currentUser.Id);
+            UpdateDetailsGoing(currentEvent);
+
+            Post("UnjoinEvent", { evt: currentEvent }, LoadEvents);
         }
 
     </script>
@@ -582,22 +584,22 @@
             });
 
             $("#signupNextBtn").click(function () {
-                $("#signupDiv").show().animate({ left: "0" }, 0);
+                $("#signupDiv").show();
                 $("#signupEmailTextBox").val($("#loginSignupEmailTextBox").val());
                 $("#signupNameTextBox").focus();
             });
 
             $(".signupHeader .backarrow").click(function () {
-                $("#signupDiv").animate({ left: "150%" }, 0, function () { $("#signupDiv").hide(); });
+                $("#signupDiv").hide();
             });
 
             $("#loginTabHeader").click(function () {
-                $("#loginDiv").show().animate({ left: "0" }, 0);
+                $("#loginDiv").show();
                 $("#loginEmailTextBox").focus();
             });
 
             $(".loginHeader .backarrow").click(function () {
-                $("#loginDiv").animate({ left: "150%" }, 0, function () { $("#loginDiv").hide(); });
+                $("#loginDiv").hide();
             });
 
             $("#forgotPasswordBtn").click(function () {
@@ -639,8 +641,9 @@
                 };
 
                 Post("SignUpUser", { user: user }, LoginSuccess);
-                $("#signupDiv").css({ left: "150%" }).hide();
-                CloseToBottom("loginSignupDiv");
+                $("#signupDiv").hide();
+                $("#loginSignupDiv").hide();
+                MessageBox(firstName + ", Welcome to Pow Wow!");
             });
 
             $("#loginBtn").click(function () {
@@ -664,8 +667,8 @@
                     if(!user)
                         MessageBox("Email or Password is incorrect")
                     else {
-                        $("#loginDiv").css({ left: "150%" }).hide();
-                        CloseToBottom("loginSignupDiv");
+                        $("#loginDiv").hide();
+                        $("#loginSignupDiv").hide();
                         LoginSuccess(user);
                     }
                 }
@@ -687,8 +690,8 @@
             $("#forgotPasswordSendBtn").click(function () {
                 var success = function (result) {
                     $("#forgotPasswordDiv").hide();
-                    $("#loginDiv").animate({ left: "150%" }, 0, function () { $("#loginDiv").hide(); });
-                    CloseToBottom("loginSignupDiv");
+                    $("#loginDiv").hide();
+                    $("#loginSignupDiv").hide();
                     if (result)
                         MessageBox(result);
                 };
@@ -699,7 +702,7 @@
         });
 
         function OpenLogin() {
-            $("#loginSignupDiv").css({ top: 0 }).show();
+            $("#loginSignupDiv").show();
             $("#loginSignupEmailTextBox").focus();
         }
 
@@ -723,6 +726,16 @@
                 }
             });
 
+            $("#myGroupsDiv").on("click", "div", function () {
+                var groupId = $(this).attr("groupid");
+                var success = function (group) {
+                    currentGroup = group;
+                    OpenGroupDetails();
+                    setTimeout(CloseMenu, 500);
+                };
+                Post("GetGroup", { groupId: groupId }, success);
+            });
+
             $("#myNotificationsDiv").on("click", "div", function () {
                 var eventId = $(this).attr("eventid");
                 OpenEventFromNotification(eventId);
@@ -732,7 +745,7 @@
 
         function LoadMyGroups()
         {
-            Post("GetMyGroups", { userId: currentUser.Id }, PopulateMyGroups);
+            Post("GetGroupsByUser", { userId: currentUser.Id }, PopulateMyGroups);
         }
 
         function PopulateMyGroups(results) {
@@ -840,14 +853,25 @@
 
                 $(groupResults).each(function () {
                     if (this.Id == groupId)
-                        currentGroup = this;
+                    {
+                        var success = function (group) {
+                            currentGroup = group;
+                            OpenGroupDetails();
+                        };
+                        Post("GetGroup", { groupId: this.Id }, success);
+                    }     
                 });
-
-                OpenGroupDetails();
             });
 
             $("#groupDetailsDiv #groupDetailsDescription").on("click", ".readMore", function () {
                 $("#groupDetailsDiv #groupDetailsDescription").html(currentGroup.Description);
+            });
+
+            $("#groupJoinBtn").click(function () {
+                if (!IsGoing(currentGroup.Members, currentUser.Id))
+                    JoinGroup();
+                else
+                    ActionMessageBox("Unjoin " + currentGroup.Name + "?", UnjoinGroup, null, "Yes", "No");
             });
         });
 
@@ -887,8 +911,6 @@
         }
 
         function OpenGroupDetails() {
-            console.log(currentGroup);
-
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
             $("#groupDetailsLogo").attr("src", currentGroup.PictureUrl);
@@ -902,6 +924,41 @@
             }
 
             $("#groupDetailsDiv #groupDetailsDescription").html(descHtml);
+
+            if (IsGoing(currentGroup.Members, currentUser.Id)) {
+                $("#groupJoinBtn").html("GOING");
+                $("#groupJoinBtn").addClass("selected");
+            }
+            else {
+                $("#groupJoinBtn").html("+ JOIN");
+                $("#groupJoinBtn").removeClass("selected");
+            }
+        }
+
+        function JoinGroup() {
+            if (!currentUser || !currentUser.Id) {
+                OpenLogin();
+                return;
+            }
+
+            $("#groupJoinBtn").html("JOINED");
+            $("#groupJoinBtn").addClass("selected");
+
+            currentGroup.UserId = currentUser.Id;
+            var user = { GroupId: currentGroup.Id, UserId: currentUser.Id, FacebookId: currentUser.FacebookId, FirstName: currentUser.FirstName, IsAdmin: false };
+            currentGroup.Members.push(user);
+
+            Post("JoinGroup", { group: currentGroup }, LoadMyGroups);
+        }
+
+        function UnjoinGroup() {
+            $("#groupJoinBtn").html("+ JOIN");
+            $("#groupJoinBtn").removeClass("selected");
+
+            currentGroup.UserId = currentUser.Id;
+            RemoveByUserId(currentGroup.Members, currentUser.Id);
+
+            Post("UnjoinGroup", { group: currentGroup }, LoadMyGroups);
         }
     </script>
 
@@ -1009,6 +1066,10 @@
                     SendMessage();
                 }
             });
+
+            $("#messageDiv .backArrow").click(function () {
+                CloseMessages();
+            });
         });
 
         function OpenMessages() {
@@ -1053,11 +1114,9 @@
         }
 
         function CloseMessages() {
-            $("#DetailMap").show();
             $("#addBtn").show();
-            $("#messageDiv").animate({ left: "100%" }, 350, function () {
-                $("#messageDiv").hide();
-            });
+            $("#DetailMap").show();
+            $("#messageDiv").hide();
         }
 
     </script>
@@ -1573,11 +1632,11 @@
         </div>
         <div id="MessageBox">
             <div class="messageContent"></div>
-            <div onclick="CloseMessageBox();" class="bottomBtn">Ok</div>
+            <div onclick="CloseMessageBox();" class="clockBottomBtn">Ok</div>
         </div>
         <div id="ActionMessageBox">
             <div class="messageContent"></div>
-            <div class="goBtn bottomBtn" style="left:0;right:50%;"">Go</div><div onclick="CloseMessageBox();" class="bottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
+            <div class="yesBtn clockBottomBtn" style="left:0;right:50%;"">Ok</div><div onclick="CloseMessageBox();" class="noBtn clockBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
     </form>
 </body>

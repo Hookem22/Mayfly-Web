@@ -94,4 +94,5 @@ public abstract class Base<T>
         AzureService service = new AzureService(AzureTable);
         service.Delete(this.Id);
     }
+
 }

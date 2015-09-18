@@ -65,20 +65,20 @@ public class Messages : Base<Messages>
 
     public static void SendPushMessageToEvent(Messages message)
     {
-        Event evt = Event.Get(message.EventId);
-        foreach(string person in evt.Going.Split('|'))
-        {
-            if (!person.Contains(":"))
-                continue;
+        //Event evt = Event.Get(message.EventId);
+        //foreach(string person in evt.Going.Split('|'))
+        //{
+        //    if (!person.Contains(":"))
+        //        continue;
 
-            string userId = person.Split(':')[0];
-            if (userId == message.UserId)
-                continue;
+        //    string userId = person.Split(':')[0];
+        //    if (userId == message.UserId)
+        //        continue;
 
 
-            string alert = evt.Name + ": " + message.Message;
-            string messageText = "New Message|" + evt.Id;
-            AzureMessagingService.Send(alert, messageText, userId);
-        }
+        //    string alert = evt.Name + ": " + message.Message;
+        //    string messageText = "New Message|" + evt.Id;
+        //    AzureMessagingService.Send(alert, messageText, userId);
+        //}
     }
 }

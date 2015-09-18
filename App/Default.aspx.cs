@@ -55,9 +55,9 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static List<Event> GetEvents(string latitude, string longitude)
+    public static List<Event> GetEvents(string latitude, string longitude, bool getGoing)
     {
-        return Event.GetCurrent(latitude, longitude);
+        return Event.GetCurrent(latitude, longitude, getGoing);
     }
 
     [WebMethod]
@@ -67,7 +67,7 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static List<Group> GetMyGroups(string userId)
+    public static List<Group> GetGroupsByUser(string userId)
     {
         return Group.GetByUserId(userId);
     }
@@ -76,6 +76,12 @@ public partial class App_Default : System.Web.UI.Page
     public static List<Group> GetGroups(string latitude, string longitude)
     {
         return Group.Get(latitude, longitude);
+    }
+
+    [WebMethod]
+    public static Group GetGroup(string groupId)
+    {
+        return Group.Get(groupId);
     }
 
     [WebMethod]
@@ -121,14 +127,31 @@ public partial class App_Default : System.Web.UI.Page
     public static Event SaveEvent(Event evt)
     {
         evt.Save();
+        return evt;
+    }
 
-        if(!string.IsNullOrEmpty(evt.NotificationMessage))
-        {
-            Notification notification = new Notification(evt.Id, evt.UserId, evt.NotificationMessage);
-            notification.Save();
-        }
+    [WebMethod]
+    public static void JoinEvent(Event evt)
+    {
+        evt.Join();
+    }
 
-        return Event.Get(evt.Id);
+    [WebMethod]
+    public static void UnjoinEvent(Event evt)
+    {
+        evt.Unjoin();
+    }
+
+    [WebMethod]
+    public static void JoinGroup(Group group)
+    {
+        group.Join();
+    }
+
+    [WebMethod]
+    public static void UnjoinGroup(Group group)
+    {
+        group.Unjoin();
     }
 
     [WebMethod]
@@ -138,41 +161,12 @@ public partial class App_Default : System.Web.UI.Page
         return user;
     }
 
-    //[WebMethod]
-    //public static void SendInvites(Event evt)
-    //{
-    //    //evt.Save();
-        
-    //    string[] people = evt.FacebookId.Split('|');
-    //    foreach (string person in people)
-    //    {s
-    //        string[] data = person.Split(':');
-    //        if (data.Length < 2 || string.IsNullOrEmpty(data[0]) || data[0].IndexOf("p") == 0)
-    //            continue;
-
-    //        Notification.Invite(evt, data[0]);
-    //    }
-    //}
-
     [WebMethod]
     public static void SendMessage(Messages message)
     {
         message.Save();
 
         Messages.SendPushMessageToEvent(message);
-    }
-
-    [WebMethod]
-    public static void SendJoinMessage(string alert, string message, string facebookId, Event evt)
-    {
-        if(evt.Going.Contains(":"))
-        {
-            string organizingFbId = evt.Going.Substring(0, evt.Going.IndexOf(":"));
-            if(organizingFbId != facebookId)
-            {
-                AzureMessagingService.Send(alert, message, organizingFbId);
-            }
-        }
     }
 
     [WebMethod]

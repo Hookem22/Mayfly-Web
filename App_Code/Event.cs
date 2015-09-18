@@ -18,7 +18,9 @@ public class Event : Base<Event>
 
     public string Name { get; set; }
 
-    public string EventDescription { get; set; }
+    public string Description { get; set; }
+
+    public string GroupId { get; set; }
 
     public string LocationName { get; set; }
 
@@ -28,28 +30,20 @@ public class Event : Base<Event>
 
     public double LocationLongitude { get; set; }
 
-    public bool IsPrivate { get; set; }
-
     public int MinParticipants { get; set; }
 
     public int MaxParticipants { get; set; }
 
-    public string CutoffTime { get; set; }
-
     public string StartTime { get; set; }
 
-    public string Invited { get; set; }
-
-    public string Going { get; set; }
+    [NonSave]
+    public List<EventGoing> Going { get; set; }
 
     [NonSave]
     public int? ReferenceId { get; set; }
 
     [NonSave]
     public string Distance { get; set; }
-
-    [NonSave]
-    public string HowManyGoing { get; set; }
 
     [NonSave]
     public string NotificationMessage { get; set; }
@@ -59,10 +53,61 @@ public class Event : Base<Event>
 
     #endregion
 
-    public static List<Event> GetCurrent(string latitude, string longitude)
+    public new void Save()
+    {
+        base.Save();
+
+        if(!string.IsNullOrEmpty(this.UserId))
+        {
+            EventGoing going = new EventGoing(this.Id, this.UserId, true);
+            going.Save();
+        }
+
+        if (!string.IsNullOrEmpty(this.NotificationMessage))
+        {
+            Notification notification = new Notification(this.Id, this.UserId, this.NotificationMessage);
+            notification.Save();
+        }
+    }
+
+    public void Join()
+    {
+        EventGoing going = EventGoing.Get(this.Id, this.UserId, true);
+        if(going != null)
+        {
+            going.Undelete();
+        }
+        else
+        {
+            going = new EventGoing(this.Id, this.UserId, false);
+            going.Save();
+        }
+
+        if (!string.IsNullOrEmpty(this.NotificationMessage))
+        {
+            Notification notification = new Notification(this.Id, this.UserId, this.NotificationMessage);
+            notification.Save();
+        }
+
+        //TODO Send messages that someone joined your event
+    }
+
+    public void Unjoin()
+    {
+        EventGoing going = EventGoing.Get(this.Id, this.UserId);
+        going.Delete();
+
+        if (!string.IsNullOrEmpty(this.NotificationMessage))
+        {
+            Notification notification = new Notification(this.Id, this.UserId, this.NotificationMessage);
+            notification.Save();
+        }
+    }
+
+    public static List<Event> GetCurrent(string latitude, string longitude, bool getGoing)
     {
         List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
-        AddHelperProperties(events, latitude, longitude);
+        AddHelperProperties(events, latitude, longitude, getGoing);
         return events;
     }
 
@@ -77,7 +122,7 @@ public class Event : Base<Event>
         return null;
     }
 
-    private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
+    private static void AddHelperProperties(List<Event> events, string latitude, string longitude, bool getGoing)
     {
         try
         {
@@ -87,19 +132,12 @@ public class Event : Base<Event>
 
             foreach (Event evt in events)
             {
-                evt.EventDescription = evt.EventDescription.Replace("\n", "<br/>");
+                evt.Description = evt.Description.Replace("\n", "<br/>");
                 var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
                 evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
 
-                //string[] going = evt.Going.Split('|');
-                //int goingCt = going.Length == 1 && string.IsNullOrEmpty(going[0]) ? 0 : going.Length;
-                evt.HowManyGoing = "";
-                if(evt.MinParticipants > 1 && evt.MaxParticipants > 0)
-                    evt.HowManyGoing = string.Format("Min: {0} Max: {1}", evt.MinParticipants.ToString(), evt.MaxParticipants.ToString());
-                else if(evt.MinParticipants > 1)
-                    evt.HowManyGoing = string.Format("Min: {0}", evt.MinParticipants.ToString());
-                else if(evt.MaxParticipants > 0)
-                    evt.HowManyGoing = string.Format("Max: {0}", evt.MaxParticipants.ToString());
+                if(getGoing)
+                    evt.Going = EventGoing.GetByEvent(evt.Id);
             }
         }
         catch (Exception ex) { }
@@ -116,6 +154,8 @@ public class Event : Base<Event>
             return string.Format("{0} miles away", Math.Round(miles));
     }
 
+
+    /*Test Events
     public static void PurgeDeleted(string latitude, string longitude)
     {
         List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
@@ -135,7 +175,7 @@ public class Event : Base<Event>
         {
             Event ev = new Event();
             ev.Name = "Test" + i;
-            ev.EventDescription = evt.EventDescription;
+            ev.Description = evt.Description;
             ev.LocationName = evt.LocationName;
             ev.LocationAddress = evt.LocationAddress;
             ev.LocationLatitude = evt.LocationLatitude;
@@ -150,5 +190,6 @@ public class Event : Base<Event>
             ev.Save();
         }
     }
+    */ 
 
 }
