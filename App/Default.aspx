@@ -49,19 +49,23 @@
             });
 
             $(".content").on("click", ".event", function () {
-                var event = eventResults[$(this).attr("index")];
-                var invited = event.ReferenceId == getParameterByName("goToEvent");
-                if (!currentUser || (!currentUser.Id && !invited)) {
+                if (!currentUser || !currentUser.Id) {
                     OpenLogin();
                     return;
                 }
 
-                if (event.IsPrivate && !Contains(event.Going, currentUser.Id) && !Contains(event.Invited, currentUser.Id) && !invited) {
-                    MessageBox("This event is private. You cannot join private events unless you are invited.");
+                var eventId = $(this).attr("eventid");
+                Post("GetEvent", { id: eventId }, OpenEventDetails);
+            });
+
+            $(".content").on("click", ".group", function () {
+                if (!currentUser || !currentUser.Id) {
+                    OpenLogin();
                     return;
                 }
 
-                OpenDetails(event);
+                var groupId = $(this).attr("groupid");
+                Post("GetGroup", { groupId: groupId }, OpenGroupDetails);
             });
 
             $(".screenHeader .backArrow").click(function () {
@@ -145,45 +149,9 @@
 
         function GoToEvent(referenceId)
         {
-            Post("GetEventByReference", { referenceId: referenceId }, OpenDetails);
+            Post("GetEventByReference", { referenceId: referenceId }, OpenEventDetails);
             $("#detailsDiv").show();
             $("#detailsDiv").css({ top: "0" });
-        }
-
-        function OpenAdd(isEdit) {
-            if (!currentUser || !currentUser.Id) {
-                OpenLogin();
-                return;
-            }
-
-            $("#addDiv").show();
-            if (!isEdit) {
-                $("#addDiv .screenTitle").html("Create Event");
-                $("#addDiv .bottomBtn").html("Create");
-                $("#addDiv input, #addDiv textarea").val("");
-                $("#addDiv .invitedFriendsScroll").html("");
-                $("#AddMap").css("height", "165px").hide();
-                $("#addDiv .invitedFriends").show();
-                $("#deleteEventBtn").hide();
-                currentEvent = {};
-                currentLocation = {};
-            }
-            else {
-                $("#addDiv .screenTitle").html("Edit Event");
-                $("#AddName").val(currentEvent.Name);
-                $("#addDiv .bottomBtn").html("Save");
-                $("#AddDetails").val(currentEvent.Description);
-                $("#AddLocation").val(currentEvent.LocationName);
-                currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
-                $("#AddStartTime").val(ToLocalTime(currentEvent.StartTime));
-                var min = currentEvent.MinParticipants > 1 ? currentEvent.MinParticipants : "";
-                $("#AddMin").val(min);
-                var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
-                $("#AddMax").val(max);
-                $("#AddMap").css("height", "135px");
-                PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
-                $("#deleteEventBtn").show();
-            }
         }
 
         function LatLngReturn(position)
@@ -196,8 +164,7 @@
 
         function LoadEvents()
         {
-            var getGoing = currentUser != null && currentUser.Id != null && currentUser.Id != "";
-            Post("GetEvents", { latitude: currentLat, longitude: currentLng, getGoing: getGoing }, PopulateEvents);
+            Post("GetEvents", { latitude: currentLat, longitude: currentLng, user: currentUser }, PopulateEvents);
         }
 
         function ReorderEvents(list)
@@ -224,6 +191,13 @@
 
         function PopulateEvents(results)
         {
+            var html = SetLocalTimes(results);
+
+            $(".content div").html(html);
+            $(".content").scrollTop(90);
+            HideLoading();
+            return;
+
             eventResults = ReorderEvents(results);
 
             var id = currentUser ? currentUser.Id : "";
@@ -260,6 +234,18 @@
             HideLoading();
         }
 
+        function SetLocalTimes(html)
+        {
+            while(html.indexOf("{{") >= 0)
+            {
+                var beginIdx = html.indexOf("{{");
+                var endIdx = html.indexOf("}}");
+                var time = html.substring(beginIdx + 2, endIdx);
+                var localTime = ToLocalTime(time);
+                html = html.substring(0, beginIdx) + localTime + html.substring(endIdx + 2);
+            }
+            return html;
+        }
     </script>
 
     <!-- Add / Edit Event -->
@@ -276,30 +262,65 @@
             $("#deleteEventBtn").click(function () {
                 ActionMessageBox("This will delete this event. Continue?", DeleteEvent);
             });
+
+            $("#AddGroupName").click(function () {
+                $(".modal-backdrop").show();
+                $("#addGroupDiv").show();
+            });
+
+            $("#addGroupsResultsDiv").on("click", "div", function () {
+                var groupId = $(this).attr("groupid");
+                if (!groupId)
+                    return;
+
+                currentGroup.Id = groupId;
+                var name = $(this).find("div").html();
+                $("#AddGroupName").val(name);
+                CloseAddGroup();
+
+            });
+
+            $("#addGroupDiv .smallBottomBtn").click(function () {
+                CloseAddGroup();
+            });
         });
 
-        function OpenCreate(event) {
-            $("#AddName").val(event.Name);
-            $("#AddDetails").val(event.Description);
-            $("#AddLocation").val(event.LocationName);
+        function OpenAdd(isEdit) {
+            if (!currentUser || !currentUser.Id) {
+                OpenLogin();
+                return;
+            }
 
-            currentLocation.Name = event.LocationName;
-            currentLocation.Address = event.LocationAddress;
-            currentLocation.Latitude = event.LocationLatitude;
-            currentLocation.Longitude = event.LocationLongitude;
-
-            SetPublic(!event.IsPrivate);
-            var min = event.MinParticipants ? event.MinParticipants : "";
-            $("#AddMin").val(min);
-            var max = event.MaxParticipants ? event.MaxParticipants : "";
-            $("#AddMax").val(max);
-
-            if (event.StartTime)
-                $("#AddStartTime").val(ToLocalTime(event.StartTime));
-
-            if (currentLocation.Name && currentLocation.Latitude && currentLocation.Longitude) {
+            $("#addDiv").show();
+            if (!isEdit) {
+                $("#addDiv .screenTitle").html("Create Event");
+                $("#addDiv .bottomBtn").html("Create");
+                $("#addDiv input, #addDiv textarea").val("");
+                $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "165px").hide();
-                PlotMap("AddMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
+                $("#addDiv .invitedFriends").show();
+                $("#deleteEventBtn").hide();
+                currentEvent = {};
+                currentLocation = {};
+                currentGroup = {};
+            }
+            else {
+                $("#addDiv .screenTitle").html("Edit Event");
+                $("#AddName").val(currentEvent.Name);
+                $("#addDiv .bottomBtn").html("Save");
+                $("#AddDetails").val(currentEvent.Description);
+                $("#AddLocation").val(currentEvent.LocationName);
+                currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
+                $("#AddStartTime").val(ToLocalTime(currentEvent.StartTime));
+                var min = currentEvent.MinParticipants > 1 ? currentEvent.MinParticipants : "";
+                $("#AddMin").val(min);
+                var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
+                $("#AddMax").val(max);
+                currentGroup = { Id: currentEvent.GroupId };
+                $("#AddGroupName").val(currentEvent.GroupName);
+                $("#AddMap").css("height", "135px");
+                PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
+                $("#deleteEventBtn").show();
             }
         }
 
@@ -336,7 +357,7 @@
 
                 if (currentEvent.Id) {
                     currentEvent = event;
-                    OpenDetails(currentEvent);
+                    OpenEventDetails(currentEvent);
                 }
                 else {
                     //SendInvites(event);
@@ -369,7 +390,7 @@
             var max = +$("#AddMax").val();
             var min = +$("#AddMin").val();
 
-            var groupId = "TODO";
+            var groupId = currentGroup.Id;
 
             var event = {
                 Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
@@ -386,6 +407,11 @@
             }
 
             return event;
+        }
+
+        function CloseAddGroup() {
+            $("#addGroupDiv").fadeOut();
+            $(".modal-backdrop").fadeOut();
         }
 
         function DeleteEvent() {
@@ -426,7 +452,7 @@
             });
         });
 
-        function OpenDetails(event) {
+        function OpenEventDetails(event) {
 
             currentEvent = event;
             $("#detailsDiv").show();
@@ -729,8 +755,7 @@
             $("#myGroupsDiv").on("click", "div", function () {
                 var groupId = $(this).attr("groupid");
                 var success = function (group) {
-                    currentGroup = group;
-                    OpenGroupDetails();
+                    OpenGroupDetails(group);
                     setTimeout(CloseMenu, 500);
                 };
                 Post("GetGroup", { groupId: groupId }, success);
@@ -742,23 +767,6 @@
             });
 
         });
-
-        function LoadMyGroups()
-        {
-            Post("GetGroupsByUser", { userId: currentUser.Id }, PopulateMyGroups);
-        }
-
-        function PopulateMyGroups(results) {
-            var html = "";
-            for (var i = 0; i < results.length; i++) {
-                var group = results[i];
-                var groupHtml = '<div groupid="{groupId}" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;"><span>{Name}</span></div>';
-                groupHtml = groupHtml.replace("{groupId}", group.Id).replace("{Name}", group.Name);
-                html += groupHtml;
-            }
-
-            $("#myGroupsDiv").html(html);
-        }
 
         function LoadNotifications() {
             Post("GetNotifications", { userId: currentUser.Id }, PopulateNotifications);
@@ -814,7 +822,7 @@
 
         function OpenEventFromNotification(eventId) {
             var success = function (event) {
-                OpenDetails(event);
+                OpenEventDetails(event);
                 setTimeout(CloseMenu, 500);
             };
             Post("GetEvent", { id: eventId }, success);
@@ -854,11 +862,7 @@
                 $(groupResults).each(function () {
                     if (this.Id == groupId)
                     {
-                        var success = function (group) {
-                            currentGroup = group;
-                            OpenGroupDetails();
-                        };
-                        Post("GetGroup", { groupId: this.Id }, success);
+                        Post("GetGroup", { groupId: this.Id }, OpenGroupDetails);
                     }     
                 });
             });
@@ -874,6 +878,32 @@
                     ActionMessageBox("Unjoin " + currentGroup.Name + "?", UnjoinGroup, null, "Yes", "No");
             });
         });
+
+        function LoadMyGroups() {
+            Post("GetGroupsByUser", { userId: currentUser.Id }, PopulateMyGroups);
+        }
+
+        function PopulateMyGroups(results) {
+            var html = "";
+            for (var i = 0; i < results.length; i++) {
+                var group = results[i];
+                var groupHtml = '<div groupid="{groupId}" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;"><span>{Name}</span></div>';
+                groupHtml = groupHtml.replace("{groupId}", group.Id).replace("{Name}", group.Name);
+                html += groupHtml;
+            }
+
+            $("#myGroupsDiv").html(html);
+
+            html = "";
+            for (var i = 0; i < results.length; i++) {
+                var group = results[i];
+                var groupHtml = '<div groupid="{GroupId}" ><img src="{PictureUrl}" onerror="this.style.display=\'none\';" /><div>{Name}</div></div>';
+                groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{PictureUrl}", group.PictureUrl).replace("{Name}", group.Name);
+                html += groupHtml;
+            }
+
+            $("#addGroupsResultsDiv").html(html);
+        }
 
         function GroupsClick() {
             CloseMenu();
@@ -910,7 +940,10 @@
             $("#groupsDiv").hide();
         }
 
-        function OpenGroupDetails() {
+        function OpenGroupDetails(group) {
+            if (group)
+                currentGroup = group;
+
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
             $("#groupDetailsLogo").attr("src", currentGroup.PictureUrl);
@@ -926,7 +959,7 @@
             $("#groupDetailsDiv #groupDetailsDescription").html(descHtml);
 
             if (IsGoing(currentGroup.Members, currentUser.Id)) {
-                $("#groupJoinBtn").html("GOING");
+                $("#groupJoinBtn").html("MEMBER");
                 $("#groupJoinBtn").addClass("selected");
             }
             else {
@@ -941,7 +974,7 @@
                 return;
             }
 
-            $("#groupJoinBtn").html("JOINED");
+            $("#groupJoinBtn").html("MEMBER");
             $("#groupJoinBtn").addClass("selected");
 
             currentGroup.UserId = currentUser.Id;
@@ -1503,7 +1536,7 @@
                 <div class="screenTitle"></div>
             </div>
             <div class="screenSubheader">
-                <img id="groupDetailsLogo" src="/" />
+                <img id="groupDetailsLogo" src="/" onerror="this.style.display='none';" />
                 <div id="groupDetailsInfo"></div>
                 <div id="groupJoinBtn" class="joinBtn">+ JOIN GROUP</div>
             </div>
@@ -1524,6 +1557,7 @@
                 <div style="float:left;margin:16px 0;">Total People?</div>
                 <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
                 <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
+                <input id="AddGroupName" type="text" placeholder="Post to Group" />
                 <div id="AddMap" style="clear:both;"></div>
                 <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
             </div>
@@ -1538,7 +1572,7 @@
                 <div id="detailsEditBtn">Edit</div>
             </div>
             <div class="screenSubheader">
-                <img id="detailsLogo" src="/" />
+                <img id="detailsLogo" src="/" onerror="this.style.display='none';" />
                 <div id="detailsInfo"></div>
                 <div id="joinBtn" class="joinBtn">+ JOIN</div>
             </div>
@@ -1628,15 +1662,19 @@
             <div id="clockCircle"></div>
             <div class="ampm" style="float:left;">AM</div>
             <div class="ampm" style="float:right;">PM</div>
-            <div onclick='$("#clockDiv").fadeOut();$(".modal-backdrop").fadeOut();' class="clockBottomBtn" >Cancel</div>
+            <div onclick='$("#clockDiv").fadeOut();$(".modal-backdrop").fadeOut();' class="smallBottomBtn" >Cancel</div>
+        </div>
+        <div id="addGroupDiv">
+            <div id="addGroupsResultsDiv"></div>
+            <div class="smallBottomBtn" >Cancel</div>
         </div>
         <div id="MessageBox">
             <div class="messageContent"></div>
-            <div onclick="CloseMessageBox();" class="clockBottomBtn">Ok</div>
+            <div onclick="CloseMessageBox();" class="smallBottomBtn">Ok</div>
         </div>
         <div id="ActionMessageBox">
             <div class="messageContent"></div>
-            <div class="yesBtn clockBottomBtn" style="left:0;right:50%;"">Ok</div><div onclick="CloseMessageBox();" class="noBtn clockBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
+            <div class="yesBtn smallBottomBtn" style="left:0;right:50%;"">Ok</div><div onclick="CloseMessageBox();" class="noBtn smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
     </form>
 </body>

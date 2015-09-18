@@ -196,23 +196,40 @@ input.error, textarea.error
     overflow: scroll;
     z-index: 1;
 }
-.event
+.homeList
 {
     border: 1px solid #F2F2F2;
     padding: 10px 20px;
-}
-.event img
-{
     height: 40px;
+}
+.homeList img
+{
+    height: 50px;
+    margin: -5px;
     float: left;
 }
-.event img.going
+.homeList img.fbPic
 {
+    height: 40px;
+    margin: 0;
     border-radius: 20px;
 }
-.event > div:first-of-type
+.homeList .name
 {
-    margin: 0px 6px 0px 20px;
+    color:#4285F4;
+    position: absolute;
+    left: 78px;
+}
+.homeList .details
+{
+    position: absolute;
+    margin-top: 22px;
+    left: 78px;
+}
+.homeList .time
+{
+    position: absolute;
+    right: 20px;
 }
 #addDiv
 {
@@ -1056,7 +1073,7 @@ input.error, textarea.error
     background-color: #4285F4;
     color: white;
 }
-.clockBottomBtn
+.smallBottomBtn
 {
     position: absolute;
     bottom: 0;
@@ -1065,4 +1082,24 @@ input.error, textarea.error
     right: 0;
     padding: 14px 0;
     border-top: 1px solid rgba(0,0,0,.2);
+}
+#addGroupDiv
+{
+    background: #F6F6F6;
+    position: absolute;
+    top: 10%;
+    left: 15%;
+    right: 15%;
+
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 4px;
+    -webkit-box-shadow: 0 6px 12px rgba(0,0,0,.175);
+    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+    z-index: 2000;
+    display: none;
+}
+#addGroupsResultsDiv
+{
+    margin: 20px 0 70px;
 }

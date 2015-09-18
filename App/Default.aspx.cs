@@ -55,9 +55,9 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static List<Event> GetEvents(string latitude, string longitude, bool getGoing)
+    public static string GetEvents(string latitude, string longitude, Users user)
     {
-        return Event.GetCurrent(latitude, longitude, getGoing);
+        return Event.GetHome(latitude, longitude, user);
     }
 
     [WebMethod]

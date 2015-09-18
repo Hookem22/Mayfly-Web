@@ -37,6 +37,9 @@ public class Event : Base<Event>
     public string StartTime { get; set; }
 
     [NonSave]
+    public bool? IsGoing { get; set; }
+
+    [NonSave]
     public List<EventGoing> Going { get; set; }
 
     [NonSave]
@@ -51,7 +54,31 @@ public class Event : Base<Event>
     [NonSave]
     public string UserId { get; set; }
 
+    [NonSave]
+    public string GroupName { get; set; }
+
     #endregion
+
+    public static new Event Get(string id)
+    {
+        Event evt = Base<Event>.Get(id);
+        evt.Description = evt.Description.Replace("\n", "<br/>");
+        evt.Going = EventGoing.GetByEvent(evt.Id);
+        if(!string.IsNullOrEmpty(evt.GroupId))
+        {
+            Group group = Group.Get(evt.GroupId);
+            if (group != null)
+                evt.GroupName = group.Name;
+        }
+        return evt;
+    }
+
+    public static string GetHome(string latitude, string longitude, Users user)
+    {
+        List<Event> events = GetByProc("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        AddHelperProperties(events, latitude, longitude);
+        return GetHomeHtml(events, user);
+    }
 
     public new void Save()
     {
@@ -104,13 +131,6 @@ public class Event : Base<Event>
         }
     }
 
-    public static List<Event> GetCurrent(string latitude, string longitude, bool getGoing)
-    {
-        List<Event> events = GetByProc("getevents", string.Format("latitude={0}&longitude={1}", latitude, longitude));
-        AddHelperProperties(events, latitude, longitude, getGoing);
-        return events;
-    }
-
     public static Event GetByRefernce(int referenceId)
     {
         List<Event> events = GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));
@@ -122,7 +142,7 @@ public class Event : Base<Event>
         return null;
     }
 
-    private static void AddHelperProperties(List<Event> events, string latitude, string longitude, bool getGoing)
+    private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
     {
         try
         {
@@ -132,12 +152,8 @@ public class Event : Base<Event>
 
             foreach (Event evt in events)
             {
-                evt.Description = evt.Description.Replace("\n", "<br/>");
                 var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
                 evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
-
-                if(getGoing)
-                    evt.Going = EventGoing.GetByEvent(evt.Id);
             }
         }
         catch (Exception ex) { }
@@ -154,6 +170,113 @@ public class Event : Base<Event>
             return string.Format("{0} miles away", Math.Round(miles));
     }
 
+    private static string GetHomeHtml(List<Event> events, Users user)
+    {
+        events = ReorderEvents(events, user);
+
+        List<GroupEvent> groupEvents = new List<GroupEvent>();
+        foreach(Event evt in events)
+        {
+            if(string.IsNullOrEmpty(evt.GroupId))
+            {
+                groupEvents.Add(new GroupEvent(null, evt));
+            }
+            else
+            {
+                GroupEvent groupEvent = groupEvents.Find(delegate(GroupEvent g)
+                {
+                    return g.Group != null && g.Group.Id == evt.GroupId;
+                });
+                if(groupEvent != null)
+                {
+                    groupEvent.Events.Add(evt);
+                }
+                else
+                {
+                    Group group = new Group();
+                    group.Id = evt.GroupId;
+                    group.Name = evt.GroupName;
+                    groupEvents.Add(new GroupEvent(group, evt));
+                }
+            }
+        }
+
+        string html = "";
+        Random rnd = new Random();
+        foreach(GroupEvent ge in groupEvents)
+        {
+            if(ge.Group == null)
+            {
+                string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='time'>{StartTime}</div></div>";
+                eventHtml = eventHtml.Replace("{EventId}", ge.Events[0].Id).Replace("{Name}", ge.Events[0].Name).Replace("{Details}", ge.Events[0].Distance).Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
+                string img = "<img src='../Img/grayface" + rnd.Next(8) + ".png' />";
+                if(ge.Events[0].IsGoing == true)
+                {
+                    if(!string.IsNullOrEmpty(user.FacebookId))
+                        img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />";
+                    else
+                        img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+                }
+                eventHtml = eventHtml.Replace("{img}", img);
+                html += eventHtml;
+            }
+            else
+            {
+                string groupHtml = "<div groupid='{GroupId}' class='homeList group'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='time'>{StartTime}</div></div>";
+                string details = ge.Events[0].Name;
+                details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + ge.Events[0].Distance;
+                groupHtml = groupHtml.Replace("{GroupId}", ge.Group.Id).Replace("{Name}", ge.Group.Name).Replace("{Details}", details).Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
+                groupHtml = groupHtml.Replace("{img}", "<img src='../Img/grayface" + rnd.Next(8) + ".png' />");
+                html += groupHtml;
+            }
+        }
+
+
+        return html;
+    }
+
+    private static List<Event> ReorderEvents(List<Event> events, Users user)
+    {
+        List<string> goingIds = EventGoing.GetByUser(user.Id);
+
+        List<Event> eventGoing = new List<Event>();
+        List<Event> eventOther = new List<Event>();
+
+        foreach(Event evt in events)
+        {
+            if (goingIds.Contains(evt.Id))
+            {
+                evt.IsGoing = true;
+                eventGoing.Add(evt);
+            }
+            else
+            {
+                evt.IsGoing = false;
+                eventOther.Add(evt);
+            }   
+        }
+
+        events = eventGoing;
+        events.AddRange(eventOther);
+        return events;
+    }
+
+    private class GroupEvent
+    {
+        public GroupEvent()
+        {
+
+        }
+        public GroupEvent(Group group, Event evt)
+        {
+            Group = group;
+            Events = new List<Event>() { evt };
+        }
+
+        public List<Event> Events { get; set; }
+
+        public Group Group { get; set; }
+    }
 
     /*Test Events
     public static void PurgeDeleted(string latitude, string longitude)

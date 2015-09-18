@@ -36,8 +36,17 @@ public class EventGoing : Base<EventGoing>
 
     public static List<EventGoing> GetByEvent(string eventId)
     {
-        List<EventGoing> going = GetByProc("getgoingbyevent", string.Format("eventid={0}", eventId));
-        return going;
+        return GetByProc("getgoingbyevent", string.Format("eventid={0}", eventId));
+    }
+
+    public static List<string> GetByUser(string userId)
+    {
+        List<EventGoing> going = GetByProc("getgoingbyuser", string.Format("userid={0}", userId));
+        List<string> goingIds = new List<string>();
+        foreach (EventGoing eg in going)
+            goingIds.Add(eg.EventId);
+
+        return goingIds;
     }
 
     public static EventGoing Get(string eventId, string userId, bool includeDeleted = false)
