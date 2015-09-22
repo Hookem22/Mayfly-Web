@@ -877,6 +877,23 @@
             $("#groupEditBtn").click(function () {
                 AddEditGroup(currentGroup);
             });
+
+            $("#checkPasswordDiv .smallBottomBtn").click(function () {
+                var pwd = $("#checkPasswordDiv input").val();
+                if(pwd == currentGroup.Password)
+                {
+                    $("#checkPasswordDiv").hide();
+                    $(".modal-backdrop").hide();
+                    currentGroup.HasAccess = true;
+                    OpenGroupDetails();
+                }
+                else
+                {
+                    $("#checkPasswordDiv").hide();
+                    MessageBox("Incorrect Password");
+                }
+            });
+
         });
 
         function AddEditGroup(group)
@@ -1043,6 +1060,13 @@
         function OpenGroupDetails(group) {
             if (group)
                 currentGroup = group;
+
+            if (!currentGroup.IsPublic && !IsGoing(currentGroup.Members, currentUser.Id) && !currentGroup.HasAccess) {
+                $("#checkPasswordDiv input").val("");
+                $("#checkPasswordDiv").show();
+                $(".modal-backdrop").show();
+                return;
+            }
 
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
@@ -1674,8 +1698,8 @@
                 <textarea id="AddGroupDescription" rows="4" placeholder="Description"></textarea>
                 <div id="isPublicBtn" class="pillBtn" style="margin:10px 0 12px;clear:both;">
                     <div class="slider"></div>
-                    <div style="margin: -25px 0 0 18%;float:left;" class="selected">Public</div>
-                    <div style="margin: -25px 18% 0 0;float:right;">Private</div>
+                    <div style="margin: -26px 0 0 18%;float:left;" class="selected">Public</div>
+                    <div style="margin: -26px 18% 0 0;float:right;">Private</div>
                 </div>
                 <input id="AddGroupPassword" type="text" placeholder="Private Password" style="margin-bottom:4px;" readonly="readonly" />
             </div>
@@ -1821,6 +1845,11 @@
         <div id="addGroupDiv">
             <div id="addGroupsResultsDiv"></div>
             <div class="smallBottomBtn" >Cancel</div>
+        </div>
+        <div id="checkPasswordDiv">
+            <div class="messageContent" style="margin-bottom:8px;">This group is private. Enter group password.</div>
+            <input type="text" placeholder="Group Password" style="margin-bottom:50px;" />
+            <div class="smallBottomBtn">Ok</div>
         </div>
         <div id="MessageBox">
             <div class="messageContent"></div>

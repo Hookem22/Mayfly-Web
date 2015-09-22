@@ -867,10 +867,11 @@ input.error, textarea.error
 }
 #groupAddBtn
 {
-    position:absolute;
+    position: absolute;
     height: 26px;
-    top: 16px;
-    right: 25px;
+    top: 6px;
+    right: 15px;
+    padding: 12px;
 }
 #groupsListDiv > div
 {
@@ -1032,7 +1033,7 @@ input.error, textarea.error
 }
 
 
-#MessageBox, #ActionMessageBox
+#MessageBox, #ActionMessageBox, #checkPasswordDiv
 {
     background: #F6F6F6;
     position: absolute;
@@ -1049,7 +1050,7 @@ input.error, textarea.error
     z-index: 9000;
     display: none;
 }
-#MessageBox .messageContent, #ActionMessageBox .messageContent
+#MessageBox .messageContent, #ActionMessageBox .messageContent, #checkPasswordDiv .messageContent
 {
     margin: 8px 10px 50px;
 }
