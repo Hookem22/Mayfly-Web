@@ -60,6 +60,17 @@ public class Group : Base<Group>
         return GetByProc("getgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
     }
 
+    public new void Save()
+    {
+        base.Save();
+
+        if (!string.IsNullOrEmpty(this.UserId))
+        {
+            GroupUsers going = new GroupUsers(this.Id, this.UserId, true);
+            going.Save();
+        }
+    }
+
     public void Join()
     {
         GroupUsers users = GroupUsers.Get(this.Id, this.UserId, true);

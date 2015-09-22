@@ -373,7 +373,7 @@
     <!-- Details -->
     <script type="text/javascript">
         $(document).ready(function () {
-            $(".detailMenuBtn").click(function () {
+            $("#detailsDiv .detailMenuBtn").click(function () {
                 setTimeout(function () { $("#detailsEditBtn").show() }, 50);
             });
 
@@ -381,7 +381,7 @@
                 $("#detailsEditBtn").hide();
             });
 
-            $(".detailMenuBtn").click(function () {
+            $("#detailsDiv .detailMenuBtn").click(function () {
                 $("#detailsEditBtn").show();
             });
 
@@ -439,9 +439,9 @@
             }
             
             if (IsAdmin(event.Going, currentUser.Id))
-                $(".detailMenuBtn").show();
+                $("#detailsDiv .detailMenuBtn").show();
             else
-                $(".detailMenuBtn").hide();
+                $("#detailsDiv .detailMenuBtn").hide();
 
             var messageSuccess = function (messages) {
                 $(messages).each(function () {
@@ -801,6 +801,22 @@
                 GroupsClick();
             });
 
+            $("#groupAddBtn").click(function () {
+                AddEditGroup();
+            });
+
+            $("#groupDetailsDiv .detailMenuBtn").click(function () {
+                setTimeout(function () { $("#groupEditBtn").show() }, 50);
+            });
+
+            $("#groupDetailsDiv").click(function () {
+                $("#groupEditBtn").hide();
+            });
+
+            $("#groupDetailsDiv .detailMenuBtn").click(function () {
+                $("#groupEditBtn").show();
+            });
+
             $("#groupFilterTextBox").keyup(function () {
                 var search = $("#groupFilterTextBox").val().toLowerCase();
                 if (search.length == 0) {
@@ -849,7 +865,109 @@
                 CloseMessageBox();
                 OpenGroups();
             });
+
+            $("#isPublicBtn").click(function () {
+                PublicClick();
+            });
+
+            $("#groupAddDiv .bottomBtn").click(function () {
+                SaveGroup();
+            });
+
+            $("#groupEditBtn").click(function () {
+                AddEditGroup(currentGroup);
+            });
         });
+
+        function AddEditGroup(group)
+        {
+            if (group)
+            {
+                $("#groupAddDiv input").removeClass("error");
+                $("#AddGroupDivName").val(group.Name);
+                $("#AddGroupCity").val(group.City);
+                $("#AddGroupDescription").val(group.Description);
+                SetPublic(group.IsPublic);
+                $("#AddGroupPassword").val(group.Password);
+                $("#groupDetailsDiv").hide();
+            }
+            else
+            {
+                currentGroup = {};
+                $("#groupAddDiv input").removeClass("error");
+                $("#AddGroupDivName").val("");
+                $("#AddGroupDescription").val("");
+                GetCityName();
+                SetPublic(true);
+                $("#AddGroupPassword").val("");
+            }
+            $("#groupAddDiv").show();
+        }
+
+        function SaveGroup()
+        {
+            var error = false;
+            $("#groupAddDiv input").removeClass("error");
+            if (!$("#AddGroupDivName").val())
+            {
+                $("#AddGroupDivName").addClass("error");
+                error = true;
+            }
+            if (!$("#AddGroupCity").val()) {
+                $("#AddGroupCity").addClass("error");
+                error = true;
+            }
+            if (error)
+                return;
+
+            currentGroup.Name = $("#AddGroupDivName").val();
+            currentGroup.Description = $("#AddGroupDescription").val();
+            currentGroup.City = $("#AddGroupCity").val();
+            currentGroup.IsPublic = $("#isPublicBtn .selected").html() == "Public";
+            currentGroup.Password = $("#AddGroupPassword").val();
+            currentGroup.UserId = currentGroup.Id ? "" : currentUser.Id;
+            if(!currentGroup.IsPublic && !currentGroup.Password)
+            {
+                MessageBox("Private groups must have passwords to access them.");
+                $("#AddGroupPassword").addClass("error");
+                return;
+            }
+
+            Post("SaveGroup", { group: currentGroup }, OpenGroups);
+            $("#groupAddDiv").hide();
+            if(!currentGroup.Id)
+                MessageBox("Your group " + currentGroup.Name + " has been created.");
+        }
+
+        function GetCityName() {
+            currentGroup.Latitude = currentLat;
+            currentGroup.Longitude = currentLng;
+
+            var latlng = new google.maps.LatLng(currentLat, currentLng);
+            var geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ 'latLng': latlng }, function (results, status) {
+                if (status == google.maps.GeocoderStatus.OK) {
+                    if (results[1]) {
+                        var indice = 0;
+                        for (var j = 0; j < results.length; j++) {
+                            if (results[j].types[0] == 'locality') {
+                                indice = j;
+                                break;
+                            }
+                        }
+                        for (var i = 0; i < results[j].address_components.length; i++) {
+                            if (results[j].address_components[i].types[0] == "locality")
+                                var city = results[j].address_components[i];
+                            if (results[j].address_components[i].types[0] == "administrative_area_level_1")
+                                var region = results[j].address_components[i];
+                            if (results[j].address_components[i].types[0] == "country")
+                                var country = results[j].address_components[i];
+                        }
+                        $("#AddGroupCity").val(city.long_name + ", " + region.short_name);
+                    }
+                } 
+            });
+        }
 
         function GetGroup(groupId)
         {
@@ -903,8 +1021,9 @@
             var html = "";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                var groupHtml = '<div groupid="{GroupId}" ><img src="{PictureUrl}" /><div>{Name}</div></div>';
-                groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{PictureUrl}", group.PictureUrl).replace("{Name}", group.Name);
+                var groupHtml = '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>';
+                var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" />' : '<img src="../Img/bluearrows.png" class="logo" />';
+                groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
             }
 
@@ -948,6 +1067,11 @@
                 $("#groupJoinBtn").html("+ JOIN");
                 $("#groupJoinBtn").removeClass("selected");
             }
+
+            if (IsAdmin(currentGroup.Members, currentUser.Id))
+                $("#groupDetailsDiv .detailMenuBtn").show();
+            else
+                $("#groupDetailsDiv .detailMenuBtn").hide();
         }
 
         function JoinGroup() {
@@ -962,6 +1086,8 @@
             currentGroup.UserId = currentUser.Id;
             var user = { GroupId: currentGroup.Id, UserId: currentUser.Id, FacebookId: currentUser.FacebookId, FirstName: currentUser.FirstName, IsAdmin: false };
             currentGroup.Members.push(user);
+            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
+            $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             Post("JoinGroup", { group: currentGroup }, LoadMyGroups);
         }
@@ -972,8 +1098,31 @@
 
             currentGroup.UserId = currentUser.Id;
             RemoveByUserId(currentGroup.Members, currentUser.Id);
+            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
+            $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             Post("UnjoinGroup", { group: currentGroup }, LoadMyGroups);
+        }
+
+        function SetPublic(isPublic) {
+            var marginLeft = isPublic ? "0px" : "44%";
+            $(".pillBtn .slider").css({ "margin-left": marginLeft });
+            $(".pillBtn div").removeClass("selected");
+            var idx = isPublic ? 1 : 2;
+            $(".pillBtn div:eq(" + idx + ")").addClass("selected");
+        }
+
+        function PublicClick() {
+            var isPublic = $("#isPublicBtn .selected").html() == "Public";
+
+            var marginLeft = isPublic ? "44%" : "0px";
+            $(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
+                var idx = isPublic ? 2 : 1;
+                $(".pillBtn div").removeClass("selected");
+                $(".pillBtn div:eq(" + idx + ")").addClass("selected");
+                $("#AddGroupPassword").attr("readonly", !isPublic);
+                $("#AddGroupPassword").val("");
+            });
         }
     </script>
 
@@ -1509,13 +1658,35 @@
             <div id="myNotificationsDiv"></div>
         </div>
         <div id="groupsDiv">
-            <div class="groupsHeader"><img src="../Img/graySearch.png" /><input id="groupFilterTextBox" type="text" placeholder="Search Groups" /></div>
+            <div class="groupsHeader"><img class="groupsSearch" src="../Img/graySearch.png" /><input id="groupFilterTextBox" type="text" placeholder="Search Groups" />
+                <img id="groupAddBtn" src="../Img/grayAdd.png" />
+            </div>
             <div id="groupsListDiv"></div>
+        </div>
+        <div id="groupAddDiv" class="screen">
+            <div class="screenHeader">
+                <div class="backArrow" ></div>
+                <div class="screenTitle">Create Group</div>
+            </div>
+            <div class="screenContent">
+                <input id="AddGroupDivName" type="text" placeholder="Your Group Name" style="margin:12px 0 4px;" />
+                <input id="AddGroupCity" type="text" placeholder="City" style="margin-bottom:4px;" />
+                <textarea id="AddGroupDescription" rows="4" placeholder="Description"></textarea>
+                <div id="isPublicBtn" class="pillBtn" style="margin:10px 0 12px;clear:both;">
+                    <div class="slider"></div>
+                    <div style="margin: -25px 0 0 18%;float:left;" class="selected">Public</div>
+                    <div style="margin: -25px 18% 0 0;float:right;">Private</div>
+                </div>
+                <input id="AddGroupPassword" type="text" placeholder="Private Password" style="margin-bottom:4px;" readonly="readonly" />
+            </div>
+            <div class="screenBottom"><div class="bottomBtn">Create</div></div>
         </div>
         <div id="groupDetailsDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle"></div>
+                <img class="detailMenuBtn" src="/Img/smallmenu.png" />
+                <div id="groupEditBtn">Edit</div>
             </div>
             <div class="screenSubheader">
                 <img id="groupDetailsLogo" src="/" onerror="this.style.display='none';" />
@@ -1537,7 +1708,7 @@
                 <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
                 <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
                 <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
-                <input id="AddGroupName" type="text" placeholder="Post to Group" style="margin: 8px 0 2px;" />
+                <input id="AddGroupName" type="text" placeholder="Add to Group" style="margin: 8px 0 2px;" />
                 <div style="float:left;margin:16px 0;">Total People?</div>
                 <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
                 <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />

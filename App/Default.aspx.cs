@@ -143,6 +143,13 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static Group SaveGroup(Group group)
+    {
+        group.Save();
+        return group;
+    }
+
+    [WebMethod]
     public static void JoinGroup(Group group)
     {
         group.Join();
