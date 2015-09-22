@@ -46,7 +46,7 @@ public class Users : Base<Users>
         if(!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
         {
             user = GetByEmail(email);
-            if (user == null)
+            if (user == null || string.IsNullOrEmpty(user.Password))
                 return null;
 
             string pwd = Decrypt(ENCRYPT_KEY, user.Password, true);

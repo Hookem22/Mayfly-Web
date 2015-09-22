@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=9" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -20,7 +20,6 @@
         var isAndroid;
         var currentLat;
         var currentLng;
-        var eventResults = [];
         var currentEvent = {};
         var currentUser;
 
@@ -48,7 +47,7 @@
                 CloseGroups();
             });
 
-            $(".content").on("click", ".event", function () {
+            $(".content, #groupEvents").on("click", ".event", function () {
                 if (!currentUser || !currentUser.Id) {
                     OpenLogin();
                     return;
@@ -65,7 +64,7 @@
                 }
 
                 var groupId = $(this).attr("groupid");
-                Post("GetGroup", { groupId: groupId }, OpenGroupDetails);
+                GetGroup(groupId);
             });
 
             $(".screenHeader .backArrow").click(function () {
@@ -167,67 +166,9 @@
             Post("GetEvents", { latitude: currentLat, longitude: currentLng, user: currentUser }, PopulateEvents);
         }
 
-        function ReorderEvents(list)
-        {
-            if (!currentUser || !currentUser.Id)
-                return list;
-
-            var id = currentUser.Id;
-            var goingList = [];
-            var otherList = [];
-
-            for(var i = 0; i < list.length; i++)
-            {
-                var event = list[i];
-                if (IsGoing(event.Going, id))
-                    goingList.push(event);
-                else
-                    otherList.push(event);
-            }
-
-            var eventList = $.merge(goingList, otherList);
-            return eventList;
-        }
-
         function PopulateEvents(results)
         {
             var html = SetLocalTimes(results);
-
-            $(".content div").html(html);
-            $(".content").scrollTop(90);
-            HideLoading();
-            return;
-
-            eventResults = ReorderEvents(results);
-
-            var id = currentUser ? currentUser.Id : "";
-            var fbId = currentUser ? currentUser.FacebookId : "";
-            var html = "";
-            for (var i = 0; i < eventResults.length; i++) {
-                var event = eventResults[i];
-                var isGoing = IsGoing(event.Going, id);
-                var goingCt = eventResults[0].Going.length;
-                if (!isGoing && event.MaxParticipants > 0 && goingCt >= event.MaxParticipants)
-                    continue;
-
-                var eventHtml = '<div index="{index}" class="event">{img}<div style="float:left;"><span style="color:#4285F4;;">{name}</span><div style="height:4px;"></div>{distance}</div><div style="float:right;text-align:right;">{time}<div style="height:4px;"></div>{going}</div><div style="clear:both;"></div></div>';
-                var time = ToLocalTime(event.StartTime);
-                eventHtml = eventHtml.replace("{index}", i).replace("{name}", event.Name).replace("{distance}", event.Distance).replace("{time}", time).replace("{going}", HowManyGoing(event));
-                if (isGoing) {
-                    if(fbId)
-                        eventHtml = eventHtml.replace("{img}", '<img class="going" src="https://graph.facebook.com/' + fbId + '/picture" />');
-                    else
-                        eventHtml = eventHtml.replace("{img}", '<img src="../Img/face' + Math.floor(Math.random() * 8) + '.png" />');
-                }
-                else if (Contains(event.Invited, id) || event.ReferenceId == getParameterByName("goToEvent"))
-                    eventHtml = eventHtml.replace("{img}", '<img src="../Img/invited.png" />');
-                else if (event.IsPrivate)
-                    eventHtml = eventHtml.replace("{img}", '<img src="../Img/lock.png" />');
-                else
-                    eventHtml = eventHtml.replace("{img}", '<img src="../Img/face' + Math.floor(Math.random() * 8) + '.png" />');
-
-                html += eventHtml;
-            }
 
             $(".content div").html(html);
             $(".content").scrollTop(90);
@@ -317,7 +258,11 @@
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
                 $("#AddMax").val(max);
                 currentGroup = { Id: currentEvent.GroupId };
-                $("#AddGroupName").val(currentEvent.GroupName);
+                $("#addGroupsResultsDiv div").each(function () {
+                    if($(this).attr("groupid") == currentEvent.GroupId)
+                        $("#AddGroupName").val($(this).find("div").html());
+                });
+                
                 $("#AddMap").css("height", "135px");
                 PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
                 $("#deleteEventBtn").show();
@@ -456,6 +401,10 @@
 
             currentEvent = event;
             $("#detailsDiv").show();
+            if (event.GroupId)
+                $("#detailsDiv").removeClass("nonGroup");
+            else
+                $("#detailsDiv").addClass("nonGroup");
 
             $("#detailsDiv .screenTitle").html(event.Name);
             $("#detailsLogo").attr("src", currentGroup.PictureUrl);
@@ -527,7 +476,8 @@
             for (var i = event.Going.length; i < event.MaxParticipants; i++) {
                 goingHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
             }
-            var width = ((event.MaxParticipants - event.Going.length) * 64) + (event.Going.length * 70) + 10;
+            var notGoing = event.MaxParticipants ? (event.MaxParticipants - event.Going.length) * 64 : 0;
+            var width = notGoing + (event.Going.length * 70) + 10;
             $("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
 
             $("#detailsInvitedFriends .invitedFriendsScroll").html(goingHtml);
@@ -561,7 +511,13 @@
             currentEvent.Going.push(going);
             UpdateDetailsGoing(currentEvent);
 
-            Post("JoinEvent", { evt: currentEvent }, LoadEvents);
+            var success = function (results) {
+                if (currentEvent.GroupId)
+                    GetGroup(currentEvent.GroupId);
+                LoadEvents()
+            };
+
+            Post("JoinEvent", { evt: currentEvent }, success);
         }
 
         function UnjoinEvent()
@@ -574,7 +530,13 @@
             RemoveByUserId(currentEvent.Going, currentUser.Id);
             UpdateDetailsGoing(currentEvent);
 
-            Post("UnjoinEvent", { evt: currentEvent }, LoadEvents);
+            var success = function (results) {
+                if (currentEvent.GroupId)
+                    GetGroup(currentEvent.GroupId);
+                LoadEvents()
+            };
+
+            Post("UnjoinEvent", { evt: currentEvent }, success);
         }
 
     </script>
@@ -758,7 +720,7 @@
                     OpenGroupDetails(group);
                     setTimeout(CloseMenu, 500);
                 };
-                Post("GetGroup", { groupId: groupId }, success);
+                GetGroup(groupId);
             });
 
             $("#myNotificationsDiv").on("click", "div", function () {
@@ -861,9 +823,7 @@
 
                 $(groupResults).each(function () {
                     if (this.Id == groupId)
-                    {
-                        Post("GetGroup", { groupId: this.Id }, OpenGroupDetails);
-                    }     
+                        GetGroup(groupId);   
                 });
             });
 
@@ -877,7 +837,24 @@
                 else
                     ActionMessageBox("Unjoin " + currentGroup.Name + "?", UnjoinGroup, null, "Yes", "No");
             });
+
+            $("#myGroupsDiv").on("click", ".joinGroupBtn", function () {
+                OpenGroups();
+                setTimeout(CloseMenu, 500);
+            });
+
+            $("#addGroupsResultsDiv").on("click", ".joinGroupBtn", function () {
+                $("#addGroupDiv").hide();
+                $("#addDiv").hide();
+                CloseMessageBox();
+                OpenGroups();
+            });
         });
+
+        function GetGroup(groupId)
+        {
+            Post("GetGroup", { groupId: groupId, latitude: currentLat, longitude: currentLng, user: currentUser }, OpenGroupDetails);
+        }
 
         function LoadMyGroups() {
             Post("GetGroupsByUser", { userId: currentUser.Id }, PopulateMyGroups);
@@ -891,6 +868,8 @@
                 groupHtml = groupHtml.replace("{groupId}", group.Id).replace("{Name}", group.Name);
                 html += groupHtml;
             }
+            if (!html)
+                html = '<div class="joinGroupBtn" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;font-weight: bold;">+ JOIN GROUPS</div>';
 
             $("#myGroupsDiv").html(html);
 
@@ -901,6 +880,8 @@
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{PictureUrl}", group.PictureUrl).replace("{Name}", group.Name);
                 html += groupHtml;
             }
+            if (!html)
+                html = "<div style='text-align: center;'>You are not a member of any groups.</div><div class='blueBtn joinGroupBtn' style='margin: 24px 16%;'>Join Groups</div>";
 
             $("#addGroupsResultsDiv").html(html);
         }
@@ -947,7 +928,7 @@
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
             $("#groupDetailsLogo").attr("src", currentGroup.PictureUrl);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + 168 + "</span> Members - " + currentGroup.City;
+            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             var descHtml = currentGroup.Description;
@@ -957,6 +938,7 @@
             }
 
             $("#groupDetailsDiv #groupDetailsDescription").html(descHtml);
+            $("#groupDetailsDiv #groupEvents").html(SetLocalTimes(group.EventsHtml));
 
             if (IsGoing(currentGroup.Members, currentUser.Id)) {
                 $("#groupJoinBtn").html("MEMBER");
@@ -1542,6 +1524,7 @@
             </div>
             <div class="screenContent">
                 <div id="groupDetailsDescription"></div>
+                <div id="groupEvents"></div>
             </div>
         </div>
         <div id="addDiv" class="screen">
@@ -1554,10 +1537,10 @@
                 <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
                 <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
                 <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
+                <input id="AddGroupName" type="text" placeholder="Post to Group" style="margin: 8px 0 2px;" />
                 <div style="float:left;margin:16px 0;">Total People?</div>
                 <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
                 <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
-                <input id="AddGroupName" type="text" placeholder="Post to Group" />
                 <div id="AddMap" style="clear:both;"></div>
                 <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
             </div>

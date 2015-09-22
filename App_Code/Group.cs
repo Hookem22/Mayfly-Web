@@ -37,12 +37,16 @@ public class Group : Base<Group>
     [NonSave]
     public string UserId { get; set; }
 
+    [NonSave]
+    public string EventsHtml { get; set; }
+
     #endregion
 
-    public new static Group Get(string id)
+    public new static Group Get(string id, string latitude, string longitude, Users user)
     {
         Group group = Base<Group>.Get(id);
         group.Members = GroupUsers.GetByGroup(id);
+        group.EventsHtml = Event.GetByGroup(id, latitude, longitude, user);
         return group;
     }
 

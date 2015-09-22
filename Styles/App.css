@@ -231,6 +231,14 @@ input.error, textarea.error
     position: absolute;
     right: 20px;
 }
+.blueBtn
+{
+    background: #4285F4;
+    color: white;
+    padding: 10px 0;
+    text-align: center;
+    border-radius: 24px;
+}
 #addDiv
 {
     z-index: 150;
@@ -971,6 +979,10 @@ input.error, textarea.error
     border: 1px solid #66bd2b;
     color: white;
 }
+.nonGroup .joinBtn
+{
+    left: 36px;
+}
 
 #groupDetailsLogo, #detailsLogo
 {
@@ -982,6 +994,10 @@ input.error, textarea.error
 #groupDetailsInfo, #detailsInfo
 {
     margin: 4px 36px 0 106px;
+}
+.nonGroup #detailsInfo
+{
+    margin: 4px 36px 0 36px;
 }
 #detailsDescription
 {

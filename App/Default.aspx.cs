@@ -79,9 +79,9 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static Group GetGroup(string groupId)
+    public static Group GetGroup(string groupId, string latitude, string longitude, Users user)
     {
-        return Group.Get(groupId);
+        return Group.Get(groupId, latitude, longitude, user);
     }
 
     [WebMethod]

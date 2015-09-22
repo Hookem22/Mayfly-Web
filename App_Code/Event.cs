@@ -64,12 +64,12 @@ public class Event : Base<Event>
         Event evt = Base<Event>.Get(id);
         evt.Description = evt.Description.Replace("\n", "<br/>");
         evt.Going = EventGoing.GetByEvent(evt.Id);
-        if(!string.IsNullOrEmpty(evt.GroupId))
-        {
-            Group group = Group.Get(evt.GroupId);
-            if (group != null)
-                evt.GroupName = group.Name;
-        }
+        //if(!string.IsNullOrEmpty(evt.GroupId))
+        //{
+        //    Group group = Group.Get(evt.GroupId);
+        //    if (group != null)
+        //        evt.GroupName = group.Name;
+        //}
         return evt;
     }
 
@@ -78,6 +78,17 @@ public class Event : Base<Event>
         List<Event> events = GetByProc("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
         AddHelperProperties(events, latitude, longitude);
         return GetHomeHtml(events, user);
+    }
+
+    public static string GetByGroup(string groupId, string latitude, string longitude, Users user)
+    {
+        List<Event> events = GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
+        if(events.Count > 0)
+        {
+            AddHelperProperties(events, latitude, longitude);
+            return GetGroupEventsHtml(events, user);
+        }
+        return "";
     }
 
     public new void Save()
@@ -172,7 +183,8 @@ public class Event : Base<Event>
 
     private static string GetHomeHtml(List<Event> events, Users user)
     {
-        events = ReorderEvents(events, user);
+        if(user != null)
+            events = ReorderEvents(events, user);
 
         List<GroupEvent> groupEvents = new List<GroupEvent>();
         foreach(Event evt in events)
@@ -231,6 +243,31 @@ public class Event : Base<Event>
             }
         }
 
+        return html;
+    }
+
+    private static string GetGroupEventsHtml(List<Event> events, Users user)
+    {
+        if (user != null)
+            events = ReorderEvents(events, user);
+
+        string html = "";
+        Random rnd = new Random();
+        foreach (Event evt in events)
+        {
+            string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='time'>{StartTime}</div></div>";
+            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartTime}", "{{" + evt.StartTime.ToString() + "}}");
+            string img = "<img src='../Img/grayface" + rnd.Next(8) + ".png' />";
+            if (evt.IsGoing == true)
+            {
+                if (!string.IsNullOrEmpty(user.FacebookId))
+                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />";
+                else
+                    img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+            }
+            eventHtml = eventHtml.Replace("{img}", img);
+            html += eventHtml;
+        }
 
         return html;
     }
