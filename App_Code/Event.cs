@@ -57,6 +57,9 @@ public class Event : Base<Event>
     [NonSave]
     public string GroupName { get; set; }
 
+    [NonSave]
+    public string GroupPictureUrl { get; set; }
+
     #endregion
 
     public static new Event Get(string id)
@@ -208,6 +211,7 @@ public class Event : Base<Event>
                     Group group = new Group();
                     group.Id = evt.GroupId;
                     group.Name = evt.GroupName;
+                    group.PictureUrl = evt.GroupPictureUrl;
                     groupEvents.Add(new GroupEvent(group, evt));
                 }
             }
@@ -236,9 +240,18 @@ public class Event : Base<Event>
             {
                 string groupHtml = "<div groupid='{GroupId}' class='homeList group'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='time'>{StartTime}</div></div>";
                 string details = ge.Events[0].Name;
+                bool isGoing = false;
+                foreach(Event evt in ge.Events)
+                {
+                    if (evt.IsGoing == true)
+                        isGoing = true;
+                }
                 details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + ge.Events[0].Distance;
                 groupHtml = groupHtml.Replace("{GroupId}", ge.Group.Id).Replace("{Name}", ge.Group.Name).Replace("{Details}", details).Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
-                groupHtml = groupHtml.Replace("{img}", "<img src='../Img/grayface" + rnd.Next(8) + ".png' />");
+                string img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", ge.Group.PictureUrl);
+                if(isGoing && !string.IsNullOrEmpty(user.FacebookId))
+                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />";
+                groupHtml = groupHtml.Replace("{img}", img);
                 html += groupHtml;
             }
         }

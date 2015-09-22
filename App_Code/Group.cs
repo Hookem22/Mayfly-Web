@@ -42,7 +42,7 @@ public class Group : Base<Group>
 
     #endregion
 
-    public new static Group Get(string id, string latitude, string longitude, Users user)
+    public static Group Get(string id, string latitude, string longitude, Users user)
     {
         Group group = Base<Group>.Get(id);
         group.Members = GroupUsers.GetByGroup(id);
@@ -91,5 +91,14 @@ public class Group : Base<Group>
         users.Delete();
     }
 
+    public static void SendPushMessageToGroup(string groupId, string alert, string messageText, string userId)
+    {
+        foreach (GroupUsers user in GroupUsers.GetByGroup(groupId))
+        {
+            if (user.UserId == userId)
+                continue;
 
+            AzureMessagingService.Send(alert, messageText, user.UserId);
+        }
+    }
 }

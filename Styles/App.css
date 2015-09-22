@@ -169,7 +169,7 @@ input.error, textarea.error
     position: absolute;
     right: 5%;
 }
-#addBtn
+#addBtn, #addFromGroupBtn
 {
     position: fixed;
     width: 60px;
@@ -218,6 +218,8 @@ input.error, textarea.error
     color:#4285F4;
     position: absolute;
     left: 78px;
+    overflow: hidden;
+    height: 18px;
 }
 .homeList .details
 {
@@ -1130,5 +1132,23 @@ input.error, textarea.error
 }
 #addGroupsResultsDiv
 {
-    margin: 20px 0 70px;
+    margin: 10px 0 70px;
+}
+#addGroupsResultsDiv > div
+{
+    border-bottom: 1px solid rgba(0,0,0,.2);
+    padding-left: 8px;
+    clear: both;
+}
+#addGroupsResultsDiv img
+{
+    height: 40px;
+    width: 40px;
+    float: left;
+    margin: 2px 0;
+}
+#addGroupsResultsDiv > div > div
+{
+    padding: 14px 0;
+    margin-left: 48px;
 }

@@ -172,7 +172,6 @@ public partial class App_Default : System.Web.UI.Page
     public static void SendMessage(Messages message)
     {
         message.Save();
-
         Messages.SendPushMessageToEvent(message);
     }
 
@@ -180,6 +179,12 @@ public partial class App_Default : System.Web.UI.Page
     public static void DeleteEvent(Event evt)
     {
         evt.Delete();
+    }
+
+    [WebMethod]
+    public static void SendMessageToGroup(string groupId, string alert, string messageText, string userId)
+    {
+        Group.SendPushMessageToGroup(groupId, alert, messageText, userId);
     }
 
 }
