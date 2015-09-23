@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -47,6 +47,24 @@
                 CloseGroups();
             });
 
+            $(".content").swipe({
+                swipeLeft: function (event, direction, distance, duration, fingerCount) {
+                    if ($("#menuDiv").is(':visible'))
+                        CloseMenu();
+                    else
+                        OpenGroups();
+                },
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    OpenMenu();
+                }
+            });
+
+            $("#groupsDiv").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    CloseGroups();
+                }
+            });
+
             $(".content, #groupEvents").on("click", ".event", function () {
                 if (!currentUser || !currentUser.Id) {
                     OpenLogin();
@@ -83,9 +101,11 @@
         function Init()
         {
             ShowLoading();
-            if ($(window).height() > 550)
+            if ($(window).height() > 550) {
                 $(".content div").css("min-height", ($(window).height() - 135) + "px");
-
+                $("#groupEvents").css("min-height", ($(window).height() - 340) + "px");
+            }
+            
             isiOS = getParameterByName("OS") == "iOS";
             isAndroid = getParameterByName("OS") == "Android";
 
@@ -820,6 +840,23 @@
         var currentGroup = {};
 
         $(document).ready(function () {
+
+            var scrollTimer;
+            $("#groupDetailsDiv").scroll(function () {
+                if (scrollTimer) {
+                    clearTimeout(scrollTimer);
+                }
+                scrollTimer = setTimeout(function () {
+                    if ($("#groupDetailsDiv").scrollTop() < 15) {
+                        ShowLoading();
+                        GetGroup(currentGroup.Id);
+                    }
+                    else if ($("#groupDetailsDiv").scrollTop() < 60) {
+                        $("#groupDetailsDiv").animate({ scrollTop: "60" }, 350);
+                    }
+                }, 100);
+            });
+
             $("#groupsBtn").click(function () {
                 GroupsClick();
             });
@@ -1087,11 +1124,13 @@
         function OpenGroups() {
             LoadGroups();
             $("#groupFilterTextBox").val("");
-            $("#groupsDiv").show();
+            $("#groupsDiv").show().animate({ left: "0", right: "0" }, 450);
+            $(".content").animate({ left: "-100%", right: "100%" }, 450);
         }
 
         function CloseGroups() {
-            $("#groupsDiv").hide();
+            $("#groupsDiv").animate({ left: "100%", right: "-100%" }, 450, function () { $("#groupsDiv").hide(); });
+            $(".content").animate({ left: "0", right: "0" }, 450);
         }
 
         function OpenGroupDetails(group) {
@@ -1118,7 +1157,7 @@
             }
 
             $("#groupDetailsDiv #groupDetailsDescription").html(descHtml);
-            $("#groupDetailsDiv #groupEvents").html(SetLocalTimes(group.EventsHtml));
+            $("#groupDetailsDiv #groupEvents").html(SetLocalTimes(currentGroup.EventsHtml));
 
             if (IsGoing(currentGroup.Members, currentUser.Id)) {
                 $("#groupJoinBtn").html("MEMBER");
@@ -1133,6 +1172,9 @@
                 $("#groupDetailsDiv .detailMenuBtn").show();
             else
                 $("#groupDetailsDiv .detailMenuBtn").hide();
+
+            $("#groupDetailsDiv").scrollTop(60);
+            HideLoading();
         }
 
         function JoinGroup() {
@@ -1758,8 +1800,8 @@
             </div>
             <div class="screenContent">
                 <div id="groupDetailsDescription"></div>
-                <div id="groupEvents"></div>
             </div>
+            <div id="groupEvents"></div>
             <img id="addFromGroupBtn" src="../Img/add.png">
         </div>
         <div id="addDiv" class="screen">

@@ -816,8 +816,8 @@ input.error, textarea.error
     background: #32394A;
     color: white;
     top: 74px;
-    left: 0;
-    right: 0;
+    left: 100%;
+    right: -100%;
     bottom: 0;
     z-index: 15;
     display: none;
@@ -1024,6 +1024,23 @@ input.error, textarea.error
     padding: 24px 16px;
     line-height: 1.5em;
     border-bottom: 1px solid rgba(0,0,0,.12);
+    min-height: 70px;
+}
+#groupDetailsDiv .screenHeader
+{
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    height: 21px;
+}
+#groupDetailsDiv .screenSubheader
+{
+    padding-top: 120px;
+}
+.ios #groupDetailsDiv .screenSubheader
+{
+    padding-top: 140px;
 }
 #groupDetailsDiv .screenContent
 {
@@ -1033,7 +1050,10 @@ input.error, textarea.error
 {
     color: #4285F4;
 }
-
+#groupDetailsDiv #groupEvents
+{
+    padding-bottom: 90px;
+}
 
 #MessageBox, #ActionMessageBox, #checkPasswordDiv
 {
