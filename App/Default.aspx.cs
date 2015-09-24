@@ -11,11 +11,12 @@ public partial class App_Default : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-        try
-        {
-            FacebookId.Value = HttpContext.Current.Session["FacebookId"].ToString();
-        }
-        catch { }
+        //try
+        //{
+        //    FacebookId.Value = HttpContext.Current.Session["FacebookId"].ToString();
+        //}
+        //catch { }
+
     }
 
     [WebMethod]
@@ -185,6 +186,12 @@ public partial class App_Default : System.Web.UI.Page
     public static void SendMessageToGroup(string groupId, string alert, string messageText, string userId)
     {
         Group.SendPushMessageToGroup(groupId, alert, messageText, userId);
+    }
+
+    [WebMethod]
+    public static void SaveNotificationToGroup(string groupId, string message, string userId, string eventId)
+    {
+        Group.SaveNotificationToGroup(groupId, message, userId, eventId);
     }
 
 }

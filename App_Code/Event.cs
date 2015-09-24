@@ -79,6 +79,8 @@ public class Event : Base<Event>
     public static string GetHome(string latitude, string longitude, Users user)
     {
         List<Event> events = GetByProc("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        if (events.Count == 0)
+            return defaultHomeHtml;
         AddHelperProperties(events, latitude, longitude);
         return GetHomeHtml(events, user);
     }
@@ -149,9 +151,7 @@ public class Event : Base<Event>
     {
         List<Event> events = GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));
         if (events.Count > 0)
-        {
             return events[0];
-        }
 
         return null;
     }
@@ -228,10 +228,11 @@ public class Event : Base<Event>
                 string img = "<img src='../Img/grayface" + rnd.Next(8) + ".png' />";
                 if(ge.Events[0].IsGoing == true)
                 {
-                    if(!string.IsNullOrEmpty(user.FacebookId))
-                        img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />";
+                    string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+                    if (!string.IsNullOrEmpty(user.FacebookId))
+                        img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
                     else
-                        img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+                        img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
                 }
                 eventHtml = eventHtml.Replace("{img}", img);
                 html += eventHtml;
@@ -249,8 +250,8 @@ public class Event : Base<Event>
                 details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + ge.Events[0].Distance;
                 groupHtml = groupHtml.Replace("{GroupId}", ge.Group.Id).Replace("{Name}", ge.Group.Name).Replace("{Details}", details).Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
                 string img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", ge.Group.PictureUrl);
-                if(isGoing && !string.IsNullOrEmpty(user.FacebookId))
-                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />";
+                if (isGoing && !string.IsNullOrEmpty(user.FacebookId))
+                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
                 groupHtml = groupHtml.Replace("{img}", img);
                 html += groupHtml;
             }
@@ -273,10 +274,11 @@ public class Event : Base<Event>
             string img = "<img src='../Img/grayface" + rnd.Next(8) + ".png' />";
             if (evt.IsGoing == true)
             {
+                string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
                 if (!string.IsNullOrEmpty(user.FacebookId))
-                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />";
+                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
                 else
-                    img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+                    img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
             }
             eventHtml = eventHtml.Replace("{img}", img);
             html += eventHtml;
@@ -327,6 +329,8 @@ public class Event : Base<Event>
 
         public Group Group { get; set; }
     }
+
+    private static string defaultHomeHtml = "<div style='text-align: center;margin-top: 40px;color: #333;'><div style='font-size: 1.5em;'>Welcome to Pow Wow!</div><div style='font-size: 1.1em;margin: .8em 0;'>The place to find events near you today</div><div style='margin: 2em 0;font-size: 1.05em;'><a style='color: #4285F4;' onclick='OpenAdd();'>Create an Event</a>&nbsp;&nbsp;or&nbsp;&nbsp;<a style='color: #4285F4;' onclick='OpenGroups();'>Join a Group</a></div></div>";
 
     /*Test Events
     public static void PurgeDeleted(string latitude, string longitude)

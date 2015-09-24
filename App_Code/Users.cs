@@ -77,7 +77,8 @@ public class Users : Base<Users>
                 user = SignUpFromFacebook(me, deviceId, pushDeviceToken);
             }
         }
-        if (user.PushDeviceToken != pushDeviceToken && !string.IsNullOrEmpty(pushDeviceToken))
+        if ((user.PushDeviceToken != pushDeviceToken && !string.IsNullOrEmpty(pushDeviceToken)) ||
+            (user.DeviceId != deviceId && !string.IsNullOrEmpty(deviceId)))
         {
             user.DeviceId = deviceId;
             user.PushDeviceToken = pushDeviceToken;

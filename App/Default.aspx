@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -142,7 +142,7 @@
         function LoginSuccess(results) {
             currentUser = results;
 
-            if (currentUser && currentUser.Latitude && currentUser.Longitude)
+            if (currentUser && currentUser.Latitude && currentUser.Longitude && !currentLat && !currentLng)
                 ReceiveLocation(currentUser.Latitude, currentUser.Longitude);
             if (currentUser)
                 LoadMyGroups();
@@ -215,6 +215,16 @@
     <!-- Add / Edit Event -->
     <script type="text/javascript">
         $(document).ready(function () {
+            $("#addDiv input, #groupAddDiv input").focus(function () {
+                if(isAndroid)
+                    $(".screen .screenBottom").css({ position: "relative" });
+            });
+
+            $("#addDiv input, #groupAddDiv input").blur(function () {
+                if (isAndroid)
+                    $(".screen .screenBottom").css({ position: "absolute" });
+            });
+
             $("#addBtn").click(function () {
                 OpenAdd();
             });
@@ -346,6 +356,9 @@
                     var alert = "New event posted to your group " + currentGroup.Name + ".";
                     var messageText = "";
                     Post("SendMessageToGroup", { groupId: event.GroupId, alert: alert, messageText: messageText, userId: currentUser.Id });
+
+                    var message = "New: " + event.Name;
+                    Post("SaveNotificationToGroup", { groupId: event.GroupId, message: message, userId: currentUser.Id, eventId: event.Id });
                 }
             });
             Post("SaveEvent", { evt: event }, success);
@@ -481,7 +494,7 @@
                 $("#joinBtn").removeClass("selected");
             }
             
-            if (IsAdmin(event.Going, currentUser.Id))
+            if (IsAdmin(event.Going, currentUser.Id) || (currentGroup && currentGroup.Members && IsAdmin(currentGroup.Members, currentUser.Id)))
                 $("#detailsDiv .detailMenuBtn").show();
             else
                 $("#detailsDiv .detailMenuBtn").hide();
@@ -555,8 +568,9 @@
             UpdateDetailsGoing(currentEvent);
 
             var success = function (results) {
-                if (currentEvent.GroupId)
+                if (currentEvent.GroupId) {
                     GetGroup(currentEvent.GroupId);
+                }
                 LoadEvents()
             };
 
@@ -574,8 +588,9 @@
             UpdateDetailsGoing(currentEvent);
 
             var success = function (results) {
-                if (currentEvent.GroupId)
+                if (currentEvent.GroupId) {
                     GetGroup(currentEvent.GroupId);
+                }
                 LoadEvents()
             };
 
@@ -791,7 +806,12 @@
 
 
         function MenuClick() {
-            CloseGroups();
+            if ($("#groupsDiv").is(":visible"))
+            {
+                $(".content").css({ left: "0", right: "0" });
+                $("#groupsDiv").animate({ left: "100%", right: "-100%" }, 450, function () { $("#groupsDiv").hide(); });
+            }
+
             if ($("#menuDiv").is(':visible'))
                 CloseMenu();
             else
@@ -838,6 +858,7 @@
     <script type="text/javascript">
         var groupResults = [];
         var currentGroup = {};
+        var hasGroupAccess = false;
 
         $(document).ready(function () {
 
@@ -855,6 +876,10 @@
                         $("#groupDetailsDiv").animate({ scrollTop: "60" }, 350);
                     }
                 }, 100);
+            });
+
+            $("#groupDetailsDiv .backArrow").click(function () {
+                hasGroupAccess = false;
             });
 
             $("#groupsBtn").click(function () {
@@ -938,13 +963,13 @@
                 AddEditGroup(currentGroup);
             });
 
-            $("#checkPasswordDiv .smallBottomBtn").click(function () {
+            $("#checkPasswordDiv .okBtn").click(function () {
                 var pwd = $("#checkPasswordDiv input").val();
                 if(pwd == currentGroup.Password)
                 {
+                    hasGroupAccess = true;
                     $("#checkPasswordDiv").hide();
                     $(".modal-backdrop").hide();
-                    currentGroup.HasAccess = true;
                     OpenGroupDetails();
                 }
                 else
@@ -956,6 +981,13 @@
 
             $("#AddGroupPictureUrl").blur(function () {
                 $("#AddGroupPicture").show().attr("src", $(this).val());
+                $("#groupAddDiv .deleteBtn").show();
+            });
+
+            $("#groupAddDiv .deleteBtn").click(function () {
+                $("#AddGroupPictureUrl").show().val("");
+                $("#AddGroupPicture").hide().attr("src", $(this).val());
+                $("#groupAddDiv .deleteBtn").hide();
             });
 
         });
@@ -975,6 +1007,7 @@
                 $("#AddGroupPassword").val("");
                 $("#AddGroupPictureUrl").val("");
                 $("#AddGroupPicture").hide();
+                $("#groupAddDiv .deleteBtn").hide();
             }
             else
             {
@@ -987,8 +1020,17 @@
                 SetPublic(group.IsPublic);
                 $("#AddGroupPassword").val(group.Password);
                 $("#groupDetailsDiv").hide();
-                $("#AddGroupPictureUrl").val(group.PictureUrl);
-                $("#AddGroupPicture").show().attr("src", group.PictureUrl);
+                if (group.PictureUrl) {
+                    $("#AddGroupPictureUrl").hide().val(group.PictureUrl);
+                    $("#AddGroupPicture").show().attr("src", group.PictureUrl);
+                    $("#groupAddDiv .deleteBtn").show();
+                }
+                else {
+                    $("#AddGroupPictureUrl").show().val("");
+                    $("#AddGroupPicture").hide();
+                    $("#groupAddDiv .deleteBtn").hide();
+                }
+
             }
             $("#groupAddDiv").show();
         }
@@ -1095,14 +1137,6 @@
             $("#addGroupsResultsDiv").html(html);
         }
 
-        function GroupsClick() {
-            CloseMenu();
-            if ($("#groupsDiv").is(':visible'))
-                CloseGroups();
-            else
-                OpenGroups();
-        }
-
         function LoadGroups() {
             Post("GetGroups", { latitude: currentLat, longitude: currentLng }, PopulateGroups);
         }
@@ -1121,6 +1155,19 @@
             $("#groupsListDiv").html(html);
         }
 
+        function GroupsClick() {
+            if ($("#menuDiv").is(":visible"))
+            {
+                $(".content").css({ left: "0", right: "0" }, 350);
+                $("#menuDiv").animate({ left: "-75%" }, 350, function () { $("#menuDiv").hide(); });
+            }
+
+            if ($("#groupsDiv").is(':visible'))
+                CloseGroups();
+            else
+                OpenGroups();
+        }
+
         function OpenGroups() {
             LoadGroups();
             $("#groupFilterTextBox").val("");
@@ -1137,7 +1184,7 @@
             if (group)
                 currentGroup = group;
 
-            if (!currentGroup.IsPublic && !IsGoing(currentGroup.Members, currentUser.Id) && !currentGroup.HasAccess) {
+            if (!currentGroup.IsPublic && !IsGoing(currentGroup.Members, currentUser.Id) && !hasGroupAccess) {
                 $("#checkPasswordDiv input").val("");
                 $("#checkPasswordDiv").show();
                 $(".modal-backdrop").show();
@@ -1325,7 +1372,7 @@
             });
 
             $("#sendText").focus(function () {
-                setTimeout(function () { $("#messageDiv").scrollTop($("#messageDiv").height()); }, 200)
+                setTimeout(function () { $("#MessageResults").scrollTop(10000000); }, 200)
             });
 
             $("#sendText").keypress(function (e) {
@@ -1334,10 +1381,50 @@
                 }
             });
 
+            $("#sendText").keyup(function () {
+                var boxWidth = $("#sendText").width();
+                $(".hiddenText").html($("#sendText").val());
+                var rows = 1;
+                while ($(".hiddenText").width() > boxWidth)
+                {
+                    $(".hiddenText").html(RemoveTextLine(boxWidth));
+                    rows++;
+
+                    console.log($(".hiddenText").html());
+                    console.log(boxWidth + ", " + $(".hiddenText").width() + ", " + rows);
+
+                    if (rows > 10)
+                        break;
+                }
+                $("#sendText").attr("rows", rows);
+                $("#MessageResults").css("padding-bottom", (62 + 18 * rows) + "px");
+                $("#MessageResults").scrollTop(10000000);
+            });
+
             $("#messageDiv .backArrow").click(function () {
                 CloseMessages();
             });
         });
+
+        function RemoveTextLine(boxWidth)
+        {
+            var text = $(".hiddenText").html();
+            var line = "";
+            $(".hiddenText").html("");
+            while (true)
+            {
+                if(text.indexOf(" ") < 0)
+                    return "";
+
+                line += text.substring(0, text.indexOf(" "));
+                $(".hiddenText").html(line);
+                line += " ";
+                if($(".hiddenText").width() > boxWidth)
+                    return text;
+
+                text = text.substring(text.indexOf(" ") + 1);
+            }
+        }
 
         function OpenMessages() {
             $("#addBtn").hide();
@@ -1346,6 +1433,7 @@
             $("#messageDiv").show();
             $("#messageDiv .screenTitle").html(currentEvent.Name);
             $(".messageBtn").attr("src", "/Img/message.png");
+            $("#MessageResults").scrollTop(10000000);
             LoadMessages();
         }
 
@@ -1357,7 +1445,7 @@
             var html = "";
             for (var i = 0; i < messages.length; i++) {
                 var message = messages[i];
-                if (Contains(message.Id, currentUser.Id)) {
+                if (message.UserId == currentUser.Id) {
                     var messageHtml = "<div style='float:right;clear:both;margin-top: 8px;'>{SinceSent}</div><div class='meMessage'>{Message}</div>";
                     html += messageHtml.replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
                 }
@@ -1367,17 +1455,19 @@
                 }
             }
             $("#MessageResults").html(html);
-            $("#MessageResults").scrollTop($("#MessageResults").height());
+            $("#MessageResults").scrollTop(1000000);
         }
 
         function SendMessage() {
-            var text = $("#messageDiv input").val();
+            var text = $("#sendText").val();
             if(!text)
                 return;
             
             var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id };
             Post("SendMessage", { message: message }, LoadMessages);
-            $("#messageDiv input").val("");
+            $("#sendText").val("");
+            $("#sendText").attr("rows", 1);
+            $("#MessageResults").css("padding-bottom", "80px");
         }
 
         function CloseMessages() {
@@ -1751,7 +1841,8 @@
             </div>
         </div>
         <div class="content">
-            <div style="min-height:500px;"></div>
+            <div style="min-height:500px;">
+            </div>
         </div>
         <img id="addBtn" src="../Img/add.png" />
         <div id="menuDiv">
@@ -1782,7 +1873,8 @@
                 </div>
                 <input id="AddGroupPassword" type="text" placeholder="Private Password" style="margin-bottom:4px;" readonly="readonly" />
                 <input id="AddGroupPictureUrl" type="text" placeholder="Logo Image Url"  />
-                <img id="AddGroupPicture" style="height: 80px;margin: 8px 0;" onerror="this.style.display='none';" />
+                <img id="AddGroupPicture" style="height: 80px;margin: 10px 0;" onerror="this.style.display='none';" />
+                <img class="deleteBtn" src="../Img/delete.png" />
             </div>
             <div class="screenBottom"><div class="bottomBtn">Create</div></div>
         </div>
@@ -1826,7 +1918,7 @@
         <div id="detailsDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
-                <div class="screenTitle"></div>
+                <div class="screenTitle" style="margin-right: 54px;"></div>
                 <img class="detailMenuBtn" src="/Img/smallmenu.png" />
                 <img class="messageBtn" src="/Img/message.png" />
                 <div id="detailsEditBtn">Edit</div>
@@ -1850,8 +1942,9 @@
             </div>
             <div id="MessageResults"></div>
             <div id="sendDiv">
-                <input id="sendText" type="text" placeholder="Message" />
+                <textarea id="sendText" rows="1" placeholder="Message"></textarea>
                 <div onclick="SendMessage();">Send</div>
+                <div class="hiddenText"></div>
             </div>
         </div>
         <div id="locationDiv" class="screen">
@@ -1930,8 +2023,8 @@
         </div>
         <div id="checkPasswordDiv">
             <div class="messageContent" style="margin-bottom: 12px;line-height: 1.4em;">This group is private. Enter group password.</div>
-            <input type="text" placeholder="Group Password" style="margin-bottom:50px;" />
-            <div class="smallBottomBtn">Ok</div>
+            <input type="text" placeholder="Group Password" style="margin-bottom:50px;width: 85%;" />
+            <div class="okBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="$('#checkPasswordDiv').hide();$('.modal-backdrop').hide();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
         <div id="MessageBox">
             <div class="messageContent"></div>
@@ -1939,7 +2032,7 @@
         </div>
         <div id="ActionMessageBox">
             <div class="messageContent"></div>
-            <div class="yesBtn smallBottomBtn" style="left:0;right:50%;"">Ok</div><div onclick="CloseMessageBox();" class="noBtn smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
+            <div class="yesBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="CloseMessageBox();" class="noBtn smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
     </form>
 </body>

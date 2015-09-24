@@ -19,6 +19,8 @@
             var isMobile = mobilecheck() || tabletCheck() || mobParam == "m";
             if (isMobile) {
                 $("body").addClass("Mobile");
+                $(".buttons").css({ width: "203px" });
+                $(".buttons img").css({ width: "203px", height: "60px" });
             }
 
             //var appBanner = '<meta name="apple-itunes-app" content="app-id=1009503264"/>';
@@ -36,13 +38,13 @@
 
             //$('head').append(appBanner);
 
-            $("#loginLink").click(function () {
-                login();
-            });
+            //$("#loginLink").click(function () {
+            //    login();
+            //});
         });
 
     </script>
-    <script type="text/javascript">
+<%--    <script type="text/javascript">
         var fbAccessToken = "";
 
         window.fbAsyncInit = function () {
@@ -109,24 +111,29 @@
             js.src = "//connect.facebook.net/en_US/all.js";
             ref.parentNode.insertBefore(js, ref);
         } (document));
-</script>
+</script>--%>
 </head>
 <body>
  <div id="fb-root"></div>
     <form id="form1" runat="server">
     <div class="header">
-        <img class="title" src="Img/title.png" />
+        <img class="title" src="Img/powwowtitle.png" />
     </div>
     <div class="content">
         <h1 style="font-size:3.5em;font-weight:300;line-height:1.1;text-align:center;margin:.3em 0 0;">Find Your Tribe</h1>
-        <h2 style="font-size:2em;font-weight: bold;text-align:center;margin:.2em 0 .4em;">Events near you today</h2>
+        <h2 style="font-size:2em;font-weight: bold;text-align:center;margin:.2em 0 .6em;">Events near you today</h2>
 <%--        <div class="links">
             <a href="https://itunes.apple.com/us/app/pow-wow-events/id1009503264?ls=1&mt=8"><img src="Img/appStoreLogo.png" /></a>
             <div style="font-size:24px;margin: 11px 16px;">or</div>
             <a id="loginLink" href="#"><img src="Img/facebookLoginButton.png" /></a>
-        </div>--%>
+        </div>
         <a id="loginLink" href="#" style="left: 50%;position: absolute;margin-left: -124px;"><img src="Img/facebookLoginButton.png" style="width: 248px;" /></a>
-        <img style="margin:5em 0 0 10%;width:80%;" src="Img/appcombined.png" />
+        --%>
+        <div class="buttons" style="margin:0 auto;width: 314px;">
+            <a href="https://geo.itunes.apple.com/us/app/pow-wow-events/id1009503264?mt=8" style="float:left;"><img src="Img/app-store.png" style="width: 150px;height: 45px;margin: 4px 2px 4px;" /></a>
+            <a href="https://play.google.com/store/apps/details?id=com.joinpowwow.powwow&hl=en" style="float:left;""><img src="Img/goog-play.png" style="width: 150px;height: 45px;margin: 4px 2px;" /></a>
+        </div>
+        <img style="margin:1em 0 0 10%;width:80%;" src="Img/appcombined.png" />
 
     </div>
     </form>
