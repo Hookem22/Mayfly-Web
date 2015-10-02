@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Device.Location;
 using System.Linq;
 using System.Web;
 
@@ -31,6 +32,8 @@ public class Group : Base<Group>
 
     public string Password { get; set; }
 
+    public string Locations { get; set; }
+
     [NonSave]
     public List<GroupUsers> Members { get; set; }
 
@@ -39,6 +42,9 @@ public class Group : Base<Group>
 
     [NonSave]
     public string EventsHtml { get; set; }
+
+    [NonSave]
+    public double Distance { get; set; }
 
     #endregion
 
@@ -57,7 +63,22 @@ public class Group : Base<Group>
 
     public static List<Group> Get(string latitude, string longitude)
     {
-        return GetByProc("getgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        List<Group> groups = GetByProc("getgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        return ReorderByDistance(groups, latitude, longitude);
+    }
+
+    private static List<Group> ReorderByDistance(List<Group> groups, string latitude, string longitude)
+    {
+        double lat = double.Parse(latitude);
+        double lng = double.Parse(longitude);
+        var sCoord = new GeoCoordinate(lat, lng);
+        foreach (Group group in groups)
+        {
+            var eCoord = new GeoCoordinate(group.Latitude, group.Longitude);
+            group.Distance = sCoord.GetDistanceTo(eCoord);
+        }
+
+        return groups.OrderBy(x=>x.Distance).ToList();
     }
 
     public new void Save()

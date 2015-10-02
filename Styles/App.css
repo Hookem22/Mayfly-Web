@@ -97,6 +97,7 @@ input.error, textarea.error
     padding: 1em 50px 3em;
     max-height: 450px;
     overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
 }
 .dialogFooter
 {
@@ -149,29 +150,47 @@ input.error, textarea.error
     left: 0;
     right: 0;
     z-index: 20;
+
+    border-bottom: 1px solid rgba(0,0,0,.12);
+    -moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
+    -webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
+    box-shadow: 0px 5px 5px rgba(0,0,0,.2);
 }
 .title
 {
-    height: 40px;
-    margin: 20px 0 10px;
+    height: 36px;
+    margin: 4px 0 2px;
+}
+.ios .title
+{
+    padding: 14px 0 2px;
 }
 #menuBtn
 {    
-    height: 34px;
-    margin: 25px 0 14px;
+    height: 20px;
+    margin: 14px 0;
     position: absolute;
     left: 5%;
+    width: 24px;
+}
+.ios #menuBtn
+{
+    margin: 26px 0;
 }
 #groupsBtn
 {
-    height: 40px;
-    margin: 22px 0 14px;
+    height: 24px;
+    margin: 12px 0;
     position: absolute;
     right: 5%;
 }
+.ios #groupsBtn
+{
+    margin: 24px 0;
+}
 #addBtn, #addFromGroupBtn
 {
-    position: absolute;
+    position: fixed;
     width: 60px;
     bottom: 20px;
     left: 50%;
@@ -185,7 +204,7 @@ input.error, textarea.error
 .content
 {
     margin: 0 auto;
-    padding: 165px 0 70px;
+    padding: 140px 0 70px;
     min-height: 350px;
     position: fixed;
     top: 0;
@@ -193,7 +212,14 @@ input.error, textarea.error
     left: 0;
     right: 0;
     overflow: scroll;
+    -webkit-overflow-scrolling: touch;
     z-index: 1;
+    background-color: #EEEEEE;
+    /*background-image: url(../Img/Balloons.png);*/
+}
+.ios .content
+{
+    padding: 154px 0 70px;
 }
 .homeList
 {
@@ -203,6 +229,14 @@ input.error, textarea.error
     position: relative;
     left: 0;
     right: 0;
+    background-color: white;
+}
+.homeList:last-child
+{
+    border-bottom: 1px solid rgba(0,0,0,.12);
+    -moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
+    -webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
+    box-shadow: 0px 2px 5px rgba(0,0,0,.2);
 }
 .homeList img
 {
@@ -222,7 +256,7 @@ input.error, textarea.error
     position: absolute;
     left: 78px;
     overflow: hidden;
-    height: 18px;
+    height: 20px;
 }
 .homeList .details
 {
@@ -271,7 +305,7 @@ input.error, textarea.error
 {
 
 }
-#detailsEditBtn, #groupEditBtn
+#detailsEditBtn, #groupEditBtn, #groupAddLocationsBtn
 {
     position: absolute;
     background-color: white;
@@ -299,6 +333,7 @@ input.error, textarea.error
 {
     position: fixed;
     overflow: scroll;
+    -webkit-overflow-scrolling: touch;
     padding: 65px 30px 80px;
     left: 0;
     right: 0;
@@ -308,7 +343,7 @@ input.error, textarea.error
 }
 #sendDiv
 {
-position: fixed;
+    position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
@@ -409,6 +444,7 @@ position: fixed;
     height: 80px;
     overflow-y: hidden;
     overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
     margin-right: -16px;
 }
 .invitedFriendsScroll
@@ -476,6 +512,7 @@ position: fixed;
 {
     position: fixed;
     overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
     background: white;
     padding: 0 20px 0;
     top: 100%;
@@ -820,14 +857,19 @@ position: fixed;
 {
     position: fixed;
     overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
     background: #32394A;
     color: white;
     width: 75%;
-    top: 74px;
-    left: -75%;
+    top: 47px;
+    left: 0;
     bottom: 0;
     z-index: 15;
     display: none;
+}
+.ios #menuDiv
+{
+    top: 63px;
 }
 .menuHeader
 {
@@ -848,14 +890,19 @@ position: fixed;
 {
     position: fixed;
     overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
     background: #32394A;
     color: white;
-    top: 74px;
+    top: 47px;
     left: 100%;
     right: -100%;
     bottom: 0;
     z-index: 15;
     display: none;
+}
+.ios #groupsDiv
+{
+    top: 63px;
 }
 .groupsHeader
 {
@@ -939,6 +986,7 @@ position: fixed;
     position: fixed;
     background-color: white;
     overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
     top: 0;
     left: 0;
     right: 0;
@@ -952,6 +1000,11 @@ position: fixed;
     background-color: #4285F4;
     padding: 18px 0 12px;
     font-size: 18px;
+
+    border-bottom: 1px solid rgba(0,0,0,.12);
+    -moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
+    -webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
+    box-shadow: 0px 5px 5px rgba(0,0,0,.2);
 }
 .ios .screen .screenHeader
 {
@@ -1073,11 +1126,11 @@ position: fixed;
 }
 #groupDetailsDiv .screenSubheader
 {
-    padding-top: 120px;
+    padding-top: 65px;
 }
 .ios #groupDetailsDiv .screenSubheader
 {
-    padding-top: 140px;
+    padding-top: 75px;
 }
 #groupDetailsDiv .screenContent
 {
@@ -1096,7 +1149,7 @@ position: fixed;
 {
     background: #F6F6F6;
     position: absolute;
-    top: 10%;
+    top: 50%;
     left: 15%;
     right: 15%;
     padding: 12px;
@@ -1108,6 +1161,8 @@ position: fixed;
     box-shadow: 0 6px 12px rgba(0,0,0,.175);
     z-index: 9000;
     display: none;
+
+    margin-top: -40%;
 }
 #MessageBox .messageContent, #ActionMessageBox .messageContent, #checkPasswordDiv .messageContent
 {

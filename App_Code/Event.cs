@@ -166,6 +166,15 @@ public class Event : Base<Event>
 
             foreach (Event evt in events)
             {
+                if(!string.IsNullOrEmpty(evt.GroupId))
+                {
+                    Group group = Group.Get(evt.GroupId);
+                    if(!string.IsNullOrEmpty(group.Locations))
+                    {
+                        evt.Distance = evt.LocationName;
+                        continue;
+                    }
+                }
                 var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
                 evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
             }
@@ -330,7 +339,7 @@ public class Event : Base<Event>
         public Group Group { get; set; }
     }
 
-    private static string defaultHomeHtml = "<div style='text-align: center;margin-top: 40px;color: #333;'><div style='font-size: 1.5em;'>Welcome to Pow Wow!</div><div style='font-size: 1.1em;margin: .8em 0;'>The place to find events near you today</div><div style='margin: 2em 0;font-size: 1.05em;'><a style='color: #4285F4;' onclick='OpenAdd();'>Create an Event</a>&nbsp;&nbsp;or&nbsp;&nbsp;<a style='color: #4285F4;' onclick='OpenGroups();'>Join a Group</a></div></div>";
+    private static string defaultHomeHtml = "<div style='background-color: white;margin: 15px 12px;padding: 34px 24px;box-shadow: 0 1px 2px 0 rgba(0,0,0,0.22);border-radius: 6px;'><div style='text-align: center;color: #555;'><div style='font-size: 1.5em;'>Welcome to Pow Wow!</div><div style='font-size: 1.1em;margin: .8em 32px;line-height: 1.4em;'>The place to find events near you today</div><div style='font-size: 1.25em;line-height: 1.8em;'><a style='color: #4285F4;' onclick='OpenAdd();'>Create an Event</a><br/>or<br/><a style='color: #4285F4;' onclick='OpenGroups();'>Join a Group</a></div></div></div>";
 
     /*Test Events
     public static void PurgeDeleted(string latitude, string longitude)

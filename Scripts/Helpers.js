@@ -62,6 +62,8 @@ function RemoveFrontBreaks(text)
 function MessageBox(message)
 {
     $("#MessageBox .messageContent").html(message);
+    var ht = $("#MessageBox").height();
+    $("#MessageBox").css("margin-top", (-.5 * ht - 25) + "px");
     $("#MessageBox").show();
     $(".modal-backdrop").show();
 }
@@ -73,6 +75,8 @@ function ActionMessageBox(message, go, param, yesBtn, noBtn) {
     $("#ActionMessageBox .messageContent").html(message);
     $("#ActionMessageBox").show();
     $(".modal-backdrop").show();
+    var ht = $("#ActionMessageBox").height();
+    $("#ActionMessageBox").css("margin-top", (-.5 * ht - 25) + "px");
 
     var yes = yesBtn || "Ok";
     var no = noBtn || "Cancel";
@@ -175,4 +179,101 @@ function RemoveByUserId(list, userId)
             list.splice(i, 1);
     }
     return list;
+}
+
+
+/*Animations*/
+function MenuClick() {
+    if ($("#groupsDiv").is(":visible")) {
+        $("#groupsDiv").addClass("groupClose");
+        $(".content").removeClass("contentGroupOpen");
+
+        setTimeout(function () {
+            $("#groupsDiv").removeClass("groupOpen");
+            $("#groupsDiv").removeClass("groupClose");
+
+            $("#groupsDiv").hide();
+        }, 500);
+    }
+
+    if ($("#menuDiv").is(':visible'))
+        CloseMenu();
+    else
+        OpenMenu();
+}
+
+function OpenMenu() {
+    LoadNotifications();
+
+    $("#menuDiv").show().addClass("menuOpen");
+    $(".content").addClass("contentMenuOpen");
+}
+
+function CloseMenu() {
+    $("#menuDiv").addClass("menuClose");
+    $(".content").addClass("contentMenuClose");
+
+    setTimeout(function () {
+        $("#menuDiv").removeClass("menuOpen");
+        $(".content").removeClass("contentMenuOpen");
+        $("#menuDiv").removeClass("menuClose");
+        $(".content").removeClass("contentMenuClose");
+
+        $("#menuDiv").hide();
+    }, 500);
+}
+
+function GroupsClick() {
+    if ($("#menuDiv").is(":visible")) {
+        $("#menuDiv").addClass("menuClose");
+        $(".content").removeClass("contentMenuOpen");
+
+        setTimeout(function () {
+            $("#menuDiv").removeClass("menuOpen");
+            $("#menuDiv").removeClass("menuClose");
+
+            $("#menuDiv").hide();
+        }, 500);
+    }
+
+    if ($("#groupsDiv").is(':visible'))
+        CloseGroups();
+    else
+        OpenGroups();
+}
+
+function OpenGroups() {
+    LoadGroups();
+    $("#groupsListDiv > div img").hide();
+    setTimeout(function () {
+        $("#groupsListDiv > div img").show();
+    }, 350);
+
+    $("#groupFilterTextBox").val("");
+    $("#groupsDiv").show().addClass("groupOpen");
+    $(".content").addClass("contentGroupOpen");
+}
+
+function CloseGroups() {
+    $("#groupsDiv").addClass("groupClose");
+    $(".content").addClass("contentGroupClose");
+
+    setTimeout(function () {
+        $("#groupsDiv").removeClass("groupOpen");
+        $(".content").removeClass("contentGroupOpen");
+        $("#groupsDiv").removeClass("groupClose");
+        $(".content").removeClass("contentGroupClose");
+
+        $("#groupsDiv").hide();
+    }, 500);
+}
+
+function CloseRight(screen)
+{
+    $(screen).addClass("closeRight");
+
+    setTimeout(function () {
+        $(screen).removeClass("closeRight");
+        $(screen).hide();
+    }, 500);
 }

@@ -1,0 +1,189 @@
+﻿.menuOpen
+{
+    -webkit-animation-name: menuOpen; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .25s; /* Chrome, Safari, Opera */
+    animation-name: menuOpen;
+    animation-duration: .25s;
+    animation-fill-mode: forwards;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes menuOpen {
+    0%   {left: -75%; right: 100%; }
+    100%  {left: 0; right: 25%;}
+}
+
+/* Standard syntax */
+@keyframes menuOpen {
+    0%   {left: -75%; right: 100%; }
+    100%  {left: 0; right: 25%;}
+}
+
+.contentMenuOpen
+{
+    -webkit-animation-name: contentMenuOpen; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .25s; /* Chrome, Safari, Opera */
+    animation-name: contentMenuOpen;
+    animation-duration: .25s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes contentMenuOpen {
+    0%   {left: 0; right: 0; }
+    100%  {left: 75%; right: -75%;}
+}
+/* Standard syntax */
+@keyframes contentMenuOpen {
+    0%   {left: 0; right: 0; }
+    100%  {left: 75%; right: -75%;}
+}
+
+.menuClose
+{
+    -webkit-animation-name: menuClose; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: menuClose;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes menuClose {
+    0%  {left: 0; right: 25%;}
+    50%   {left: -75%; right: 100%; }
+    100%   {left: -75%; right: 100%; }
+}
+
+/* Standard syntax */
+@keyframes menuClose {
+    0%  {left: 0; right: 25%;}
+    50%   {left: -75%; right: 100%; }
+    100%   {left: -75%; right: 100%; }
+}
+
+.contentMenuClose
+{
+    -webkit-animation-name: contentMenuClose; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: contentMenuClose;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes contentMenuClose {
+    0%  {left: 75%; right: -75%;}
+    50%   {left: 0; right: 0; }
+    100%   {left: 0; right: 0; }
+}
+/* Standard syntax */
+@keyframes contentMenuClose {
+    0%  {left: 75%; right: -75%;}
+    50%   {left: 0; right: 0; }
+    100%   {left: 0; right: 0; }
+}
+
+
+.groupOpen
+{
+    -webkit-animation-name: groupOpen; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    animation-name: groupOpen;
+    animation-duration: .35s;
+    animation-fill-mode: forwards;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes groupOpen {
+    0%   {left: 100%; right: -100%; }
+    100%  {left: 0; right: 0;}
+}
+
+/* Standard syntax */
+@keyframes groupOpen {
+    0%   {left: 100%; right: -100%; }
+    100%  {left: 0; right: 0;}
+}
+
+.contentGroupOpen
+{
+    -webkit-animation-name: contentGroupOpen; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    animation-name: contentGroupOpen;
+    animation-duration: .35s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes contentGroupOpen {
+    0%   {left: 0; right: 0; }
+    100%  {left: -100%; right: 100%;}
+}
+/* Standard syntax */
+@keyframes contentGroupOpen {
+    0%   {left: 0; right: 0; }
+    100%  {left: -100%; right: 100%;}
+}
+
+.groupClose
+{
+    -webkit-animation-name: groupClose; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: groupClose;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes groupClose {
+    0%  {left: 0; right: 0;}
+    50%   {left: 100%; right: -100%; }
+    100%   {left: 100%; right: -100%; }
+}
+
+/* Standard syntax */
+@keyframes groupClose {
+    0%  {left: 0; right: 0;}
+    50%   {left: 100%; right: -100%; }
+    100%   {left: 100%; right: -100%; }
+}
+
+.contentGroupClose
+{
+    -webkit-animation-name: contentGroupClose; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: contentGroupClose;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes contentGroupClose {
+    0%  {left: -100%; right: 100%;}
+    70%   {left: 0; right: 0; }
+    100%   {left: 0; right: 0; }
+}
+/* Standard syntax */
+@keyframes contentGroupClose {
+    0%  {left: -100%; right: 100%;}
+    70%   {left: 0; right: 0; }
+    100%   {left: 0; right: 0; }
+}
+
+.closeRight
+{
+    -webkit-animation-name: closeRight; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: closeRight;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes closeRight {
+    0%  {left: 0; right: 0;}
+    70%   {left: 100%; right: -100%;}
+    100%   {left: 100%; right: -100%;}
+}
+/* Standard syntax */
+@keyframes closeRight {
+    0%  {left: 0; right: 0;}
+    70%   {left: 100%; right: -100%;}
+    100%   {left: 100%; right: -100%;}
+}

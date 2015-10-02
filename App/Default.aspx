@@ -8,11 +8,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=6" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
+    <link href="/Styles/Animation.css?i=5" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
+    <script src="/Scripts/velocity.min.js" type="text/javascript"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
     <script type="text/javascript">
         var isMobile;
@@ -40,11 +42,6 @@
                         $(".content").animate({ scrollTop: "90" }, 350);
                     }
                 }, 100);
-            });
-
-            $(".title").click(function () {
-                CloseMenu();
-                CloseGroups();
             });
 
             $(".content").swipe({
@@ -86,7 +83,7 @@
             });
 
             $(".screenHeader .backArrow").click(function () {
-                $(this).closest(".screen").hide();
+                CloseRight($(this).closest(".screen"));
             });
 
             $("#addDiv .backArrow").click(function () {
@@ -96,14 +93,35 @@
             $("#detailsDiv .backArrow").click(function () {
                 LoadEvents();
             });
+
+            $(".screen.swipe").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    CloseRight($(this).closest(".screen"));
+                }
+            });
+
+            $("#addDiv").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    LoadEvents();
+                }
+            });
+
+            $("#detailsDiv .screenSubheader, #detailsDiv #detailsDescription, #detailsHowMany").swipe({
+                swipeLeft: function (event, direction, distance, duration, fingerCount) {
+                    OpenMessages();
+                },
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    CloseRight($(this).closest(".screen"));
+                    LoadEvents();
+                }
+            });
         });
 
         function Init()
         {
             ShowLoading();
             if ($(window).height() > 550) {
-                $(".content div").css("min-height", ($(window).height() - 135) + "px");
-                $("#groupEvents").css("min-height", ($(window).height() - 340) + "px");
+                $(".content div").css("min-height", ($(window).height() - 120) + "px");
             }
             
             isiOS = getParameterByName("OS") == "iOS";
@@ -121,8 +139,8 @@
                 if(fbAccessToken || pushDeviceToken)
                     Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: "", password: "" }, LoginSuccess);
 
-                currentLat = +getParameterByName("lat");
-                currentLng = +getParameterByName("lng");
+                currentLat = +getParameterByName("lat") || 30.25;
+                currentLng = +getParameterByName("lng") || -97.75;
 
                 if (currentLat && currentLng)
                     LoadEvents();
@@ -144,8 +162,11 @@
 
             if (currentUser && currentUser.Latitude && currentUser.Longitude && !currentLat && !currentLng)
                 ReceiveLocation(currentUser.Latitude, currentUser.Longitude);
+            else if (currentUser)
+                LoadEvents();
             if (currentUser)
                 LoadMyGroups();
+                
         }
 
         function ReceiveLocation(lat, lng)
@@ -260,12 +281,11 @@
             });
 
             $("#addFromGroupBtn").click(function () {
-                var groupId = currentGroup.Id;
+                var group = currentGroup;
                 OpenAdd();
                 var name = $("#groupDetailsDiv .screenTitle").html();
                 $("#AddGroupName").val(name);
-                currentGroup.Id = groupId;
-                currentGroup.Name = name;
+                currentGroup = group;
             });
         });
 
@@ -774,11 +794,14 @@
 
             $("#myGroupsDiv").on("click", "div", function () {
                 var groupId = $(this).attr("groupid");
+                var name = $(this).find("span").html();
                 var success = function (group) {
                     OpenGroupDetails(group);
                     setTimeout(CloseMenu, 500);
                 };
-                GetGroup(groupId);
+                Post("GetGroup", { groupId: groupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
+                var group = { Id: groupId, Name: name, IsPublic: true };
+                OpenGroupInitial(group);
             });
 
             $("#myNotificationsDiv").on("click", "div", function () {
@@ -789,7 +812,8 @@
         });
 
         function LoadNotifications() {
-            Post("GetNotifications", { userId: currentUser.Id }, PopulateNotifications);
+            if(currentUser && currentUser.Id)
+                Post("GetNotifications", { userId: currentUser.Id }, PopulateNotifications);
         }
 
         function PopulateNotifications(results) {
@@ -804,46 +828,6 @@
             $("#myNotificationsDiv").html(html);
         }
 
-
-        function MenuClick() {
-            if ($("#groupsDiv").is(":visible"))
-            {
-                $(".content").css({ left: "0", right: "0" });
-                $("#groupsDiv").animate({ left: "100%", right: "-100%" }, 450, function () { $("#groupsDiv").hide(); });
-            }
-
-            if ($("#menuDiv").is(':visible'))
-                CloseMenu();
-            else
-                OpenMenu();
-        }
-
-        function OpenMenu() {
-            LoadNotifications();
-
-            $("#menuDiv").show();
-            if (isMobile)
-            {
-                $("#menuDiv").animate({ left: "0" }, 350);
-                $(".content").animate({ left: "75%", right: "-75%" }, 350);
-            }
-            else
-                $("#menuDiv").animate({ "margin-left": "300px" }, 350);
-        }
-
-        function CloseMenu() {
-            if (isMobile) {
-                $("#menuDiv").animate({ left: "-75%" }, 350, function () {
-                    $("#menuDiv").hide();
-                });
-                $(".content").animate({ left: "0", right: "0" }, 350 );
-            }
-            else {
-                $("#menuDiv").animate({ "margin-left": "0" }, 350, function () {
-                    $("#menuDiv").hide();
-                });
-            }
-        }
 
         function OpenEventFromNotification(eventId) {
             var success = function (event) {
@@ -862,20 +846,27 @@
 
         $(document).ready(function () {
 
-            var scrollTimer;
-            $("#groupDetailsDiv").scroll(function () {
-                if (scrollTimer) {
-                    clearTimeout(scrollTimer);
+            //var scrollTimer;
+            //$("#groupDetailsDiv").scroll(function () {
+            //    if (scrollTimer) {
+            //        clearTimeout(scrollTimer);
+            //    }
+            //    scrollTimer = setTimeout(function () {
+            //        if ($("#groupDetailsDiv").scrollTop() < 15) {
+            //            ShowLoading();
+            //            GetGroup(currentGroup.Id);
+            //        }
+            //        else if ($("#groupDetailsDiv").scrollTop() < 60) {
+            //            $("#groupDetailsDiv").animate({ scrollTop: "60" }, 350);
+            //        }
+            //    }, 100);
+            //});
+
+            $("#groupDetailsDiv .screenSubheader, #groupDetailsDiv .screenContent").swipe({
+                swipeDown: function (event, direction, distance, duration, fingerCount) {
+                    ShowLoading();
+                    GetGroup(currentGroup.Id);
                 }
-                scrollTimer = setTimeout(function () {
-                    if ($("#groupDetailsDiv").scrollTop() < 15) {
-                        ShowLoading();
-                        GetGroup(currentGroup.Id);
-                    }
-                    else if ($("#groupDetailsDiv").scrollTop() < 60) {
-                        $("#groupDetailsDiv").animate({ scrollTop: "60" }, 350);
-                    }
-                }, 100);
             });
 
             $("#groupDetailsDiv .backArrow").click(function () {
@@ -902,6 +893,18 @@
                 $("#groupEditBtn").show();
             });
 
+            $("#groupAddDiv .detailMenuBtn").click(function () {
+                setTimeout(function () { $("#groupAddLocationsBtn").show() }, 50);
+            });
+
+            $("#groupAddDiv").click(function () {
+                $("#groupAddLocationsBtn").hide();
+            });
+
+            $("#groupAddDiv .detailMenuBtn").click(function () {
+                $("#groupAddLocationsBtn").show();
+            });
+
             $("#groupFilterTextBox").keyup(function () {
                 var search = $("#groupFilterTextBox").val().toLowerCase();
                 if (search.length == 0) {
@@ -924,7 +927,10 @@
 
                 $(groupResults).each(function () {
                     if (this.Id == groupId)
-                        GetGroup(groupId);   
+                    {
+                        OpenGroupInitial(this);
+                        GetGroup(groupId);
+                    }       
                 });
             });
 
@@ -940,8 +946,7 @@
             });
 
             $("#myGroupsDiv").on("click", ".joinGroupBtn", function () {
-                OpenGroups();
-                setTimeout(CloseMenu, 500);
+                GroupsClick();
             });
 
             $("#addGroupsResultsDiv").on("click", ".joinGroupBtn", function () {
@@ -961,6 +966,10 @@
 
             $("#groupEditBtn").click(function () {
                 AddEditGroup(currentGroup);
+            });
+
+            $("#groupAddLocationsBtn").click(function () {
+                AddGroupLocations();
             });
 
             $("#checkPasswordDiv .okBtn").click(function () {
@@ -1126,7 +1135,6 @@
             html = "";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                console.log(group);
                 var groupHtml = '<div groupid="{GroupId}" ><img src="{PictureUrl}" onerror="this.style.display=\'none\';" /><div>{Name}</div></div>';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{PictureUrl}", group.PictureUrl).replace("{Name}", group.Name);
                 html += groupHtml;
@@ -1147,7 +1155,7 @@
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
                 var groupHtml = '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>';
-                var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" />' : '<img src="../Img/group.png" class="logo" />';
+                var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" onerror="this.src=\'../Img/group.png\';" />' : '<img src="../Img/group.png" class="logo" />';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
             }
@@ -1155,32 +1163,19 @@
             $("#groupsListDiv").html(html);
         }
 
-        function GroupsClick() {
-            if ($("#menuDiv").is(":visible"))
-            {
-                $(".content").css({ left: "0", right: "0" }, 350);
-                $("#menuDiv").animate({ left: "-75%" }, 350, function () { $("#menuDiv").hide(); });
+        function OpenGroupInitial(group) {
+            if (group.IsPublic || hasGroupAccess) {
+                $("#groupDetailsDiv .screenTitle").html(group.Name);
+                $("#groupDetailsLogo").hide();
+                $("#groupDetailsDiv #groupDetailsInfo").html("");
+                $("#groupDetailsDiv #groupDetailsDescription").html("");
+                $("#groupJoinBtn").hide();
+                $("#groupDetailsDiv").show();
             }
-
-            if ($("#groupsDiv").is(':visible'))
-                CloseGroups();
-            else
-                OpenGroups();
-        }
-
-        function OpenGroups() {
-            LoadGroups();
-            $("#groupFilterTextBox").val("");
-            $("#groupsDiv").show().animate({ left: "0", right: "0" }, 450);
-            $(".content").animate({ left: "-100%", right: "100%" }, 450);
-        }
-
-        function CloseGroups() {
-            $("#groupsDiv").animate({ left: "100%", right: "-100%" }, 450, function () { $("#groupsDiv").hide(); });
-            $(".content").animate({ left: "0", right: "0" }, 450);
         }
 
         function OpenGroupDetails(group) {
+            HideLoading();
             if (group)
                 currentGroup = group;
 
@@ -1206,6 +1201,7 @@
             $("#groupDetailsDiv #groupDetailsDescription").html(descHtml);
             $("#groupDetailsDiv #groupEvents").html(SetLocalTimes(currentGroup.EventsHtml));
 
+            $("#groupJoinBtn").show();
             if (IsGoing(currentGroup.Members, currentUser.Id)) {
                 $("#groupJoinBtn").html("MEMBER");
                 $("#groupJoinBtn").addClass("selected");
@@ -1215,13 +1211,10 @@
                 $("#groupJoinBtn").removeClass("selected");
             }
 
-            if (IsAdmin(currentGroup.Members, currentUser.Id))
+            if (IsAdmin(currentGroup.Members, currentUser.Id) || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
                 $("#groupDetailsDiv .detailMenuBtn").show();
             else
                 $("#groupDetailsDiv .detailMenuBtn").hide();
-
-            $("#groupDetailsDiv").scrollTop(60);
-            HideLoading();
         }
 
         function JoinGroup() {
@@ -1238,6 +1231,11 @@
             currentGroup.Members.push(user);
             var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
+
+            if ($("#myGroupsDiv div").not(".joinGroupBtn").length <= 0)
+            {
+                MessageBox("You've joined " + currentGroup.Name + "! <br/><br/>You will now be notified when new events are added to this group, or you can create your own events in this group.");
+            }
 
             Post("JoinGroup", { group: currentGroup }, LoadMyGroups);
         }
@@ -1266,13 +1264,24 @@
             var isPublic = $("#isPublicBtn .selected").html() == "Public";
 
             var marginLeft = isPublic ? "44%" : "0px";
-            $(".pillBtn .slider").animate({ "margin-left": marginLeft }, 350, function () {
+            $(".pillBtn .slider").velocity({ "margin-left": marginLeft }, 350, function () {
                 var idx = isPublic ? 2 : 1;
                 $(".pillBtn div").removeClass("selected");
                 $(".pillBtn div:eq(" + idx + ")").addClass("selected");
                 $("#AddGroupPassword").attr("readonly", !isPublic);
                 $("#AddGroupPassword").val("");
             });
+        }
+
+        function AddGroupLocations()
+        {
+            $("#groupLocationsTextbox").val("");
+            var locations = currentGroup.Locations ? currentGroup.Locations.split("|") : "";
+            for (var i = 0; i < locations.length; i++)
+            {
+
+            }
+            $("#groupLocationsDiv").show();
         }
     </script>
 
@@ -1284,9 +1293,27 @@
         $(document).ready(function () {
             $("#AddLocation").focus(function () {
                 $("#locationSearchTextbox").val("");
+                $("#locationSearchTextbox").attr("readonly", false);
                 $("#locationResults").html("");
                 $("#locationDiv").show();
                 $("#locationSearchTextbox").focus();
+
+                if(currentGroup && currentGroup.Locations)
+                {
+                    $("#locationSearchTextbox").attr("readonly", true);
+                    $("#locationSearchTextbox").blur();
+                    var locations = currentGroup.Locations.split("|");
+                    var html = "";
+                    for(var i = 0; i < locations.length; i++)
+                    {
+                        var name = locations[i];
+                        var location = { Name: name, Latitude: currentGroup.Latitude, Longitude: currentGroup.Longitude, Address: "" };
+                        locationResults.push(location);
+                        var locationHtml = '<div locationIdx="' + i + '" ><span style="font-weight:bold;">{Name}</span><div></div>{Address}</div>';
+                        html += locationHtml.replace("{Name}", location.Name).replace("{Address}", location.Address);
+                    }
+                    $("#locationResults").html(html);
+                }
             });
 
             $("#locationSearchTextbox").keyup(function () {
@@ -1389,9 +1416,6 @@
                 {
                     $(".hiddenText").html(RemoveTextLine(boxWidth));
                     rows++;
-
-                    console.log($(".hiddenText").html());
-                    console.log(boxWidth + ", " + $(".hiddenText").width() + ", " + rows);
 
                     if (rows > 10)
                         break;
@@ -1835,9 +1859,9 @@
         <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
             <div>
-                <img id="menuBtn" src="/Img/whiteMenu.png" />
+                <img id="menuBtn" src="/Img/whitemenu.png" />
                 <img class="title" src="/Img/title.png" />
-                <img id="groupsBtn" src="/Img/whiteSearch.png" />
+                <img id="groupsBtn" src="/Img/whitesearch.png" />
             </div>
         </div>
         <div class="content">
@@ -1857,10 +1881,12 @@
             </div>
             <div id="groupsListDiv"></div>
         </div>
-        <div id="groupAddDiv" class="screen">
+        <div id="groupAddDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle">Create Group</div>
+<%--                <img class="detailMenuBtn" src="/Img/smallmenu.png" />
+                <div id="groupAddLocationsBtn">Add Locations</div>--%>
             </div>
             <div class="screenContent">
                 <input id="AddGroupDivName" type="text" placeholder="Your Group Name" style="margin:12px 0 4px;" />
@@ -1878,7 +1904,7 @@
             </div>
             <div class="screenBottom"><div class="bottomBtn">Create</div></div>
         </div>
-        <div id="groupDetailsDiv" class="screen">
+        <div id="groupDetailsDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle"></div>
@@ -1896,7 +1922,7 @@
             <div id="groupEvents"></div>
             <img id="addFromGroupBtn" src="../Img/add.png">
         </div>
-        <div id="addDiv" class="screen">
+        <div id="addDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle">Create Event</div>
@@ -1935,7 +1961,7 @@
                 <div id="detailsMap"></div>
             </div>
         </div>
-        <div id="messageDiv" class="screen">
+        <div id="messageDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle"></div>
@@ -1947,7 +1973,7 @@
                 <div class="hiddenText"></div>
             </div>
         </div>
-        <div id="locationDiv" class="screen">
+        <div id="locationDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle">Add Location</div>
@@ -1957,6 +1983,16 @@
                 <div id="locationResults"></div>
             </div>
         </div>
+<%--        <div id="groupLocationsDiv" class="screen swipe">
+            <div class="screenHeader">
+                <div class="backArrow" ></div>
+                <div class="screenTitle">Add Locations</div>
+            </div>
+            <div class="screenContent">
+                <input id="groupLocationsTextbox" type="text" placeholder="Search" style="margin:12px 0;" />
+                <div id="groupLocationsResults"></div>
+            </div>
+        </div>--%>
         <div id="loginSignupDiv">
             <div class="loginSignupHeader">
                 <img class="backarrow" src="/Img/whitebackarrow.png" />
