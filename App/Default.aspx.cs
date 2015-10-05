@@ -16,7 +16,6 @@ public partial class App_Default : System.Web.UI.Page
         //    FacebookId.Value = HttpContext.Current.Session["FacebookId"].ToString();
         //}
         //catch { }
-
     }
 
     [WebMethod]
@@ -58,7 +57,7 @@ public partial class App_Default : System.Web.UI.Page
     [WebMethod]
     public static string GetEvents(string latitude, string longitude, Users user)
     {
-        return Event.GetHome(latitude, longitude, user);
+        return Event.GetHome(user, latitude, longitude);
     }
 
     [WebMethod]

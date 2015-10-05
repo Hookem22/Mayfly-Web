@@ -44,7 +44,7 @@ public class Group : Base<Group>
     public string EventsHtml { get; set; }
 
     [NonSave]
-    public double Distance { get; set; }
+    public double? Distance { get; set; }
 
     #endregion
 

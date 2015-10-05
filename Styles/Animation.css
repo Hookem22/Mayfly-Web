@@ -123,6 +123,25 @@
     100%  {left: -100%; right: 100%;}
 }
 
+.searchGroupOpen
+{
+    -webkit-animation-name: searchGroupOpen; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    animation-name: searchGroupOpen;
+    animation-duration: .35s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes searchGroupOpen {
+    0%   {left: 100%; right: -55%; }
+    100%  {left: 20%; right: initial;}
+}
+/* Standard syntax */
+@keyframes searchGroupOpen {
+    0%   {left: 100%; right: -55%; }
+    100%  {left: 20%; right: initial;}
+}
+
 .groupClose
 {
     -webkit-animation-name: groupClose; /* Chrome, Safari, Opera */
@@ -167,6 +186,25 @@
     100%   {left: 0; right: 0; }
 }
 
+.searchGroupClose
+{
+    -webkit-animation-name: searchGroupClose; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    animation-name: searchGroupClose;
+    animation-duration: .35s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes searchGroupClose {
+    0%  {left: 20%; right: initial;}
+    100%   {left: 100%; right: -55%; }
+}
+/* Standard syntax */
+@keyframes searchGroupClose {
+    0%  {left: 20%; right: initial;}
+    100%   {left: 100%; right: -55%; }
+}
+
 .closeRight
 {
     -webkit-animation-name: closeRight; /* Chrome, Safari, Opera */
@@ -187,3 +225,47 @@
     70%   {left: 100%; right: -100%;}
     100%   {left: 100%; right: -100%;}
 }
+
+.isPrivate
+{
+    -webkit-animation-name: isPrivate; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: isPrivate;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes isPrivate {
+    0%  {margin-left: 0;}
+    70%   {margin-left: 44%;}
+    100%   {margin-left: 44%;}
+}
+/* Standard syntax */
+@keyframes isPrivate {
+    0%  {margin-left: 0;}
+    70%   {margin-left: 44%;}
+    100%   {margin-left: 44%;}
+}
+
+.isPublic
+{
+    -webkit-animation-name: isPublic; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    animation-name: isPublic;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes isPublic {
+    0%  {margin-left: 44%;}
+    70%   {margin-left: 0;}
+    100%   {margin-left: 0;}
+}
+/* Standard syntax */
+@keyframes isPublic {
+    0%  {margin-left: 44%;}
+    70%   {margin-left: 0;}
+    100%   {margin-left: 0;}
+}
+
+

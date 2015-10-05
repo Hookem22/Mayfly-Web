@@ -135,6 +135,11 @@ function Contains(fullString, sub) {
 
     return fullString.indexOf(sub) >= 0;
 }
+function ToLocalDay(dateTime)
+{
+    var localDay = new Date(dateTime).getDay();
+    return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][localDay];
+}
 function ToLocalTime(dateTime) {
     var localTime = new Date(dateTime).toLocaleTimeString().replace(":00", "");
     if(localTime.split(" ").length > 2)
@@ -249,16 +254,19 @@ function OpenGroups() {
         $("#groupsListDiv > div img").show();
     }, 350);
 
-    $("#groupFilterTextBox").val("");
+    $("#groupFilterTextBox").addClass("searchGroupOpen").val("");
     $("#groupsDiv").show().addClass("groupOpen");
     $(".content").addClass("contentGroupOpen");
 }
 
 function CloseGroups() {
+    $("#groupFilterTextBox").addClass("searchGroupClose")
     $("#groupsDiv").addClass("groupClose");
     $(".content").addClass("contentGroupClose");
 
     setTimeout(function () {
+        $("#groupFilterTextBox").removeClass("searchGroupOpen");
+        $("#groupFilterTextBox").removeClass("searchGroupClose");
         $("#groupsDiv").removeClass("groupOpen");
         $(".content").removeClass("contentGroupOpen");
         $("#groupsDiv").removeClass("groupClose");
@@ -276,4 +284,23 @@ function CloseRight(screen)
         $(screen).removeClass("closeRight");
         $(screen).hide();
     }, 500);
+}
+
+function PublicClick() {
+    var isPublic = $("#isPublicBtn .selected").html() == "Public";
+
+    var addClass = isPublic ? "isPrivate" : "isPublic";
+    $(".pillBtn .slider").addClass(addClass);
+
+    setTimeout(function () {
+        var idx = isPublic ? 2 : 1;
+        $(".pillBtn div").removeClass("selected");
+        $(".pillBtn div:eq(" + idx + ")").addClass("selected");
+        $("#AddGroupPassword").attr("readonly", !isPublic);
+        $("#AddGroupPassword").val("");
+        if(!isPublic)
+        {
+            $(".pillBtn .slider").removeClass("isPrivate").removeClass("isPublic");
+        }
+    }, 350);
 }

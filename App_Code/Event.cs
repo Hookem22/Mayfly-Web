@@ -60,6 +60,12 @@ public class Event : Base<Event>
     [NonSave]
     public string GroupPictureUrl { get; set; }
 
+    [NonSave]
+    public string LocalDayTime { get; set; }
+
+    [NonSave]
+    public string LocalTime { get; set; }
+
     #endregion
 
     public static new Event Get(string id)
@@ -76,7 +82,7 @@ public class Event : Base<Event>
         return evt;
     }
 
-    public static string GetHome(string latitude, string longitude, Users user)
+    public static string GetHome(Users user, string latitude, string longitude)
     {
         List<Event> events = GetByProc("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
         if (events.Count == 0)
@@ -90,7 +96,7 @@ public class Event : Base<Event>
         List<Event> events = GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
         if(events.Count > 0)
         {
-            AddHelperProperties(events, latitude, longitude);
+            //AddHelperProperties(events, latitude, longitude);
             return GetGroupEventsHtml(events, user);
         }
         return "";
@@ -158,6 +164,17 @@ public class Event : Base<Event>
 
     private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
     {
+        //foreach(Event evt in events)
+        //{
+        //    DateTime date;
+        //    if(DateTime.TryParse(evt.StartTime, out date))
+        //    {
+        //        evt.LocalDayTime = date.AddMinutes(minuteOffset).ToString("ddd h:mm tt");
+        //        evt.LocalTime = date.AddMinutes(minuteOffset).ToString("h:mm tt");
+        //    }
+        //}
+
+        //return;
         try
         {
             double lat = double.Parse(latitude);
@@ -232,8 +249,8 @@ public class Event : Base<Event>
         {
             if(ge.Group == null)
             {
-                string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='time'>{StartTime}</div></div>";
-                eventHtml = eventHtml.Replace("{EventId}", ge.Events[0].Id).Replace("{Name}", ge.Events[0].Name).Replace("{Details}", ge.Events[0].Distance).Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
+                string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='time'>{StartTime}</div></div>";
+                eventHtml = eventHtml.Replace("{EventId}", ge.Events[0].Id).Replace("{Name}", ge.Events[0].Name).Replace("{Details}", ge.Events[0].Distance).Replace("{StartDay}", "[[" + ge.Events[0].StartTime.ToString() + "]]").Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
                 string img = "<img src='../Img/grayface" + rnd.Next(8) + ".png' />";
                 if(ge.Events[0].IsGoing == true)
                 {
@@ -248,7 +265,7 @@ public class Event : Base<Event>
             }
             else
             {
-                string groupHtml = "<div groupid='{GroupId}' class='homeList group'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='time'>{StartTime}</div></div>";
+                string groupHtml = "<div groupid='{GroupId}' class='homeList group'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='time'>{StartTime}</div></div>";
                 string details = ge.Events[0].Name;
                 bool isGoing = false;
                 foreach(Event evt in ge.Events)
@@ -257,7 +274,7 @@ public class Event : Base<Event>
                         isGoing = true;
                 }
                 details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + ge.Events[0].Distance;
-                groupHtml = groupHtml.Replace("{GroupId}", ge.Group.Id).Replace("{Name}", ge.Group.Name).Replace("{Details}", details).Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
+                groupHtml = groupHtml.Replace("{GroupId}", ge.Group.Id).Replace("{Name}", ge.Group.Name).Replace("{Details}", details).Replace("{StartDay}", "[[" + ge.Events[0].StartTime.ToString() + "]]").Replace("{StartTime}", "{{" + ge.Events[0].StartTime.ToString() + "}}");
                 string img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", ge.Group.PictureUrl);
                 if (isGoing && !string.IsNullOrEmpty(user.FacebookId))
                     img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";

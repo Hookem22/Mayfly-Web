@@ -8,13 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=6" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=9" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
-    <link href="/Styles/Animation.css?i=5" rel="stylesheet" type="text/css" />
+    <link href="/Styles/Animation.css?i=8" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
-    <script src="/Scripts/velocity.min.js" type="text/javascript"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
     <script type="text/javascript">
         var isMobile;
@@ -229,6 +228,13 @@
                 var localTime = ToLocalTime(time);
                 html = html.substring(0, beginIdx) + localTime + html.substring(endIdx + 2);
             }
+            while (html.indexOf("[[") >= 0) {
+                var beginIdx = html.indexOf("[[");
+                var endIdx = html.indexOf("]]");
+                var time = html.substring(beginIdx + 2, endIdx);
+                var localTime = ToLocalDay(time);
+                html = html.substring(0, beginIdx) + localTime + html.substring(endIdx + 2);
+            }
             return html;
         }
     </script>
@@ -302,6 +308,7 @@
                 $("#addDiv .bottomBtn").html("Create");
                 $("#addDiv .bottomBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
+                $("#addDiv #AddDay").val("Today");
                 $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "165px").hide();
                 $("#addDiv .invitedFriends").show();
@@ -403,6 +410,14 @@
                 startTime.setHours(hr);
                 startTime.setMinutes(min);
                 startTime.setSeconds(0);
+
+                var i = 0;
+                $("#dateDivResults div").each(function () {
+                    if ($(this).hasClass("selected")) {
+                        startTime.setDate(startTime.getDate() + i);
+                    }
+                    i++;
+                });
             }
 
             var max = +$("#AddMax").val();
@@ -484,7 +499,7 @@
             }
 
             $("#detailsDiv .screenTitle").html(event.Name);
-            var subheaderHtml = ToLocalTime(event.StartTime) + " - " + event.LocationName;
+            var subheaderHtml = ToLocalDay(event.StartTime) + " " + ToLocalTime(event.StartTime) + " - " + event.LocationName;
             $("#detailsDiv #detailsInfo").html(subheaderHtml);
 
             var descHtml = event.Description;
@@ -846,22 +861,6 @@
 
         $(document).ready(function () {
 
-            //var scrollTimer;
-            //$("#groupDetailsDiv").scroll(function () {
-            //    if (scrollTimer) {
-            //        clearTimeout(scrollTimer);
-            //    }
-            //    scrollTimer = setTimeout(function () {
-            //        if ($("#groupDetailsDiv").scrollTop() < 15) {
-            //            ShowLoading();
-            //            GetGroup(currentGroup.Id);
-            //        }
-            //        else if ($("#groupDetailsDiv").scrollTop() < 60) {
-            //            $("#groupDetailsDiv").animate({ scrollTop: "60" }, 350);
-            //        }
-            //    }, 100);
-            //});
-
             $("#groupDetailsDiv .screenSubheader, #groupDetailsDiv .screenContent").swipe({
                 swipeDown: function (event, direction, distance, duration, fingerCount) {
                     ShowLoading();
@@ -877,7 +876,7 @@
                 GroupsClick();
             });
 
-            $("#groupAddBtn").click(function () {
+            $("#groupAddBtn, #groupAddBtnDiv").click(function () {
                 AddEditGroup();
             });
 
@@ -1260,19 +1259,6 @@
             $(".pillBtn div:eq(" + idx + ")").addClass("selected");
         }
 
-        function PublicClick() {
-            var isPublic = $("#isPublicBtn .selected").html() == "Public";
-
-            var marginLeft = isPublic ? "44%" : "0px";
-            $(".pillBtn .slider").velocity({ "margin-left": marginLeft }, 350, function () {
-                var idx = isPublic ? 2 : 1;
-                $(".pillBtn div").removeClass("selected");
-                $(".pillBtn div:eq(" + idx + ")").addClass("selected");
-                $("#AddGroupPassword").attr("readonly", !isPublic);
-                $("#AddGroupPassword").val("");
-            });
-        }
-
         function AddGroupLocations()
         {
             $("#groupLocationsTextbox").val("");
@@ -1363,6 +1349,8 @@
             }
             else {
                 currentLocation = locationResults[index];
+                console.log("Index:" + index);
+                console.log(currentLocation);
                 PlotMap("AddMap", currentLocation.Name, currentLocation.Latitude, currentLocation.Longitude);
                 $("#AddLocation").val(currentLocation.Name);
             }
@@ -1502,11 +1490,15 @@
 
     </script>
 
-    <!-- Clock -->
+    <!-- Clock / Date -->
     <script type="text/javascript">
             $(document).ready(function () {
                 $("#AddStartTime").click(function () {
                     InitClock();
+                });
+
+                $("#AddDay").click(function () {
+                    InitDay();
                 });
 
                 $("#clockCircle").on("click", "div", function () {
@@ -1538,6 +1530,16 @@
                     time = time.substring(0, time.indexOf(" ") + 1);
                     time += $(this).html();
                     $("#clockDiv .time").html(time)
+                });
+
+                $("#dateDivResults").on("click", "div", function () {
+                    $("#dateDivResults div").removeClass("selected");
+                    $(this).addClass("selected");
+
+                    $("#AddDay").val($(this).html());
+
+                    $("#dateDiv").fadeOut();
+                    $(".modal-backdrop").fadeOut();
                 });
             });
 
@@ -1684,6 +1686,28 @@
 
                 document.getElementById("clockDiv").appendChild(div);
 
+            }
+
+            function InitDay() {
+                var html = "";
+                var dayNumber = new Date().getDay();
+                for(var i = 0; i < 7; i++)
+                {
+                    var day = "Today";
+                    if (i == 1)
+                        day = "Tomorrow";
+                    else if(i > 1)
+                    {
+                        day = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][(i + dayNumber) % 7];
+                    }
+                    if ($("#AddDay").val() == day)
+                        html += "<div class='selected'>" + day + "</div>";
+                    else
+                        html += "<div>" + day + "</div>";
+                }
+                $("#dateDivResults").html(html);
+                $(".modal-backdrop").show();
+                $("#dateDiv").show();
             }
     </script>
 
@@ -1861,7 +1885,8 @@
             <div>
                 <img id="menuBtn" src="/Img/whitemenu.png" />
                 <img class="title" src="/Img/title.png" />
-                <img id="groupsBtn" src="/Img/whitesearch.png" />
+                <img id="groupsBtn" src="/Img/whitegroup.png" />
+                <input id="groupFilterTextBox" type="text" placeholder="Search Groups" />
             </div>
         </div>
         <div class="content">
@@ -1876,9 +1901,11 @@
             <div id="myNotificationsDiv"></div>
         </div>
         <div id="groupsDiv">
-            <div class="groupsHeader"><img class="groupsSearch" src="../Img/graySearch.png" /><input id="groupFilterTextBox" type="text" placeholder="Search Groups" />
+            <div id="groupAddBtnDiv">
+                Create Group
                 <img id="groupAddBtn" src="../Img/grayAdd.png" />
             </div>
+            <div class="menuHeader">GROUPS NEAR YOU</div>
             <div id="groupsListDiv"></div>
         </div>
         <div id="groupAddDiv" class="screen swipe">
@@ -1929,7 +1956,8 @@
             </div>
             <div class="screenContent">
                 <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
-                <input id="AddLocation" type="text" placeholder="Location" style="width:48%;float:left;margin-bottom:4px;" />
+                <input id="AddLocation" type="text" placeholder="Location" style="float:left;margin-bottom:4px;" />
+                <input id="AddDay" type="text" placeholder="Day" readonly="readonly" style="width:48%;float:left;margin-bottom:4px;" />
                 <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
                 <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
                 <input id="AddGroupName" type="text" placeholder="Add to Group" style="margin: 8px 0 2px;" />
@@ -2045,6 +2073,10 @@
                 <img src="../Img/grayenvelope.png" /><input id="forgotPasswordEmailTextBox" placeholder="Your email" />
                 <div id="forgotPasswordSendBtn" style="margin-bottom:12px;">Send Password</div>
             </div>
+        </div>
+        <div id="dateDiv">
+            <div id="dateDivResults"></div>
+            <div onclick='$("#dateDiv").fadeOut();$(".modal-backdrop").fadeOut();' class="smallBottomBtn" >Cancel</div>
         </div>
         <div id="clockDiv">
             <div class="time"></div>
