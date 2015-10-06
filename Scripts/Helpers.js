@@ -135,9 +135,16 @@ function Contains(fullString, sub) {
 
     return fullString.indexOf(sub) >= 0;
 }
-function ToLocalDay(dateTime)
+function ToLocalDay(dateTime, includeToday)
 {
     var localDay = new Date(dateTime).getDay();
+    if (includeToday) {
+        var today = new Date().getDay();
+        if (today == localDay)
+            return "Today";
+        else if (localDay - today == 1)
+            return "Tomorrow";
+    }
     return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][localDay];
 }
 function ToLocalTime(dateTime) {
@@ -192,10 +199,13 @@ function MenuClick() {
     if ($("#groupsDiv").is(":visible")) {
         $("#groupsDiv").addClass("groupClose");
         $(".content").removeClass("contentGroupOpen");
+        $("#groupFilterTextBox").addClass("searchGroupClose");
 
         setTimeout(function () {
             $("#groupsDiv").removeClass("groupOpen");
             $("#groupsDiv").removeClass("groupClose");
+            $("#groupFilterTextBox").removeClass("searchGroupOpen");
+            $("#groupFilterTextBox").removeClass("searchGroupClose");
 
             $("#groupsDiv").hide();
         }, 500);
@@ -260,7 +270,7 @@ function OpenGroups() {
 }
 
 function CloseGroups() {
-    $("#groupFilterTextBox").addClass("searchGroupClose")
+    $("#groupFilterTextBox").addClass("searchGroupClose");
     $("#groupsDiv").addClass("groupClose");
     $(".content").addClass("contentGroupClose");
 

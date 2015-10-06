@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=9" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=1" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=8" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -232,7 +232,7 @@
                 var beginIdx = html.indexOf("[[");
                 var endIdx = html.indexOf("]]");
                 var time = html.substring(beginIdx + 2, endIdx);
-                var localTime = ToLocalDay(time);
+                var localTime = ToLocalDay(time, true);
                 html = html.substring(0, beginIdx) + localTime + html.substring(endIdx + 2);
             }
             return html;
@@ -491,7 +491,11 @@
             $("#detailsDiv").show();
             if (event.GroupId) {
                 $("#detailsDiv").removeClass("nonGroup");
-                $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
+                var success = function (results) {
+                    currentGroup = results;
+                    $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
+                };
+                Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
             }
             else {
                 $("#detailsDiv").addClass("nonGroup");
@@ -861,6 +865,23 @@
 
         $(document).ready(function () {
 
+            $("#groupAddDiv .screenTitle").click(function () {
+                if(currentUser && currentUser.Id == "1AEE4881-1B34-4806-8985-CA253116B6CE" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
+                {
+                    $('#changeLatLngDiv').show();
+                    $('.modal-backdrop').show();
+                }
+            });
+
+            $("#changeLatLngDiv .okBtn").click(function () {
+                var lat = $("#ChangeLatitude").val();
+                var lng = $("#ChangeLongitude").val();
+                ReceiveLocation(lat, lng);
+
+                $('#changeLatLngDiv').hide();
+                $('.modal-backdrop').hide();
+            });
+
             $("#groupDetailsDiv .screenSubheader, #groupDetailsDiv .screenContent").swipe({
                 swipeDown: function (event, direction, distance, duration, fingerCount) {
                     ShowLoading();
@@ -877,6 +898,10 @@
             });
 
             $("#groupAddBtn, #groupAddBtnDiv").click(function () {
+                if (!currentUser || !currentUser.Id) {
+                    OpenLogin();
+                    return;
+                }
                 AddEditGroup();
             });
 
@@ -2101,6 +2126,12 @@
         <div id="ActionMessageBox">
             <div class="messageContent"></div>
             <div class="yesBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="CloseMessageBox();" class="noBtn smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
+        </div>
+        <div id="changeLatLngDiv">
+            <div class="messageContent">Change Location</div>
+            <input id="ChangeLatitude" type="text" placeholder="Latitude" style="margin-top: -32px;" />
+            <input id="ChangeLongitude" type="text" placeholder="Longitude" style="margin-bottom: 48px;" />
+            <div class="okBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="$('#changeLatLngDiv').hide();$('.modal-backdrop').hide();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
     </form>
 </body>

@@ -53,6 +53,7 @@ public class Group : Base<Group>
         Group group = Base<Group>.Get(id);
         group.Members = GroupUsers.GetByGroup(id);
         group.EventsHtml = Event.GetByGroup(id, latitude, longitude, user);
+        group.Description = group.Description.Replace("\n", "<br/>");
         return group;
     }
 

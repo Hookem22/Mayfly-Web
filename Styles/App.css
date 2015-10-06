@@ -221,6 +221,24 @@ input.error, textarea.error
 {
     padding: 154px 0 70px;
 }
+.dayHeader
+{
+    padding: 29px 18px 18px;
+    font-size: 18px;
+    color: #555;
+}
+.dayHeader > div:first-child 
+{
+    border-top: 1px solid #ccc;
+    margin-bottom: -11px;
+}
+.dayHeader > div:last-child
+{
+    margin: 0 auto;
+    width: 35%;
+    text-align: center;
+    background-color: #EEEEEE;
+}
 .homeList
 {
     border: 1px solid #F2F2F2;
@@ -231,7 +249,11 @@ input.error, textarea.error
     right: 0;
     background-color: white;
 }
-.homeList:last-child
+.homeList.first 
+{
+    border-top: 1px solid #ccc;
+}
+.homeList.last
 {
     border-bottom: 1px solid rgba(0,0,0,.12);
     -moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
@@ -243,6 +265,7 @@ input.error, textarea.error
     height: 50px;
     margin: -5px;
     float: left;
+    max-width: 56px;
 }
 .homeList img.fbPic
 {
@@ -1194,7 +1217,7 @@ input.error, textarea.error
     padding-bottom: 90px;
 }
 
-#MessageBox, #ActionMessageBox, #checkPasswordDiv
+#MessageBox, #ActionMessageBox, #checkPasswordDiv, #changeLatLngDiv
 {
     background: #F6F6F6;
     position: absolute;
@@ -1213,7 +1236,7 @@ input.error, textarea.error
 
     margin-top: -40%;
 }
-#MessageBox .messageContent, #ActionMessageBox .messageContent, #checkPasswordDiv .messageContent
+#MessageBox .messageContent, #ActionMessageBox .messageContent, #checkPasswordDiv .messageContent, #changeLatLngDiv  .messageContent
 {
     margin: 8px 10px 50px;
 }
