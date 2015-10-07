@@ -11,17 +11,51 @@ public partial class App_Default : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-        //try
-        //{
-        //    FacebookId.Value = HttpContext.Current.Session["FacebookId"].ToString();
-        //}
-        //catch { }
+        try
+        {
+            string facebookAccessToken = Request.QueryString["fbAccessToken"];
+            string deviceId = Request.QueryString["deviceId"];
+            string pushDeviceToken = Request.QueryString["pushDeviceToken"];
+
+            dynamic me = null;
+            if (!string.IsNullOrEmpty(facebookAccessToken))
+            {
+                var client = new FacebookClient(facebookAccessToken);
+                me = client.Get("me");
+            }
+            Users user = Users.Login(me, deviceId, pushDeviceToken, "", "");
+            if(user != null)
+                UserId.Value = user.Id;
+
+            string latitude = Request.QueryString["lat"];
+            string longitude = Request.QueryString["lng"];
+            double lat, lng;
+            double.TryParse(latitude, out lat);
+            double.TryParse(longitude, out lng);
+
+            if (lat == 0 && lng == 0 && user != null && user.Latitude != null && user.Longitude != null)
+            {
+                lat = (double)user.Latitude;
+                lng = (double)user.Longitude;
+            }
+            if(lat != 0 && lng != 0)
+            {
+                contentResults.InnerHtml = Event.GetHome(user, lat.ToString(), lng.ToString());
+                CurrentLat.Value = lat.ToString();
+                CurrentLng.Value = lng.ToString();
+            }
+
+        }
+        catch { }
 
     }
 
     [WebMethod]
-    public static Users LoginUser(string facebookAccessToken, string deviceId, string pushDeviceToken, string email, string password)
+    public static Users LoginUser(string userId, string facebookAccessToken, string deviceId, string pushDeviceToken, string email, string password)
     {
+        if (!string.IsNullOrEmpty(userId))
+            return Users.Get(userId);
+
         dynamic me = null;
         if (!string.IsNullOrEmpty(facebookAccessToken))
         {

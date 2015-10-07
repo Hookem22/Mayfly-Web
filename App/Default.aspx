@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=1" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=8" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -118,9 +118,8 @@
 
         function Init()
         {
-            ShowLoading();
             if ($(window).height() > 550) {
-                $(".content div").css("min-height", ($(window).height() - 120) + "px");
+                $("#contentResults").css("min-height", ($(window).height() - 220) + "px");
             }
             
             isiOS = getParameterByName("OS") == "iOS";
@@ -132,20 +131,13 @@
             if (isiOS || isAndroid || isMobile) {
 
                 currentUser = {};
-                var fbAccessToken = getParameterByName("fbAccessToken");
-                var deviceId = getParameterByName("deviceId");
-                var pushDeviceToken = getParameterByName("pushDeviceToken");
-                if(fbAccessToken || pushDeviceToken)
-                    Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: "", password: "" }, LoginSuccess);
+                if ($("#UserId").val())
+                    Post("LoginUser", { userId:$("#UserId").val(), facebookAccessToken: "", deviceId: "", pushDeviceToken: "", email: "", password: "" }, LoginSuccess);
 
-                currentLat = +getParameterByName("lat") || 30.25;
-                currentLng = +getParameterByName("lng") || -97.75;
+                currentLat = +$("#CurrentLat").val();// || 30.25;
+                currentLng = +$("#CurrentLng").val();// || -97.75;
 
-                if (currentLat && currentLng)
-                    LoadEvents();
-                //else
-                //    navigator.geolocation.getCurrentPosition(LatLngReturn);
-
+                $(".content").scrollTop(90);
             }
 
             if (!isMobile) {
@@ -159,10 +151,6 @@
         function LoginSuccess(results) {
             currentUser = results;
 
-            if (currentUser && currentUser.Latitude && currentUser.Longitude && !currentLat && !currentLng)
-                ReceiveLocation(currentUser.Latitude, currentUser.Longitude);
-            else if (currentUser)
-                LoadEvents();
             if (currentUser)
                 LoadMyGroups();
                 
@@ -210,11 +198,9 @@
         {
             var html = SetLocalTimes(results);
 
-            $(".content div").html(html);
+            $(".content #contentResults").html(html);
             $(".content").scrollTop(90);
 
-            var nameMaxWidth = screen.width - 160;
-            $(".content div.name").css("max-width", nameMaxWidth);
             HideLoading();
         }
 
@@ -758,7 +744,7 @@
                     }
                 }
 
-                Post("LoginUser", { facebookAccessToken: "", deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: $("#loginEmailTextBox").val(), password: $("#loginPasswordTextBox").val() }, success);
+                Post("LoginUser", { userId: $("#UserId").val(), facebookAccessToken: "", deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: $("#loginEmailTextBox").val(), password: $("#loginPasswordTextBox").val() }, success);
 
             });
 
@@ -1904,6 +1890,10 @@
     <form id="form1" runat="server">
         <div id="fb-root"></div>
         <input type="hidden" id="FacebookId" runat="server" />
+        <input type="hidden" id="UserId" runat="server" />
+        <input type="hidden" id="CurrentLat" runat="server" />
+        <input type="hidden" id="CurrentLng" runat="server" />
+
         <div class="modal-backdrop"></div>
         <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
@@ -1915,10 +1905,10 @@
             </div>
         </div>
         <div class="content">
-            <div style="min-height:500px;">
+            <div id="contentResults" runat="server">
             </div>
         </div>
-        <img id="addBtn" src="../Img/add.png" />
+        <div id="addBtn"><img src="../Img/plus.png" /></div>
         <div id="menuDiv">
             <div class="menuHeader" style="border-top: none;padding-top:10px;">MY GROUPS</div>
             <div id="myGroupsDiv"></div>
@@ -1972,7 +1962,7 @@
                 <div id="groupDetailsDescription"></div>
             </div>
             <div id="groupEvents"></div>
-            <img id="addFromGroupBtn" src="../Img/add.png">
+            <div id="addFromGroupBtn"><img src="../Img/plus.png" /></div>
         </div>
         <div id="addDiv" class="screen swipe">
             <div class="screenHeader">

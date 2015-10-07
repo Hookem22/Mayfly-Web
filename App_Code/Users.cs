@@ -64,6 +64,9 @@ public class Users : Base<Users>
             return null;
         }
 
+        if (string.IsNullOrEmpty(pushDeviceToken))
+            return null;
+
         user = GetByPushTokenId(pushDeviceToken);
         if (user == null && me == null)
         {

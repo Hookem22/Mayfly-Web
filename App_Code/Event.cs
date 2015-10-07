@@ -258,7 +258,7 @@ public class Event : Base<Event>
 
                 groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", details).Replace("{Details}", evt.GroupName).Replace("{StartDay}", evt.LocalTime);
                 string img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
-                if ((bool)evt.IsGoing && !string.IsNullOrEmpty(user.FacebookId))
+                if (evt.IsGoing != null && (bool)evt.IsGoing && !string.IsNullOrEmpty(user.FacebookId))
                     img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
                 groupHtml = groupHtml.Replace("{img}", img);
                 html += groupHtml;
