@@ -2,6 +2,7 @@
 {
     -webkit-animation-name: menuOpen; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .25s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: menuOpen;
     animation-duration: .25s;
     animation-fill-mode: forwards;
@@ -23,6 +24,7 @@
 {
     -webkit-animation-name: contentMenuOpen; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .25s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: contentMenuOpen;
     animation-duration: .25s;
     animation-fill-mode: forwards;
@@ -42,6 +44,7 @@
 {
     -webkit-animation-name: menuClose; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: menuClose;
     animation-duration: .5s;
     animation-fill-mode: forwards;
@@ -65,6 +68,7 @@
 {
     -webkit-animation-name: contentMenuClose; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: contentMenuClose;
     animation-duration: .5s;
     animation-fill-mode: forwards;
@@ -87,6 +91,7 @@
 {
     -webkit-animation-name: groupOpen; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: groupOpen;
     animation-duration: .35s;
     animation-fill-mode: forwards;
@@ -108,6 +113,7 @@
 {
     -webkit-animation-name: contentGroupOpen; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: contentGroupOpen;
     animation-duration: .35s;
     animation-fill-mode: forwards;
@@ -127,6 +133,7 @@
 {
     -webkit-animation-name: searchGroupOpen; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: searchGroupOpen;
     animation-duration: .35s;
     animation-fill-mode: forwards;
@@ -146,6 +153,7 @@
 {
     -webkit-animation-name: groupClose; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: groupClose;
     animation-duration: .5s;
     animation-fill-mode: forwards;
@@ -169,6 +177,7 @@
 {
     -webkit-animation-name: contentGroupClose; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: contentGroupClose;
     animation-duration: .5s;
     animation-fill-mode: forwards;
@@ -190,6 +199,7 @@
 {
     -webkit-animation-name: searchGroupClose; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: searchGroupClose;
     animation-duration: .35s;
     animation-fill-mode: forwards;
@@ -209,6 +219,7 @@
 {
     -webkit-animation-name: closeRight; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: closeRight;
     animation-duration: .5s;
     animation-fill-mode: forwards;
@@ -230,6 +241,7 @@
 {
     -webkit-animation-name: isPrivate; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: isPrivate;
     animation-duration: .5s;
     animation-fill-mode: forwards;
@@ -251,6 +263,7 @@
 {
     -webkit-animation-name: isPublic; /* Chrome, Safari, Opera */
     -webkit-animation-duration: .5s; /* Chrome, Safari, Opera */
+    -webkit-animation-fill-mode: forwards;
     animation-name: isPublic;
     animation-duration: .5s;
     animation-fill-mode: forwards;

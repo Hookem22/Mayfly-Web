@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="/img/favicon.png" />
     <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
-    <link href="/Styles/Animation.css?i=8" rel="stylesheet" type="text/css" />
+    <link href="/Styles/Animation.css?i=1" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
