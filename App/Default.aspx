@@ -118,9 +118,10 @@
 
         function Init()
         {
-            if ($(window).height() > 550) {
+            if ($(window).height() > 600)
                 $("#contentResults").css("min-height", ($(window).height() - 220) + "px");
-            }
+            else if ($(window).height() > 550)
+                $("#contentResults").css("min-height", ($(window).height() - 160) + "px");
             
             isiOS = getParameterByName("OS") == "iOS";
             isAndroid = getParameterByName("OS") == "Android";
@@ -199,7 +200,7 @@
             var html = SetLocalTimes(results);
 
             $(".content #contentResults").html(html);
-            $(".content").scrollTop(90);
+            $(".content").scrollTop(20).animate({ scrollTop: "90" }, 350);
 
             HideLoading();
         }
@@ -1722,114 +1723,6 @@
             }
     </script>
 
-    <!-- Facebook -->
-    <%--<script type="text/javascript">
-        var currentUser;
-        var fbAccessToken;
-
-        window.fbAsyncInit = function () {
-            
-            FB.init({
-                appId: '397533583786525', // App ID
-                status: true, // check login status
-                cookie: true, // enable cookies to allow the server to access the session
-                xfbml: true  // parse XFBML
-            });
-
-            fbAccessToken = getParameterByName("fbAccessToken");
-            var deviceId = getParameterByName("deviceId");
-            var pushDeviceToken = getParameterByName("pushDeviceToken");
-            if (fbAccessToken) {
-                Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-            }
-            else
-            {
-                FB.getLoginStatus(function (response) {
-
-                    if (response.status === 'connected') {
-                        // the user is logged in and has authenticated your
-                        // app, and response.authResponse supplies
-                        // the user's ID, a valid access token, a signed
-                        // request, and the time the access token 
-                        // and signed request each expire
-                        var uid = response.authResponse.userID;
-                        $("#FacebookId").val(uid);
-                        fbAccessToken = response.authResponse.accessToken;
-
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-
-                    } else {
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-                        //if (!fbAccessToken)
-                        //    window.location = "../";
-                        //else
-                        //    Post("LoginUser", { facebookAccessToken: fbAccessToken }, LoginSuccess);
-                    }
-                });
-            }
-        };
-
-        function LoginSuccess(results) {
-            currentUser = results;
-            $("#FacebookId").val(currentUser.FacebookId);
-            //LoadEvents();
-            /*TODO: fix
-            if (document.URL.indexOf("?") > 0) {
-                var referenceId = document.URL.substr(document.URL.indexOf("?") + 1);
-                Post("GetReferredNotification", { referenceId: referenceId, facebookId: currentUser.FacebookId }, OpenReferredNotification);
-            }
-            */
-        }
-
-        function OpenFacebookLogin()
-        {
-            OpenFromBottom("facebookLoginDiv");
-        }
-
-        function FacebookLogin() {
-            if (isiOS) {
-                window.location = "ios:FacebookLogin";
-            }
-            else if(isAndroid)
-            {
-                if (typeof androidAppProxy !== "undefined")
-                    androidAppProxy.AndroidFacebookLogin();
-            }
-            else
-            {
-                FB.login(function (response) {
-                    if (response.authResponse) {
-                        var uid = response.authResponse.userID;
-                        $("#FacebookId").val(uid);
-                        fbAccessToken = response.authResponse.accessToken;
-                        var deviceId = getParameterByName("deviceId");
-                        var pushDeviceToken = getParameterByName("pushDeviceToken");
-
-                        Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-                        CloseToBottom('facebookLoginDiv');
-                    } else {
-                        console.log('User cancelled login or did not fully authorize.');
-                    }
-                });
-            }
-        }
-
-        function FacebookLogout() {
-            FB.logout(function (response) {
-                // user is now logged out
-            });
-        }
-
-        // Load the SDK Asynchronously
-        (function (d) {
-            var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
-            if (d.getElementById(id)) { return; }
-            js = d.createElement('script'); js.id = id; js.async = true;
-            js.src = "//connect.facebook.net/en_US/all.js";
-            ref.parentNode.insertBefore(js, ref);
-        }(document));
-    </script>--%>
-
     <!-- Branch -->
     <script type="text/javascript">
 
@@ -1888,8 +1781,6 @@
 </head>
 <body>
     <form id="form1" runat="server">
-        <div id="fb-root"></div>
-        <input type="hidden" id="FacebookId" runat="server" />
         <input type="hidden" id="UserId" runat="server" />
         <input type="hidden" id="CurrentLat" runat="server" />
         <input type="hidden" id="CurrentLng" runat="server" />
