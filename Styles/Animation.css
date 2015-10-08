@@ -281,4 +281,31 @@
     100%   {margin-left: 0;}
 }
 
+.launchImg
+{
+    position: fixed;
+    top:35%;
+    left:25%;
+    width:50%;
+
+    -webkit-animation-name: launchImg; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: 8s; /* Chrome, Safari, Opera */
+    -webkit-animation-iteration-count:infinite;
+    animation-name: launchImg;
+    animation-duration: 8s;
+    animation-iteration-count: infinite;
+}
+/* Chrome, Safari, Opera */
+@-webkit-keyframes launchImg {
+    0%  {top:35%;left:25%;width:50%;}
+    50%   {top:20%;left:10%;width:80%;}
+    100%   {top:35%;left:25%;width:50%;}
+}
+/* Standard syntax */
+@keyframes launchImg {
+    0%  {top:35%;left:25%;width:50%;}
+    50%   {top:20%;left:10%;width:80%;}
+    100%   {top:35%;left:25%;width:50%;}
+}
+
 

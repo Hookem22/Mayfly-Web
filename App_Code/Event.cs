@@ -87,7 +87,7 @@ public class Event : Base<Event>
 
     public static string GetHome(Users user, string latitude, string longitude)
     {
-        List<Event> events = GetByProc("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        List<Event> events = GetByProcFast("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
         if (events.Count == 0)
             return defaultHomeHtml;
         AddHelperProperties(events, latitude, longitude);

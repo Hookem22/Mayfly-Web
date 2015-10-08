@@ -41,7 +41,7 @@ public class EventGoing : Base<EventGoing>
 
     public static List<string> GetByUser(string userId)
     {
-        List<EventGoing> going = GetByProc("getgoingbyuser", string.Format("userid={0}", userId));
+        List<EventGoing> going = GetByProcFast("getgoingbyuser", string.Format("userid={0}", userId));
         List<string> goingIds = new List<string>();
         foreach (EventGoing eg in going)
             goingIds.Add(eg.EventId);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
+using System.IO;
 
 public abstract class Base<T>
 {
@@ -61,6 +62,13 @@ public abstract class Base<T>
         return items.ToList();
     }
 
+    protected static List<T> GetByProcFast(string procName, string parameters)
+    {
+        AzureService service = new AzureService(AzureTable);
+        var data = service.GetByProc(procName, parameters);
+        return DeserializeJson(data, typeof(T));
+    }
+
     public void Save()
     {
         AzureService service = new AzureService(AzureTable);
@@ -93,6 +101,53 @@ public abstract class Base<T>
     {
         AzureService service = new AzureService(AzureTable);
         service.Delete(this.Id);
+    }
+
+    private static List<T> DeserializeJson(string data, Type type)
+    {
+        List<T> list = new List<T>();
+        while (data.Contains("}"))
+        {
+            T obj = (T)Activator.CreateInstance(type);
+            list.Add(obj);
+            string json = data.Substring(0, data.IndexOf("}") + 1);
+            data = data.Substring(data.IndexOf("}") + 1);
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                var propName = string.Format("\"{0}\":", prop.Name.ToLower());
+                if (json.Contains(propName))
+                {
+                    string val = null;
+                    if (prop.PropertyType.Name == "String")
+                    {
+                        val = json.Substring(json.IndexOf(propName) + propName.Length + 1);
+                        if (val.Contains("\",\""))
+                            val = val.Substring(0, val.IndexOf("\",\""));
+                        else
+                            val = val.Substring(0, val.IndexOf("\"}"));
+                    }
+                    else
+                    {
+                        val = json.Substring(json.IndexOf(propName) + propName.Length);
+                        if (val.Contains(",\""))
+                            val = val.Substring(0, val.IndexOf(",\""));
+                        else
+                            val = val.Substring(0, val.IndexOf("}"));
+                    }
+                    if (prop.PropertyType.Name == "String")
+                        prop.SetValue(obj, val);
+                    else if (prop.PropertyType.Name == "DateTime")
+                        prop.SetValue(obj, DateTime.Parse(val));
+                    else if (prop.PropertyType.Name == "Double")
+                        prop.SetValue(obj, double.Parse(val));
+                    else if (prop.PropertyType.Name == "Int32")
+                        prop.SetValue(obj, int.Parse(val));
+                    else if (prop.PropertyType.Name == "Bool")
+                        prop.SetValue(obj, bool.Parse(val));
+                }
+            }
+        }
+        return list;
     }
 
 }

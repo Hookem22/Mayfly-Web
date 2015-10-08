@@ -40,6 +40,14 @@ public class Users : Base<Users>
 
     #endregion
 
+    public static Users InitialLogin(string pushDeviceToken)
+    {
+        if (string.IsNullOrEmpty(pushDeviceToken))
+            return null;
+
+        return GetByPushTokenId(pushDeviceToken, true);
+    }
+
     public static Users Login(dynamic me, string deviceId, string pushDeviceToken, string email, string password)
     {
         Users user = new Users();
@@ -142,9 +150,48 @@ public class Users : Base<Users>
         return null;
     }
 
-    public static Users GetByPushTokenId(string pushTokenId)
+    public static Users GetByPushTokenId(string pushTokenId, bool fast = false)
     {
-        List<Users> users = GetByWhere(string.Format("(pushdevicetoken%20eq%20'{0}')", pushTokenId));
+        if(fast)
+        {
+            AzureService service = new AzureService("Users");
+            string data = service.GetByProc("getuseridbypushdevicetoken", string.Format("pushdevicetoken={0}", pushTokenId)).ToString();
+            if (!data.Contains("id"))
+                return null;
+
+            Users user = new Users();
+            if(data.Contains("\"id\":"))
+            {
+                string id = data.Substring(data.IndexOf("\"id\":") + 6);
+                id = id.Substring(0, id.IndexOf("\",\""));
+                user.Id = id;
+            }
+            if (data.Contains("\"facebookid\":"))
+            {
+                string facebookId = data.Substring(data.IndexOf("\"facebookid\":") + 14);
+                facebookId = facebookId.Substring(0, facebookId.IndexOf("\",\""));
+                user.FacebookId = facebookId;
+            }
+            if (data.Contains("\"latitude\":"))
+            {
+                string latitude = data.Substring(data.IndexOf("\"latitude\":") + 11);
+                latitude = latitude.Substring(0, latitude.IndexOf(",\""));
+                double lat;
+                if (double.TryParse(latitude, out lat))
+                    user.Latitude = lat;
+            }
+            if (data.Contains("\"longitude\":"))
+            {
+                string longitude = data.Substring(data.IndexOf("\"longitude\":") + 12);
+                longitude = longitude.Substring(0, longitude.IndexOf("}"));
+                double lng;
+                if (double.TryParse(longitude, out lng))
+                    user.Longitude = lng;
+            }
+            return user;
+        }
+
+        List<Users> users = GetByProc("getuserbypushdevicetoken", string.Format("pushdevicetoken={0}", pushTokenId));
         if (users.Count > 0)
             return users[0];
 
