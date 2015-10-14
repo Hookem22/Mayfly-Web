@@ -24,11 +24,11 @@ public class Group : Base<Group>
 
     public double Latitude { get; set; }
 
-    public double Longitude { get; set; }
+    public double? Longitude { get; set; }
 
     public string City { get; set; }
 
-    public bool IsPublic { get; set; }
+    public bool? IsPublic { get; set; }
 
     public string Password { get; set; }
 
@@ -75,7 +75,7 @@ public class Group : Base<Group>
         var sCoord = new GeoCoordinate(lat, lng);
         foreach (Group group in groups)
         {
-            var eCoord = new GeoCoordinate(group.Latitude, group.Longitude);
+            var eCoord = new GeoCoordinate(group.Latitude, (double)group.Longitude);
             group.Distance = sCoord.GetDistanceTo(eCoord);
         }
 

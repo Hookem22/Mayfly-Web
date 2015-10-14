@@ -291,7 +291,6 @@ input.error, textarea.error
 }
 .homeList .name
 {
-    color:#4285F4;
     position: absolute;
     left: 78px;
     right: 80px;
@@ -309,11 +308,15 @@ input.error, textarea.error
     position: absolute;
     right: 20px;
 }
-.homeList .time
+.homeList .group
 {
+    color: #4285F4;
     position: absolute;
     right: 20px;
-    margin-top: 22px;
+    margin-top: 18px;
+    z-index: 20;
+    background-color: white;
+    padding: 4px;
 }
 .homeList .icon
 {
@@ -334,6 +337,18 @@ input.error, textarea.error
     height: 15px;
     padding-top: 8px;
     padding-left: 7px;
+}
+.homeGoing
+{
+    overflow: hidden;
+    height: 20px;
+    margin-right: 18px;
+}
+.homeGoing img
+{
+    height: 20px;
+    border-radius: 10px;
+    margin: 0px 0px;
 }
 .blueBtn
 {

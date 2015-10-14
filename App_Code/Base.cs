@@ -121,7 +121,9 @@ public abstract class Base<T>
                     if (prop.PropertyType.Name == "String")
                     {
                         val = json.Substring(json.IndexOf(propName) + propName.Length + 1);
-                        if (val.Contains("\",\""))
+                        if (val.Length >= 3 && val.Substring(0, 3) == "ull")
+                            val = null;
+                        else if (val.Contains("\",\""))
                             val = val.Substring(0, val.IndexOf("\",\""));
                         else
                             val = val.Substring(0, val.IndexOf("\"}"));
@@ -129,7 +131,9 @@ public abstract class Base<T>
                     else
                     {
                         val = json.Substring(json.IndexOf(propName) + propName.Length);
-                        if (val.Contains(",\""))
+                        if (val.Length >= 4 && val.Substring(0, 4) == "null")
+                            val = null;
+                        else if (val.Contains(",\""))
                             val = val.Substring(0, val.IndexOf(",\""));
                         else
                             val = val.Substring(0, val.IndexOf("}"));
@@ -139,11 +143,23 @@ public abstract class Base<T>
                     else if (prop.PropertyType.Name == "DateTime")
                         prop.SetValue(obj, DateTime.Parse(val));
                     else if (prop.PropertyType.Name == "Double")
-                        prop.SetValue(obj, double.Parse(val));
-                    else if (prop.PropertyType.Name == "Int32")
-                        prop.SetValue(obj, int.Parse(val));
-                    else if (prop.PropertyType.Name == "Bool")
-                        prop.SetValue(obj, bool.Parse(val));
+                    {
+                        double d;
+                        if (double.TryParse(val, out d))
+                            prop.SetValue(obj, d);
+                    }
+                    else if (prop.PropertyType.FullName.Contains("Int32"))
+                    {
+                        int i;
+                        if(int.TryParse(val, out i))
+                            prop.SetValue(obj, i);
+                    }
+                    else if (prop.PropertyType.Name == "Boolean")
+                    {
+                        bool b;
+                        if (bool.TryParse(val, out b))
+                            prop.SetValue(obj, b);
+                    }
                 }
             }
         }

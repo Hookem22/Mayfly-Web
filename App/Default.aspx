@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=5" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -61,7 +61,10 @@
                 }
             });
 
-            $(".content, #groupEvents").on("click", ".event", function () {
+            $(".content, #groupEvents").on("click", ".event", function (e) {
+                if ($(e.target).hasClass("group"))
+                    return;
+
                 if (!currentUser || !currentUser.Id) {
                     OpenLogin();
                     return;
@@ -214,8 +217,16 @@
         function PopulateEvents(results)
         {
             var html = SetLocalTimes(results);
-
             $(".content #contentResults").html(html);
+            var today = new Date().getDay();
+            $(".content #contentResults .dayHeader").each(function () {
+                var day = $(this).attr("dayofweek");
+                if (day == today)
+                    $(this).find("div:last-child").html("Today");
+                else if(day - today == 1)
+                    $(this).find("div:last-child").html("Tomorrow");
+            });
+
             if ($(".content").scrollTop() < 20)
                 $(".content").scrollTop(20);
 
@@ -331,7 +342,8 @@
                 $("#AddDetails").val(currentEvent.Description);
                 $("#AddLocation").val(currentEvent.LocationName);
                 currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
-                $("#AddStartTime").val(ToLocalTime(currentEvent.StartTime));
+                $("#addDiv #AddDay").val(GetDayLabel(currentEvent.DayOfWeek));
+                $("#AddStartTime").val(currentEvent.LocalTime);
                 var min = currentEvent.MinParticipants > 1 ? currentEvent.MinParticipants : "";
                 $("#AddMin").val(min);
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
@@ -401,6 +413,8 @@
 
         function GetCreateEvent() {
             var startTime = "";
+            var dayOfWeek;
+            var localTime = "";
             if ($("#AddStartTime").val()) {
                 var now = new Date();
                 startTime = new Date();
@@ -424,6 +438,9 @@
                     }
                     i++;
                 });
+
+                dayOfWeek = startTime.getDay();
+                localTime = $("#AddStartTime").val();
             }
 
             var max = +$("#AddMax").val();
@@ -434,7 +451,7 @@
             var event = {
                 Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
                 LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
-                MinParticipants: min, MaxParticipants: max, StartTime: startTime,
+                MinParticipants: min, MaxParticipants: max, StartTime: startTime, DayOfWeek: dayOfWeek, LocalTime: localTime,
                 NotificationMessage: "Created: " + $("#AddName").val(), UserId: currentUser.Id
             };
 
@@ -872,7 +889,7 @@
         $(document).ready(function () {
 
             $("#groupAddDiv .screenTitle").click(function () {
-                if(currentUser && currentUser.Id == "1AEE4881-1B34-4806-8985-CA253116B6CE" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
+                if (currentUser && currentUser.Id == "1690A2B0-2218-4098-8165-8B349E3B0C29" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
                 {
                     $('#changeLatLngDiv').show();
                     $('.modal-backdrop').show();
@@ -1118,21 +1135,14 @@
             var geocoder = new google.maps.Geocoder();
             geocoder.geocode({ 'latLng': latlng }, function (results, status) {
                 if (status == google.maps.GeocoderStatus.OK) {
-                    if (results[1]) {
-                        var indice = 0;
-                        for (var j = 0; j < results.length; j++) {
-                            if (results[j].types[0] == 'locality') {
-                                indice = j;
-                                break;
-                            }
-                        }
-                        for (var i = 0; i < results[j].address_components.length; i++) {
-                            if (results[j].address_components[i].types[0] == "locality")
-                                var city = results[j].address_components[i];
-                            if (results[j].address_components[i].types[0] == "administrative_area_level_1")
-                                var region = results[j].address_components[i];
-                            if (results[j].address_components[i].types[0] == "country")
-                                var country = results[j].address_components[i];
+                    if (results) {
+                        for (var i = 0; i < results[0].address_components.length; i++) {
+                            if (results[0].address_components[i].types[0] == "locality")
+                                var city = results[0].address_components[i];
+                            if (results[0].address_components[i].types[0] == "administrative_area_level_1")
+                                var region = results[0].address_components[i];
+                            if (results[0].address_components[i].types[0] == "country")
+                                var country = results[0].address_components[i];
                         }
                         $("#AddGroupCity").val(city.long_name + ", " + region.short_name);
                     }
@@ -1739,6 +1749,17 @@
                 $("#dateDivResults").html(html);
                 $(".modal-backdrop").show();
                 $("#dateDiv").show();
+            }
+
+            function GetDayLabel(dayNumber)
+            {
+                var today = new Date().getDay();
+                if (dayNumber == today)
+                    return "Today";
+                else if (dayNumber - today == 1)
+                    return "Tomorrow";
+
+                return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dayNumber];
             }
     </script>
 

@@ -35,7 +35,7 @@ public class GroupUsers : Base<GroupUsers>
 
     public static List<GroupUsers> GetByGroup(string groupId)
     {
-        List<GroupUsers> users = GetByProc("getgroupusers", string.Format("groupid={0}", groupId));
+        List<GroupUsers> users = GetByProcFast("getgroupusers", string.Format("groupid={0}", groupId));
         return users;
     }
 

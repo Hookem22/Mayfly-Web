@@ -36,6 +36,10 @@ public class Event : Base<Event>
 
     public string StartTime { get; set; }
 
+    public int? DayOfWeek { get; set; } /* Sunday = 0, Monday = 1, etc. */
+
+    public string LocalTime { get; set; }
+
     [NonSave]
     public bool? IsGoing { get; set; }
 
@@ -62,12 +66,9 @@ public class Event : Base<Event>
 
     [NonSave]
     public string LocalDayTime { get; set; }
-
+    
     [NonSave]
-    public string LocalTime { get; set; }
-
-    [NonSave]
-    public int? DayOfWeek { get; set; } /* Today = 0, Tomorrow = 1, etc. */
+    public string DayLabel { get; set; }
 
     #endregion
 
@@ -99,7 +100,7 @@ public class Event : Base<Event>
         List<Event> events = GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
         if(events.Count > 0)
         {
-            //AddHelperProperties(events, latitude, longitude);
+            AddHelperProperties(events, latitude, longitude);
             return GetGroupEventsHtml(events, user);
         }
         return "";
@@ -167,16 +168,30 @@ public class Event : Base<Event>
 
     private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
     {
-        double lat = double.Parse(latitude);
-        double lng = double.Parse(longitude);
-        
         foreach (Event evt in events)
         {
-            DateTime localTime = GoogleMapsService.GetLocalDateTime(evt.StartTime, lat, lng);
-            evt.LocalDayTime = localTime.ToString("ddd h:mm tt");
-            evt.LocalTime = localTime.ToString("h:mm tt");
-            evt.DayOfWeek = (int?)localTime.DayOfWeek;
+            evt.Going = EventGoing.GetByEvent(evt.Id);
+
+            if (evt.DayOfWeek != null)
+            {
+                string[] daysShort = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                evt.LocalDayTime = daysShort[(int)evt.DayOfWeek] + " " + evt.LocalTime;
+
+                string[] days = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+                evt.DayLabel = days[(int)evt.DayOfWeek];
+            }
         }
+        
+        //double lat = double.Parse(latitude);
+        //double lng = double.Parse(longitude);
+        
+        //foreach (Event evt in events)
+        //{
+        //    DateTime localTime = GoogleMapsService.GetLocalDateTime(evt.StartTime, lat, lng);
+        //    evt.LocalDayTime = localTime.ToString("ddd h:mm tt");
+        //    evt.LocalTime = localTime.ToString("h:mm tt");
+        //    evt.DayOfWeek = (int?)localTime.DayOfWeek;
+        //}
 
         //try
         //{
@@ -219,50 +234,53 @@ public class Event : Base<Event>
         if (user != null)
             events = ReorderEvents(events, user);
 
-        DayOfWeek today = GoogleMapsService.GetToday(events[0].LocationLatitude, events[0].LocationLongitude).DayOfWeek;
-        string html = string.Format("<div class='dayHeader'><div></div><div>{0}</div></div>", DayLabel((int)events[0].DayOfWeek, today));
+        string html = string.Format("<div class='dayHeader' dayofweek='{0}'><div></div><div>{1}</div></div>", events[0].DayOfWeek, events[0].DayLabel);
 
         Random rnd = new Random();
         int i = 0;
         foreach (Event evt in events)
         {
             if(i > 0 && events[i - 1].DayOfWeek != events[i].DayOfWeek)
-                html += string.Format("<div class='dayHeader'><div></div><div>{0}</div></div>", DayLabel((int)events[i].DayOfWeek, today));
+                html += string.Format("<div class='dayHeader' dayofweek='{0}'><div></div><div>{1}</div></div>", events[i].DayOfWeek, events[i].DayLabel);
             string addClass = "";
             if(i == 0 || events[i - 1].DayOfWeek != events[i].DayOfWeek)
                 addClass = "first";
             if (i == events.Count - 1 || events[i].DayOfWeek != events[i + 1].DayOfWeek)
                 addClass += " last";
 
-            if (string.IsNullOrEmpty(evt.GroupId))
-            {
-                string eventHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
-                eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", evt.LocalTime);
-                string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
-                if (evt.IsGoing == true)
-                {
-                    string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-                    if (!string.IsNullOrEmpty(user.FacebookId))
-                        img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
-                    else
-                        img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
-                }
-                eventHtml = eventHtml.Replace("{img}", img);
-                html += eventHtml;
-            }
-            else
-            {
-                string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
-                string details = evt.Name;
-                //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
+            //if (string.IsNullOrEmpty(evt.GroupId))
+            //{
+            //    string eventHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
+            //    eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", evt.LocalTime);
+            //    string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+            //    if (evt.IsGoing == true)
+            //    {
+            //        string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            //        if (!string.IsNullOrEmpty(user.FacebookId))
+            //            img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
+            //        else
+            //            img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
+            //    }
+            //    eventHtml = eventHtml.Replace("{img}", img);
+            //    html += eventHtml;
+            //}
+            //else
+            //{
+            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='group' groupid='{GroupId}'>{Group}</div></div>";
+            string details = AddGoing(evt);
+            //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
-                groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", details).Replace("{Details}", evt.GroupName).Replace("{StartDay}", evt.LocalTime);
-                string img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
-                if (evt.IsGoing != null && (bool)evt.IsGoing && !string.IsNullOrEmpty(user.FacebookId))
-                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-                groupHtml = groupHtml.Replace("{img}", img);
-                html += groupHtml;
-            }
+            groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", details).Replace("{StartDay}", evt.LocalTime).Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
+            string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+            if (!string.IsNullOrEmpty(evt.GroupId))
+                img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
+            if (evt.IsGoing != null && (bool)evt.IsGoing && !string.IsNullOrEmpty(user.FacebookId))
+                img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            else if (evt.IsGoing != null && (bool)evt.IsGoing)
+                img = "<img src='../Img/face" + rnd.Next(8) + ".png' /><div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            groupHtml = groupHtml.Replace("{img}", img);
+            html += groupHtml;
+            //}
             i++;
         }
 
@@ -345,17 +363,6 @@ public class Event : Base<Event>
         //return html;
     }
 
-    private static string DayLabel(int day, DayOfWeek today)
-    {
-        if (day == (int)today)
-            return "Today";
-        else if (day - (int)today == 1)
-            return "Tomorrow";
-
-        string[] days = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
-        return days[day];
-    }
-
     private static string GetGroupEventsHtml(List<Event> events, Users user)
     {
         if (user != null)
@@ -366,7 +373,7 @@ public class Event : Base<Event>
         foreach (Event evt in events)
         {
             string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='time'>{StartTime}</div></div>";
-            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", "" /*"[[" + evt.StartTime.ToString() + "]]"*/).Replace("{StartTime}", "" /*"{{" + evt.StartTime.ToString() + "}}"*/);
+            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", evt.LocalDayTime).Replace("{StartTime}", "" /*"{{" + evt.StartTime.ToString() + "}}"*/);
             string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
             if (evt.IsGoing == true)
             {
@@ -385,14 +392,23 @@ public class Event : Base<Event>
 
     private static List<Event> ReorderEvents(List<Event> events, Users user)
     {
-        List<string> goingIds = EventGoing.GetByUser(user.Id);
+        //List<string> goingIds = EventGoing.GetByUser(user.Id);
 
         List<Event> eventGoing = new List<Event>();
         List<Event> eventOther = new List<Event>();
 
         foreach(Event evt in events)
         {
-            if (goingIds.Contains(evt.Id))
+            bool isGoing = false;
+            foreach(EventGoing going in evt.Going)
+            {
+                if(user.Id == going.UserId)
+                {
+                    isGoing = true;
+                    break;
+                }
+            }
+            if (isGoing)
             {
                 evt.IsGoing = true;
                 eventGoing.Add(evt);
@@ -407,6 +423,21 @@ public class Event : Base<Event>
         //events = eventGoing;
         //events.AddRange(eventOther);
         return events;
+    }
+
+    private static string AddGoing(Event evt)
+    {
+        string html = "<div class='homeGoing'>";
+        Random rnd = new Random();
+        foreach(EventGoing going in evt.Going)
+        {
+            if (!string.IsNullOrEmpty(going.FacebookId))
+                html += "<img src='https://graph.facebook.com/" + going.FacebookId + "/picture' />";
+            else
+                html += "<img style='height: 25px;margin: -3px 0;' src='../Img/face" + rnd.Next(8) + ".png' />";
+        }
+        html += "</div>";
+        return html;
     }
 
     private class GroupEvent

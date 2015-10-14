@@ -36,7 +36,7 @@ public class EventGoing : Base<EventGoing>
 
     public static List<EventGoing> GetByEvent(string eventId)
     {
-        return GetByProc("getgoingbyevent", string.Format("eventid={0}", eventId));
+        return GetByProcFast("getgoingbyevent", string.Format("eventid={0}", eventId));
     }
 
     public static List<string> GetByUser(string userId)
