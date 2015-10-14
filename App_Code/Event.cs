@@ -62,6 +62,9 @@ public class Event : Base<Event>
     public string GroupName { get; set; }
 
     [NonSave]
+    public bool? GroupIsPublic { get; set; }
+
+    [NonSave]
     public string GroupPictureUrl { get; set; }
 
     [NonSave]
@@ -180,6 +183,8 @@ public class Event : Base<Event>
                 string[] days = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
                 evt.DayLabel = days[(int)evt.DayOfWeek];
             }
+            if (evt.GroupIsPublic == null)
+                evt.GroupIsPublic = true;
         }
         
         //double lat = double.Parse(latitude);

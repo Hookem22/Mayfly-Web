@@ -98,7 +98,10 @@
 
             $(".screen.swipe").swipe({
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
-                    CloseRight($(this).closest(".screen"));
+                    if ($(this).closest(".screen").attr('id') == "groupDetailsDiv")
+                        currentGroup = {};
+
+                    CloseRight(this);
                 }
             });
 
@@ -117,6 +120,12 @@
                     LoadEvents();
                 }
             });
+
+            $("#groupDetailsDiv .screenHeader .backArrow").click(function () {
+                currentGroup = {};
+            });
+
+
         });
 
         function Init()
@@ -511,20 +520,29 @@
         function OpenEventDetails(event) {
 
             currentEvent = event;
-            $("#detailsDiv").show();
             if (event.GroupId) {
                 $("#detailsDiv").removeClass("nonGroup");
-                var success = function (results) {
-                    currentGroup = results;
-                    $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
-                };
-                Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
+                if (!currentGroup || !currentGroup.Id || currentGroup.Id != event.GroupId) {
+                    var success = function (results) {
+                        currentGroup = results;
+                        $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
+                        if (!event.GroupIsPublic && IsGoing(currentGroup.Members, currentUser.Id))
+                            OpenEventDetails(currentEvent);
+                        else if (!event.GroupIsPublic)
+                            MessageBox("This event is private. Please join the group to attend this event.")
+                    };
+                    Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
+
+                    if (!event.GroupIsPublic)
+                        return;
+                }
             }
             else {
                 $("#detailsDiv").addClass("nonGroup");
                 $("#detailsLogo").hide();
             }
 
+            $("#detailsDiv").show();
             $("#detailsDiv .screenTitle").html(event.Name);
             var subheaderHtml = ToLocalDay(event.StartTime) + " " + ToLocalTime(event.StartTime) + " - " + event.LocationName;
             $("#detailsDiv #detailsInfo").html(subheaderHtml);
