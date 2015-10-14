@@ -80,12 +80,7 @@ public class Event : Base<Event>
         Event evt = Base<Event>.Get(id);
         evt.Description = evt.Description.Replace("\n", "<br/>");
         evt.Going = EventGoing.GetByEvent(evt.Id);
-        //if(!string.IsNullOrEmpty(evt.GroupId))
-        //{
-        //    Group group = Group.Get(evt.GroupId);
-        //    if (group != null)
-        //        evt.GroupName = group.Name;
-        //}
+
         return evt;
     }
 
@@ -187,39 +182,6 @@ public class Event : Base<Event>
                 evt.GroupIsPublic = true;
         }
         
-        //double lat = double.Parse(latitude);
-        //double lng = double.Parse(longitude);
-        
-        //foreach (Event evt in events)
-        //{
-        //    DateTime localTime = GoogleMapsService.GetLocalDateTime(evt.StartTime, lat, lng);
-        //    evt.LocalDayTime = localTime.ToString("ddd h:mm tt");
-        //    evt.LocalTime = localTime.ToString("h:mm tt");
-        //    evt.DayOfWeek = (int?)localTime.DayOfWeek;
-        //}
-
-        //try
-        //{
-        //    double lat = double.Parse(latitude);
-        //    double lng = double.Parse(longitude);
-        //    var sCoord = new GeoCoordinate(lat, lng);
-
-        //    foreach (Event evt in events)
-        //    {
-        //        if(!string.IsNullOrEmpty(evt.GroupId))
-        //        {
-        //            Group group = Group.Get(evt.GroupId);
-        //            if(!string.IsNullOrEmpty(group.Locations))
-        //            {
-        //                evt.Distance = evt.LocationName;
-        //                continue;
-        //            }
-        //        }
-        //        var eCoord = new GeoCoordinate(evt.LocationLatitude, evt.LocationLongitude);
-        //        evt.Distance = DistanceLabel(sCoord.GetDistanceTo(eCoord));
-        //    }
-        //}
-        //catch (Exception ex) { }
     }
 
     private static string DistanceLabel(double meters)
@@ -253,24 +215,6 @@ public class Event : Base<Event>
             if (i == events.Count - 1 || events[i].DayOfWeek != events[i + 1].DayOfWeek)
                 addClass += " last";
 
-            //if (string.IsNullOrEmpty(evt.GroupId))
-            //{
-            //    string eventHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
-            //    eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", evt.LocalTime);
-            //    string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
-            //    if (evt.IsGoing == true)
-            //    {
-            //        string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-            //        if (!string.IsNullOrEmpty(user.FacebookId))
-            //            img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
-            //        else
-            //            img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
-            //    }
-            //    eventHtml = eventHtml.Replace("{img}", img);
-            //    html += eventHtml;
-            //}
-            //else
-            //{
             string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='group' groupid='{GroupId}'>{Group}</div></div>";
             string details = AddGoing(evt);
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
@@ -285,87 +229,12 @@ public class Event : Base<Event>
                 img = "<img src='../Img/face" + rnd.Next(8) + ".png' /><div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
             groupHtml = groupHtml.Replace("{img}", img);
             html += groupHtml;
-            //}
+
             i++;
         }
 
         return html;
-        
-        
-        
-        
-        //if(user != null)
-        //    events = ReorderEvents(events, user);
 
-        //List<GroupEvent> groupEvents = new List<GroupEvent>();
-        //foreach(Event evt in events)
-        //{
-        //    if(string.IsNullOrEmpty(evt.GroupId))
-        //    {
-        //        groupEvents.Add(new GroupEvent(null, evt));
-        //    }
-        //    else
-        //    {
-        //        GroupEvent groupEvent = groupEvents.Find(delegate(GroupEvent g)
-        //        {
-        //            return g.Group != null && g.Group.Id == evt.GroupId;
-        //        });
-        //        if(groupEvent != null)
-        //        {
-        //            groupEvent.Events.Add(evt);
-        //        }
-        //        else
-        //        {
-        //            Group group = new Group();
-        //            group.Id = evt.GroupId;
-        //            group.Name = evt.GroupName;
-        //            group.PictureUrl = evt.GroupPictureUrl;
-        //            groupEvents.Add(new GroupEvent(group, evt));
-        //        }
-        //    }
-        //}
-
-        //string html = "";
-        //Random rnd = new Random();
-        //foreach(GroupEvent ge in groupEvents)
-        //{
-        //    if(ge.Group == null)
-        //    {
-        //        string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
-        //        eventHtml = eventHtml.Replace("{EventId}", ge.Events[0].Id).Replace("{Name}", ge.Events[0].Name).Replace("{Details}", ge.Events[0].Distance).Replace("{StartDay}", ge.Events[0].LocalTime);
-        //        string img = "<img src='../Img/grayface" + rnd.Next(8) + ".png' />";
-        //        if(ge.Events[0].IsGoing == true)
-        //        {
-        //            string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-        //            if (!string.IsNullOrEmpty(user.FacebookId))
-        //                img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
-        //            else
-        //                img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
-        //        }
-        //        eventHtml = eventHtml.Replace("{img}", img);
-        //        html += eventHtml;
-        //    }
-        //    else
-        //    {
-        //        string groupHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
-        //        string details = ge.Events[0].Name;
-        //        bool isGoing = false;
-        //        foreach(Event evt in ge.Events)
-        //        {
-        //            if (evt.IsGoing == true)
-        //                isGoing = true;
-        //        }
-        //        //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + ge.Events[0].Distance;
-        //        groupHtml = groupHtml.Replace("{EventId}", ge.Events[0].Id).Replace("{Name}", details).Replace("{Details}", ge.Group.Name).Replace("{StartDay}", ge.Events[0].LocalTime);
-        //        string img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", ge.Group.PictureUrl);
-        //        if (isGoing && !string.IsNullOrEmpty(user.FacebookId))
-        //            img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-        //        groupHtml = groupHtml.Replace("{img}", img);
-        //        html += groupHtml;
-        //    }
-        //}
-
-        //return html;
     }
 
     private static string GetGroupEventsHtml(List<Event> events, Users user)
@@ -443,23 +312,6 @@ public class Event : Base<Event>
         }
         html += "</div>";
         return html;
-    }
-
-    private class GroupEvent
-    {
-        public GroupEvent()
-        {
-
-        }
-        public GroupEvent(Group group, Event evt)
-        {
-            Group = group;
-            Events = new List<Event>() { evt };
-        }
-
-        public List<Event> Events { get; set; }
-
-        public Group Group { get; set; }
     }
 
     private static string defaultHomeHtml = "<div style='background-color: white;margin: 15px 12px;padding: 34px 24px;box-shadow: 0 1px 2px 0 rgba(0,0,0,0.22);border-radius: 6px;'><div style='text-align: center;color: #555;'><div style='font-size: 1.5em;'>Welcome to Pow Wow!</div><div style='font-size: 1.1em;margin: .8em 32px;line-height: 1.4em;'>The place to find events near you today</div><div style='font-size: 1.25em;line-height: 1.8em;'><a style='color: #4285F4;' onclick='OpenAdd();'>Create an Event</a><br/>or<br/><a style='color: #4285F4;' onclick='OpenGroups();'>Join a Group</a></div></div></div>";
