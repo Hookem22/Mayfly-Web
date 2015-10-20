@@ -681,158 +681,40 @@
 
     <!-- Login -->
     <script type="text/javascript">
-        $(document).ready(function () {
-            $("#loginSignupEmailPlaceholder").click(function () {
-                $("#loginSignupEmailTextBox").focus();
-            });
-
-            $(".loginSignupHeader .backarrow").click(function () {
-                $("#loginSignupDiv").hide();
-            });
-
-            $("#loginSignupEmailTextBox").keyup(function () {
-                if($(this).val())
-                {
-                    $(".loginOrDiv").hide();
-                    $("#facebookLoginBtn").hide();
-                    $(".loginLineDiv").show();
-                    $("#signupNextBtn").show();
-                    $("#loginSignupEmailPlaceholder").hide();
-                }
-                else
-                {
-                    $(".loginOrDiv").show();
-                    $("#facebookLoginBtn").show();
-                    $(".loginLineDiv").hide();
-                    $("#signupNextBtn").hide();
-                    $("#loginSignupEmailPlaceholder").show();
-                }
-            });
-
-            $("#signupNextBtn").click(function () {
-                $("#signupDiv").show();
-                $("#signupEmailTextBox").val($("#loginSignupEmailTextBox").val());
-                $("#signupNameTextBox").focus();
-            });
-
-            $(".signupHeader .backarrow").click(function () {
-                $("#signupDiv").hide();
-            });
-
-            $("#loginTabHeader").click(function () {
-                $("#loginDiv").show();
-                $("#loginEmailTextBox").focus();
-            });
-
-            $(".loginHeader .backarrow").click(function () {
-                $("#loginDiv").hide();
-            });
-
-            $("#forgotPasswordBtn").click(function () {
-                $("#forgotPasswordDiv").show();
-                $("#forgotPasswordEmailTextBox").focus();
-            });
-
-            $(".forgotPasswordHeader .backarrow").click(function () {
-                $("#forgotPasswordDiv").hide(); 
-            });
-
-            $("#signupBtn").click(function () {
-                var error = false;
-                $("#signupContentDiv input").removeClass("error");
-                if (!$("#signupEmailTextBox").val()) {
-                    $("#signupEmailTextBox").addClass("error");
-                    error = true;
-                }
-                if (!$("#signupNameTextBox").val()) {
-                    $("#signupNameTextBox").addClass("error");
-                    error = true;
-                }
-                if (!$("#signupPasswordTextBox").val()) {
-                    $("#signupPasswordTextBox").addClass("error");
-                    error = true;
-                }
-                if (error)
-                    return;
-
-                var name = $("#signupNameTextBox").val();
-                var firstName = name.indexOf(" ") > 0 ? name.substring(0, name.indexOf(" ")) : name;
-
-                var deviceId = getParameterByName("deviceId");
-                var pushDeviceToken = getParameterByName("pushDeviceToken");
-
-                var user = {
-                    Name: name, FirstName: firstName, Email: $("#signupEmailTextBox").val(), Password: $("#signupPasswordTextBox").val(),
-                    DeviceId: deviceId, PushDeviceToken: pushDeviceToken, Latitude: currentLat, Longitude: currentLng
-                };
-
-                Post("SignUpUser", { user: user }, LoginSuccess);
-                $("#signupDiv").hide();
-                $("#loginSignupDiv").hide();
-                MessageBox(firstName + ", Welcome to Pow Wow!");
-            });
-
-            $("#loginBtn").click(function () {
-                var error = false;
-                $("#loginContentDiv input").removeClass("error");
-                if (!$("#loginEmailTextBox").val()) {
-                    $("#loginEmailTextBox").addClass("error");
-                    error = true;
-                }
-                if (!$("#loginPasswordTextBox").val()) {
-                    $("#loginPasswordTextBox").addClass("error");
-                    error = true;
-                }
-                if (error)
-                    return;
-
-                var deviceId = getParameterByName("deviceId");
-                var pushDeviceToken = getParameterByName("pushDeviceToken");
-
-                var success = function (user) {
-                    if(!user)
-                        MessageBox("Email or Password is incorrect")
-                    else {
-                        $("#loginDiv").hide();
-                        $("#loginSignupDiv").hide();
-                        LoginSuccess(user);
-                    }
-                }
-
-                Post("LoginUser", { facebookAccessToken: "", deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: $("#loginEmailTextBox").val(), password: $("#loginPasswordTextBox").val() }, success);
-
-            });
-
-            $(".facebookLoginBtn").click(function () {
-                if (isiOS) {
-                    window.location = "ios:FacebookLogin";
-                }
-                else if (isAndroid) {
-                    if (typeof androidAppProxy !== "undefined")
-                        androidAppProxy.AndroidFacebookLogin();
-                }
-            });
-
-            $("#forgotPasswordSendBtn").click(function () {
-                var success = function (result) {
-                    $("#forgotPasswordDiv").hide();
-                    $("#loginDiv").hide();
-                    $("#loginSignupDiv").hide();
-                    if (result)
-                        MessageBox(result);
-                };
-
-                Post("ForgotPassword", { email: $("#forgotPasswordEmailTextBox").val() }, success);
-            });
-
-        });
-
-        function OpenLogin() {
-            $("#loginSignupDiv").show();
-            $("#loginSignupEmailTextBox").focus();
+        function OpenLogin()
+        {
+            OpenFromBottom("facebookLoginDiv");
         }
 
-    </script>
+        function FacebookLogin() {
+            if (isiOS) {
+                window.location = "ios:FacebookLogin";
+            }
+            else if(isAndroid)
+            {
+                if (typeof androidAppProxy !== "undefined")
+                    androidAppProxy.AndroidFacebookLogin();
+            }
+            //else
+            //{
+            //    FB.login(function (response) {
+            //        if (response.authResponse) {
+            //            var uid = response.authResponse.userID;
+            //            $("#FacebookId").val(uid);
+            //            fbAccessToken = response.authResponse.accessToken;
+            //            var deviceId = getParameterByName("deviceId");
+            //            var pushDeviceToken = getParameterByName("pushDeviceToken");
+
+            //            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
+            //            CloseToBottom('facebookLoginDiv');
+            //        } else {
+            //            console.log('User cancelled login or did not fully authorize.');
+            //        }
+            //    });
+            //}
+        }
+
+        </script>
 
     <!-- Menu -->
     <script type="text/javascript">
@@ -1980,57 +1862,13 @@
                 <div id="groupLocationsResults"></div>
             </div>
         </div>--%>
-        <div id="loginSignupDiv">
-            <div class="loginSignupHeader">
-                <img class="backarrow" src="/Img/whitebackarrow.png" />
-                <img class="title" src="/Img/title.png" />
-                <div class="subtitle">Sign up to discover activities<br /> near you today.</div>
-                <div id="signupTabHeader" class="loginTabHeaders selected">SIGN UP<div class="arrowUp"></div></div>
-                <div id="loginTabHeader" class="loginTabHeaders" style="left: 50%;">LOG IN<div class="arrowUp"></div></div>
-            </div>
-            <div id="signupTab">
-                <input id="loginSignupEmailTextBox" /><div id="loginSignupEmailPlaceholder" >Enter your email</div>
-                <div class="loginOrDiv" style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 38%;"></div><div class="loginOrDiv" style="float:left;width:13.8%;text-align: center;color:#B5B5B5">OR</div><div class="loginOrDiv" style="float:right;border-top:1px solid #B5B5B5;margin:8px 5% 0 0;width: 38%;"></div>
-                <div id="facebookLoginBtn" class="facebookLoginBtn" style="clear: both;text-align: center;color:#4285F4;"><img src="../Img/fbIcon.png" style="height: 20px;margin: 8px 10px 0 0;vertical-align: bottom;" />Sign up with Facebook</div>
-                <div class="loginLineDiv" style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 90%;margin-bottom: 12px;display:none;"></div>
-                <div id="signupNextBtn" style="text-align: center;color:#4285F4;font-size:20px;display:none;">Next</div>
-            </div>
-        </div>
-        <div id="signupDiv">
-            <div class="signupHeader">
-                <img class="backarrow" src="/Img/whitebackarrow.png" />
-                <img class="title" src="/Img/title.png" />
-            </div>
-            <div id="signupContentDiv">
-                <img src="../Img/grayenvelope.png" /><input id="signupEmailTextBox" placeholder="Your email" />
-                <img src="../Img/grayface.png" style="margin-top: 2px;" /><input id="signupNameTextBox" placeholder="Your name" />
-                <img src="../Img/graylock.png" style="margin-top: 0;" /><input id="signupPasswordTextBox" type="password" placeholder="Password" />
-                <div id="signupBtn">Sign Up</div>
-            </div>
-        </div>
-        <div id="loginDiv">
-            <div class="loginHeader">
-                <img class="backarrow" src="/Img/whitebackarrow.png" />
-                <img class="title" src="/Img/title.png" />
-            </div>
-            <div id="loginContentDiv">
-                <img src="../Img/grayenvelope.png" /><input id="loginEmailTextBox" placeholder="Your email" />
-                <img src="../Img/graylock.png" /><input id="loginPasswordTextBox" type="password" placeholder="Password" />
-                <div id="forgotPasswordBtn">Forgot?</div>
-                <div id="loginBtn" style="margin-bottom:12px;">Log In</div>
-                <div style="float:left;border-top:1px solid #B5B5B5;margin:8px 0 0 5%;width: 38%;"></div><div style="float:left;width:13.8%;text-align: center;color:#B5B5B5">OR</div><div style="float:right;border-top:1px solid #B5B5B5;margin:8px 5% 0 0;width: 38%;"></div>
-                <div class="facebookLoginBtn" style="clear: both;text-align: center;color:#4285F4;"><img src="../Img/fbIcon.png" style="height: 20px;margin: 8px 10px 0 0;vertical-align: bottom;float: none;" />Log in with Facebook</div>
-
-            </div>
-        </div>
-        <div id="forgotPasswordDiv">
-            <div class="forgotPasswordHeader">
-                <img class="backarrow" src="/Img/whitebackarrow.png" />
-                <img class="title" src="/Img/title.png" />
-            </div>
-            <div id="forgotPasswordContentDiv">
-                <img src="../Img/grayenvelope.png" /><input id="forgotPasswordEmailTextBox" placeholder="Your email" />
-                <div id="forgotPasswordSendBtn" style="margin-bottom:12px;">Send Password</div>
+         <div id="facebookLoginDiv" class="screen swipe">
+             <img src="../Img/bluebackarrow.png" onclick="$('#facebookLoginDiv').hide();" style="position: absolute;height: 28px;width: 30px;left: 16px;top: 14px;" />            
+             <div id="loginHeader" style="margin:15px 44px 25px;text-align: center;font-size: 20px;line-height: 28px;">Log In to Discover Activities Near You Today</div>
+            <img src="../Img/appScreenshot.png" style="margin: 12px auto;height: 64%;display:block;" />
+            <div style="text-align: center;position: absolute;width: 100%;top: 100%;margin-top: -80px;">
+                <div onclick="FacebookLogin();" style="display:block;margin:0 auto;width: 80%;background-color:#3B5998;color:white;padding: 10px 0;border-radius: 5px;">Log In with Facebook</div>
+                <div style="margin-top: 6px;font-size: 14px;">We don't post anything to Facebook</div>
             </div>
         </div>
         <div id="dateDiv">
