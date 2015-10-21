@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=5" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -105,13 +105,14 @@
                 }
             });
 
-            $("#addDiv").swipe({
+            $("#addDiv .screenContent").children().not(".invitedFriends, #AddMap").swipe({
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
                     LoadEvents();
+                    CloseRight($("#addDiv"));
                 }
             });
 
-            $("#detailsDiv .screenSubheader, #detailsDiv #detailsDescription, #detailsHowMany").swipe({
+            $("#detailsDiv .screenSubheader, #detailsDescription, #detailsInviteBtn").swipe({
                 swipeLeft: function (event, direction, distance, duration, fingerCount) {
                     OpenMessages();
                 },
@@ -165,7 +166,7 @@
             if(results)
                 PopulateEvents(results);
 
-            var fbAccessToken = getParameterByName("fbAccessToken");
+            fbAccessToken = getParameterByName("fbAccessToken");
             var deviceId = getParameterByName("deviceId");
             var pushDeviceToken = getParameterByName("pushDeviceToken");
 
@@ -322,7 +323,7 @@
         });
 
         function OpenAdd(isEdit) {
-            if (!currentUser || !currentUser.Id) {
+            if (!currentUser || !currentUser.Id || !fbAccessToken) {
                 OpenLogin();
                 return;
             }
@@ -399,6 +400,7 @@
             var success = (function (event) {
                 LoadEvents();
                 $("#addDiv").hide();
+                SendInvites(event);
 
                 if (currentEvent.Id) {
                     currentEvent = event;
@@ -461,7 +463,7 @@
                 Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
                 LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
                 MinParticipants: min, MaxParticipants: max, StartTime: startTime, DayOfWeek: dayOfWeek, LocalTime: localTime,
-                NotificationMessage: "Created: " + $("#AddName").val(), UserId: currentUser.Id
+                NotificationMessage: "Created " + $("#AddName").val(), UserId: currentUser.Id
             };
 
             if (currentEvent.Id) {
@@ -597,6 +599,7 @@
             $("#detailsHowMany").html(howMany);
 
             var goingHtml = "";
+            var people = 0;
             for (var i = 0; i < event.Going.length; i++) {
                 var user = event.Going[i];
                 if(user.FacebookId) {
@@ -607,13 +610,36 @@
                     var src = "/Img/face" + Math.floor(Math.random() * 8) + ".png";
                     goingHtml += "<div class='nonFb'><img src='" + src + "' /><div class='goingIcon icon'><img src='/Img/greenCheck.png' /></div><div>" + user.FirstName + "</div></div>";
                 }
-
+                people++;
             }
-            for (var i = event.Going.length; i < event.MaxParticipants; i++) {
+            for (var i = 0; i < event.Invited.length; i++) {
+                var user = event.Invited[i];
+                var isGoing = false;
+                for (var j = 0; i < event.Going.length; j++)
+                {
+                    if(user.FacebookId == event.Going[j].FacebookId)
+                    {
+                        isGoing = true;
+                        break;
+                    }
+                }
+                if(isGoing)
+                    continue;
+                if (user.FacebookId) {
+                    var src = "https://graph.facebook.com/" + user.FacebookId + "/picture";
+                    goingHtml += "<div><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
+                }
+                else {
+                    var src = "/Img/face" + Math.floor(Math.random() * 8) + ".png";
+                    goingHtml += "<div class='nonFb'><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
+                }
+                people++;
+            }
+            for (var i = people; i < event.MaxParticipants; i++) {
                 goingHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
             }
-            var notGoing = event.MaxParticipants ? (event.MaxParticipants - event.Going.length) * 64 : 0;
-            var width = notGoing + (event.Going.length * 70) + 10;
+            var notGoing = event.MaxParticipants ? (event.MaxParticipants - people) * 64 : 0;
+            var width = notGoing + (people * 70) + 10;
             $("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
 
             $("#detailsInvitedFriends .invitedFriendsScroll").html(goingHtml);
@@ -681,9 +707,28 @@
 
     <!-- Login -->
     <script type="text/javascript">
+        var fbAccessToken;
+        window.fbAsyncInit = function () {
+
+            FB.init({
+                appId: '397533583786525', // App ID
+                status: true, // check login status
+                cookie: true, // enable cookies to allow the server to access the session
+                xfbml: true  // parse XFBML
+            });
+            fbAccessToken = getParameterByName("fbAccessToken");
+            if (!fbAccessToken) {
+                FB.getLoginStatus(function (response) {
+                    if (response.status === 'connected') {
+                        fbAccessToken = response.authResponse.accessToken;
+                    }
+                });
+            }
+        };
+
         function OpenLogin()
         {
-            OpenFromBottom("facebookLoginDiv");
+            $("#facebookLoginDiv").show();
         }
 
         function FacebookLogin() {
@@ -695,26 +740,297 @@
                 if (typeof androidAppProxy !== "undefined")
                     androidAppProxy.AndroidFacebookLogin();
             }
-            //else
-            //{
-            //    FB.login(function (response) {
-            //        if (response.authResponse) {
-            //            var uid = response.authResponse.userID;
-            //            $("#FacebookId").val(uid);
-            //            fbAccessToken = response.authResponse.accessToken;
-            //            var deviceId = getParameterByName("deviceId");
-            //            var pushDeviceToken = getParameterByName("pushDeviceToken");
-
-            //            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken }, LoginSuccess);
-            //            CloseToBottom('facebookLoginDiv');
-            //        } else {
-            //            console.log('User cancelled login or did not fully authorize.');
-            //        }
-            //    });
-            //}
         }
 
+        // Load the SDK Asynchronously
+        (function (d) {
+            var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+            if (d.getElementById(id)) { return; }
+            js = d.createElement('script'); js.id = id; js.async = true;
+            js.src = "//connect.facebook.net/en_US/all.js";
+            ref.parentNode.insertBefore(js, ref);
+        }(document));
+
         </script>
+
+    <!-- Friends / Address Book -->
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#inviteBtn").click(function () {
+                $("#Invite").html("Add");
+                if (isiOS && !$("#contactResults").html()) {
+                    window.location = "ios:GetContacts";
+                }
+                else {
+                    OpenAddressBook();
+                }
+            });
+            $("#inviteDiv #Invite").click(function () {
+                if ($(this).html() == "Add") {
+                    AddInvitesToCreate();
+                }
+                else {
+                    SendInvites();
+                }
+            });
+            $("#detailsInviteBtn").click(function () {
+                $("#Invite").html("Invite");
+                if (isiOS && !$("#contactResults").html()) {
+                    window.location = "ios:GetContacts";
+                }
+                else {
+                    OpenAddressBook();
+                }
+            });
+            $("#filterFriendsTextbox").keyup(function () {
+                FilterFriends();
+            });
+            $("#inviteResults").on("click", "div", function () {
+                $(this).toggleClass("invited");
+            });
+            $("#contactResults").on("click", "div", function () {
+                $(this).toggleClass("invited");
+            });
+        });
+
+        function OpenAddressBook() {
+            OpenFromBottom("inviteDiv");
+            $("#filterFriendsTextbox").val("");
+            $("#inviteResults div").removeClass("invited").show();
+            $("#contactResults div").removeClass("invited").show();
+            $("#addDiv .invitedFriendsScroll div").each(function () {
+                if ($(this).attr("facebookId")) {
+                    var fbId = $(this).attr("facebookId");
+                    $("#inviteResults div").each(function () {
+                        if ($(this).attr("facebookId") == fbId)
+                            $(this).addClass("invited");
+                    });
+                }
+                if ($(this).attr("phone")) {
+                    var phone = $(this).attr("phone");
+                    $("#contactResults div").each(function () {
+                        if ($(this).attr("phone") == phone)
+                            $(this).addClass("invited");
+                    });
+                }
+            });
+            if (!$("#inviteResults").html())
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
+        }
+
+        function PopulateAddressBook(friendList) {
+            var html = "<div style='color:white;background:#AAAAAA;'>Friends</div>";
+            for (var i = 0; i < friendList.length; i++) {
+                var friend = friendList[i];
+                html += '<div facebookId="' + friend.FacebookId + '"><span>' + friend.Name + '</span><img src="/Img/check.png" /></div>';
+            }
+            $("#inviteResults").html(html);
+        }
+
+        function AndroidContacts(contactString) {
+            var contacts = contactString.split("||");
+            var contactArray = [];
+            for (var i = 0; i < contacts.length; i++) {
+                var contact = contacts[i].split("|");
+                var contactObject = {};
+                if (contact && contact[0] && contact[1]) {
+                    contactObject.Name = contact[1];
+                    contactObject.Phone = contact[0];
+                    contactArray.push(contactObject);
+                }
+            }
+            contactArray.sort(function (a, b) {
+                return a.Name.localeCompare(b.Name);
+            });
+            var html = "<div style='color:white;background:#AAAAAA;'>Contacts</div>";
+            for (var i = 0; i < contactArray.length; i++) {
+                html += '<div phone="' + contactArray[i].Phone + '"><span>' + contactArray[i].Name + '</span><img src="/Img/check.png" /></div>';
+            }
+            $("#contactResults").html(html);
+            if (fbAccessToken && !$("#inviteResults").html())
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
+        }
+
+        function iOSContacts(contactString) {
+            var contacts = contactString.split("||");
+            var contactArray = [];
+            for (var i = 0; i < contacts.length; i++) {
+                var contact = contacts[i].split("|");
+                var contactObject = {};
+                if (contact && contact[0] && contact[1]) {
+                    contactObject.Name = contact[1];
+                    contactObject.Phone = contact[0];
+                    contactArray.push(contactObject);
+                }
+            }
+            contactArray.sort(function (a, b) {
+                return a.Name.localeCompare(b.Name);
+            });
+            var html = "<div style='color:white;background:#AAAAAA;'>Contacts</div>";
+            for (var i = 0; i < contactArray.length; i++) {
+                html += '<div phone="' + contactArray[i].Phone + '"><span>' + contactArray[i].Name + '</span><img src="/Img/check.png" /></div>';
+            }
+            $("#contactResults").html(html);
+            if (fbAccessToken && !$("#inviteResults").html()) {
+                var sucess = function (friendList) {
+                    PopulateAddressBook(friendList);
+                    OpenAddressBook();
+                }
+                Post("GetFriends", { facebookAccessToken: fbAccessToken }, sucess);
+            }
+            else
+                OpenAddressBook();
+        }
+
+        function FilterFriends() {
+            var filter = $("#filterFriendsTextbox").val();
+            $("#inviteResults div").not(":eq(0)").each(function () {
+                if (!filter || Contains($(this).html().toLowerCase(), filter.toLowerCase()))
+                    $(this).show();
+                else
+                    $(this).hide();
+            });
+            $("#contactResults div").not(":eq(0)").each(function () {
+                if (!filter || Contains($(this).html().toLowerCase(), filter.toLowerCase()))
+                    $(this).show();
+                else
+                    $(this).hide();
+            });
+        }
+
+        function AddInvitesToCreate(friendList) {
+
+            if (isiOS && friendList) {
+                var html = "";
+                for (var i = 0; i < friendList.length; i++) {
+                    var friend = friendList[i];
+                    if (friend.facebookId) //Facebook user
+                        html += "<div facebookId='" + friend.facebookId + "' ><img src='https://graph.facebook.com/" + friend.facebookId + "/picture' /><div>" + friend.name + "</div></div>";
+                    else
+                        html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
+                }
+                $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
+                $("#addDiv .invitedFriendsScroll").html(html);
+            }
+            else {
+                var html = "";
+                $("#inviteResults div.invited").each(function () {
+                    var fbId = $(this).attr("facebookId");
+                    var name = $(this).find("span").html();
+                    if (Contains(name, " "))
+                        name = name.substring(0, name.indexOf(" "));
+                    html += "<div facebookId='" + fbId + "' ><img src='https://graph.facebook.com/" + fbId + "/picture' /><div>" + name + "</div></div>";
+                });
+                $("#contactResults div.invited").each(function () {
+                    var phone = $(this).attr("phone");
+                    var name = $(this).find("span").html();
+                    if (Contains(name, " "))
+                        name = name.substring(0, name.indexOf(" "));
+                    html += "<div phone='" + phone + "' class='nonFb' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + name + "</div></div>";
+                });
+                var width = $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
+                $("#addDiv .invitedFriendsScroll").css("width", width + "px");
+                $("#addDiv .invitedFriendsScroll").html(html);
+                CloseToBottom("inviteDiv");
+            }
+        }
+
+        function SendInvites(event) {
+            var phoneList = "";
+            if (!event) {
+                event = jQuery.extend({}, currentEvent);
+                $("#inviteResults div.invited").each(function () {
+                    var fbId = $(this).attr("facebookId");
+                    var name = $(this).find("span").html();
+                    if (Contains(name, " "))
+                        name = name.substring(0, name.indexOf(" "));
+
+                    var inList = false;
+                    $(event.Invited).each(function () {
+                        if (this.FacebookId == fbId)
+                            inList = true;
+                    });
+                    if (!inList)
+                        event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name });
+                });
+                $("#contactResults div.invited").each(function () {
+                    var phone = $(this).attr("phone");
+                    var name = $(this).find("span").html();
+                    if (Contains(name, " "))
+                        name = name.substring(0, name.indexOf(" "));
+                    event.Invited.push({ EventId: event.Id, FacebookId: "", Name: name });
+                    phoneList += phone + ",";
+                });
+
+                CloseRight($("#inviteDiv"));
+            }
+            else
+            {
+                event.Invited = [];
+
+                $("#addDiv .invitedFriendsScroll > div").each(function () {
+                    var fbId = $(this).attr("facebookId");
+                    var phone = $(this).attr("phone");
+                    var name = $(this).find("div").html();
+                    
+                    event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name });
+                    if(phone)
+                        phoneList += phone + ",";
+                });
+            }
+
+            event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
+            Post("SaveInvites", { evt: event }, UpdateDetailsGoing);
+
+            if (phoneList) {
+                var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
+                GetBranchLink(event, phoneList, message);
+            }
+        }
+
+        //function SendInvites(event) {
+        //    if()
+
+        //    event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
+        //    Post("SaveInvites", { evt: event });
+        //    var phoneList = "";
+        //    $(event.Invited.split("|")).each(function () {
+        //        var info = this.split(":");
+        //        if (info.length == 2 && info[0].indexOf("p") == 0) {
+        //            phoneList += info[0].substring(1) + ",";
+        //        }
+        //    });
+        //    if (phoneList) {
+        //        var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
+        //        GetBranchLink(event, phoneList, message);
+        //    }
+        //}
+
+        function SendText(phoneList, message) {
+            if (isiOS) {
+                var params = "?name=" + event.Name + "&referenceId=" + event.ReferenceId;
+                var phone = "";
+                $(event.Invited.split("|")).each(function () {
+                    var info = this.split(":");
+                    if (info.length == 2 && info[0].indexOf("p") == 0) {
+                        phone += info[0].substring(1) + ",";
+                    }
+                });
+                if (phone.length > 0) {
+                    phone = phone.substring(0, phone.length - 1);
+                    params += "&phone=" + phone;
+                    window.location = "ios:SendSMS" + params;
+                }
+            }
+            else if (isAndroid) {
+                if (typeof androidAppProxy !== "undefined") {
+                    androidAppProxy.sendSMS(phoneList, message);
+                } else {
+                    console.log("Running outside Android app");
+                }
+            }
+        }
+    </script>
 
     <!-- Menu -->
     <script type="text/javascript">
@@ -789,7 +1105,7 @@
         $(document).ready(function () {
 
             $("#groupAddDiv .screenTitle").click(function () {
-                if (currentUser && currentUser.Id == "1690A2B0-2218-4098-8165-8B349E3B0C29" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
+                if (currentUser && currentUser.Id == "D2049B98-E7E7-42BE-96C4-3229ADF52CD6" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
                 {
                     $('#changeLatLngDiv').show();
                     $('.modal-backdrop').show();
@@ -1790,23 +2106,26 @@
             <div id="groupEvents"></div>
             <div id="addFromGroupBtn"><img src="../Img/plus.png" /></div>
         </div>
-        <div id="addDiv" class="screen swipe">
+        <div id="addDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle">Create Event</div>
             </div>
-            <div class="screenContent">
-                <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
-                <input id="AddLocation" type="text" placeholder="Location" style="float:left;margin-bottom:4px;" />
-                <input id="AddDay" type="text" placeholder="Day" readonly="readonly" style="width:48%;float:left;margin-bottom:4px;" />
-                <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
-                <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
-                <input id="AddGroupName" type="text" placeholder="Add to Group" style="margin: 8px 0 2px;" />
-                <div style="float:left;margin:16px 0;">Total People?</div>
-                <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
-                <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
+            <div class="screenContent" style="margin-bottom: 70px;">
+                <div>
+                    <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
+                    <input id="AddLocation" type="text" placeholder="Location" style="float:left;margin-bottom:4px;" />
+                    <input id="AddDay" type="text" placeholder="Day" readonly="readonly" style="width:48%;float:left;margin-bottom:4px;" />
+                    <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
+                    <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
+                    <div style="float:left;margin:16px 0;">Total People?</div>
+                    <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
+                    <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
+                    <div id="inviteBtn" >Invite Friends or Groups</div>
+                </div>
+                <div class="invitedFriends"><div class="invitedFriendsScroll"></div></div>
                 <div id="AddMap" style="clear:both;"></div>
-                <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 8px;display:none;">Close Event</div>
+                <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 90px;display:none;">Close Event</div>
             </div>
             <div class="screenBottom"><div class="bottomBtn">Create</div></div>
         </div>
@@ -1825,8 +2144,9 @@
             </div>
             <div class="screenContent">
                 <div id="detailsDescription"></div>
-                <div id="detailsHowMany" style="text-align:center;"></div>
+                <div id="detailsHowMany" style="text-align:center;margin-bottom: 10px;"></div>
                 <div id="detailsInvitedFriends" class="invitedFriends" ><div class="invitedFriendsScroll"></div></div>
+                <div id="detailsInviteBtn" >Invite Friends or Groups</div>
                 <div id="detailsMap"></div>
             </div>
         </div>
@@ -1851,6 +2171,16 @@
                 <input id="locationSearchTextbox" type="text" placeholder="Search" style="margin:12px 0;" />
                 <div id="locationResults"></div>
             </div>
+        </div>
+        <div id="inviteDiv" class="screen swipe">
+            <div class="screenHeader">
+                <div class="backArrow" ></div>
+                <div class="screenTitle">Recipients</div>
+                <div id="Invite">Add</div>
+            </div>
+            <input id="filterFriendsTextbox" type="text" placeholder="Search" style="margin: 14px 14px;width: 85%;" />
+            <div id="inviteResults" class="addressBookList"></div>
+            <div id="contactResults" class="addressBookList" style="margin-bottom: 90px;"></div>
         </div>
 <%--        <div id="groupLocationsDiv" class="screen swipe">
             <div class="screenHeader">

@@ -362,6 +362,14 @@ input.error, textarea.error
 {
     z-index: 150;
 }
+#inviteBtn
+{
+    clear: both;
+    text-align: center;
+    margin: 60px 0 14px;
+    color: #4285F4;
+    font-size: 18px;
+}
 #detailsDiv
 {
 
@@ -377,6 +385,14 @@ input.error, textarea.error
     border: 1px solid rgba(0,0,0,.54);
     margin-top: 4px;
     display: none;
+}
+#detailsInviteBtn
+{
+    clear: both;
+    text-align: center;
+    margin: 2px 0 16px;
+    color: #4285F4;
+    font-size: 18px;
 }
 
 #messageDiv
@@ -571,21 +587,22 @@ input.error, textarea.error
 }
 #inviteDiv
 {
-    position: fixed;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    background: white;
-    padding: 0 20px 0;
-    top: 100%;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: none;
-    z-index: 3000;
+    z-index: 200;
+}
+#Invite
+{
+    position: absolute;
+    top: 12px;
+    right: 6%;
+    font-size: 24px;
+}
+.ios #Invite
+{
+    top: 22px;
 }
 .addressBookList > div
 {
-    padding: 4px 16px;
+    padding: 4px 20px;
     border-bottom: 1px solid #D8D8D8;
     background-color: white;
 }
@@ -1147,7 +1164,7 @@ input.error, textarea.error
 }
 .screen .screenBottom
 {
-    position: absolute;
+    position: fixed;
     left: 0;
     right: 0;
     bottom: 0;

@@ -149,6 +149,13 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static Event SaveInvites(Event evt)
+    {
+        evt.SaveInvites();
+        return evt;
+    }
+
+    [WebMethod]
     public static void JoinEvent(Event evt)
     {
         evt.Join();

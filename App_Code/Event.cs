@@ -47,6 +47,12 @@ public class Event : Base<Event>
     public List<EventGoing> Going { get; set; }
 
     [NonSave]
+    public bool? IsInvited { get; set; }
+
+    [NonSave]
+    public List<EventInvited> Invited { get; set; }
+
+    [NonSave]
     public int? ReferenceId { get; set; }
 
     [NonSave]
@@ -80,6 +86,7 @@ public class Event : Base<Event>
         Event evt = Base<Event>.Get(id);
         evt.Description = evt.Description.Replace("\n", "<br/>");
         evt.Going = EventGoing.GetByEvent(evt.Id);
+        evt.Invited = EventInvited.GetByEvent(evt.Id);
 
         return evt;
     }
@@ -112,12 +119,45 @@ public class Event : Base<Event>
         {
             EventGoing going = new EventGoing(this.Id, this.UserId, true);
             going.Save();
+
+            Users user = Users.Get(this.UserId);
+            if(user != null)
+            {
+                EventInvited invited = new EventInvited(this.Id, user.FacebookId, user.FirstName);
+                invited.UserId = null;
+                invited.Save();
+            }
         }
 
         if (!string.IsNullOrEmpty(this.NotificationMessage))
         {
             Notification notification = new Notification(this.Id, this.UserId, this.NotificationMessage);
             notification.Save();
+        }
+    }
+
+    public void SaveInvites()
+    {
+        foreach (EventInvited invite in this.Invited)
+        {
+            if (string.IsNullOrEmpty(invite.Id))
+            {
+                EventInvited invited = new EventInvited(this.Id, invite.FacebookId, invite.Name);
+                invited.UserId = null;
+                invited.Save();
+
+                if(!string.IsNullOrEmpty(invite.FacebookId))
+                {
+                    Users user = Users.GetByFacebookId(invite.FacebookId);
+                    if(user != null)
+                    {
+                        Notification notification = new Notification(this.Id, user.Id, this.NotificationMessage);
+                        notification.Save();
+
+                        //Send push message
+                    }
+                }
+            }
         }
     }
 
@@ -168,7 +208,7 @@ public class Event : Base<Event>
     {
         foreach (Event evt in events)
         {
-            evt.Going = EventGoing.GetByEvent(evt.Id);
+            //evt.Going = EventGoing.GetByEvent(evt.Id);
 
             if (evt.DayOfWeek != null)
             {
@@ -227,6 +267,8 @@ public class Event : Base<Event>
                 img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
             else if (evt.IsGoing != null && (bool)evt.IsGoing)
                 img = "<img src='../Img/face" + rnd.Next(8) + ".png' /><div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            else if (evt.IsInvited != null && (bool)evt.IsInvited)
+                img = "<img src='../Img/invited.png' />";
             groupHtml = groupHtml.Replace("{img}", img);
             html += groupHtml;
 
@@ -266,17 +308,27 @@ public class Event : Base<Event>
 
     private static List<Event> ReorderEvents(List<Event> events, Users user)
     {
-        //List<string> goingIds = EventGoing.GetByUser(user.Id);
+        List<string> goingIds = EventGoing.GetByUser(user.Id);
+        List<string> invitedIds = EventInvited.GetByUser(user.FacebookId);
+        foreach(Event evt in events)
+        {
+            if (goingIds.Contains(evt.Id))
+                evt.IsGoing = true;
+            if (invitedIds.Contains(evt.Id))
+                evt.IsInvited = true;
+        }
+        return events;
 
         List<Event> eventGoing = new List<Event>();
+        List<Event> eventInvited = new List<Event>();
         List<Event> eventOther = new List<Event>();
 
         foreach(Event evt in events)
         {
             bool isGoing = false;
-            foreach(EventGoing going in evt.Going)
+            foreach (EventGoing going in evt.Going)
             {
-                if(user.Id == going.UserId)
+                if (user.Id == going.UserId)
                 {
                     isGoing = true;
                     break;
@@ -291,7 +343,26 @@ public class Event : Base<Event>
             {
                 evt.IsGoing = false;
                 eventOther.Add(evt);
-            }   
+            }
+            bool isInvited = false;
+            foreach (EventInvited invited in evt.Invited)
+            {
+                if (user.FacebookId == invited.FacebookId)
+                {
+                    isInvited = true;
+                    break;
+                }
+            }
+            if (isInvited)
+            {
+                evt.IsInvited = true;
+                eventInvited.Add(evt);
+            }
+            else
+            {
+                evt.IsInvited = false;
+                eventOther.Add(evt);
+            } 
         }
 
         //events = eventGoing;
@@ -301,17 +372,17 @@ public class Event : Base<Event>
 
     private static string AddGoing(Event evt)
     {
-        string html = "<div class='homeGoing'>";
-        Random rnd = new Random();
-        foreach(EventGoing going in evt.Going)
-        {
-            if (!string.IsNullOrEmpty(going.FacebookId))
-                html += "<img src='https://graph.facebook.com/" + going.FacebookId + "/picture' />";
-            else
-                html += "<img style='height: 25px;margin: -3px 0;' src='../Img/face" + rnd.Next(8) + ".png' />";
-        }
-        html += "</div>";
-        return html;
+        //string html = "<div class='homeGoing'>";
+        //Random rnd = new Random();
+        //foreach(EventGoing going in evt.Going)
+        //{
+        //    if (!string.IsNullOrEmpty(going.FacebookId))
+        //        html += "<img src='https://graph.facebook.com/" + going.FacebookId + "/picture' />";
+        //    else
+        //        html += "<img style='height: 25px;margin: -3px 0;' src='../Img/face" + rnd.Next(8) + ".png' />";
+        //}
+        //html += "</div>";
+        return "";
     }
 
     private static string defaultHomeHtml = "<div style='background-color: white;margin: 15px 12px;padding: 34px 24px;box-shadow: 0 1px 2px 0 rgba(0,0,0,0.22);border-radius: 6px;'><div style='text-align: center;color: #555;'><div style='font-size: 1.5em;'>Welcome to Pow Wow!</div><div style='font-size: 1.1em;margin: .8em 32px;line-height: 1.4em;'>The place to find events near you today</div><div style='font-size: 1.25em;line-height: 1.8em;'><a style='color: #4285F4;' onclick='OpenAdd();'>Create an Event</a><br/>or<br/><a style='color: #4285F4;' onclick='OpenGroups();'>Join a Group</a></div></div></div>";
