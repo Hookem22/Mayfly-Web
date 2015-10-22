@@ -1263,10 +1263,9 @@ input.error, textarea.error
 }
 #groupDetailsDescription
 {
-    padding: 24px 16px;
+    padding: 24px 16px 4px;
     line-height: 1.5em;
-    border-bottom: 1px solid rgba(0,0,0,.12);
-    min-height: 70px;
+    min-height: 0px;
 }
 #groupDetailsDiv .screenHeader
 {
@@ -1292,9 +1291,18 @@ input.error, textarea.error
 {
     color: #4285F4;
 }
+#groupDetailsDiv #groupInviteBtn 
+{
+    clear: both;
+    text-align: center;
+    margin: 2px 0 16px;
+    color: #4285F4;
+    font-size: 18px;
+}
 #groupDetailsDiv #groupEvents
 {
     padding-bottom: 90px;
+    border-top: 1px solid #ccc;
 }
 
 #MessageBox, #ActionMessageBox, #checkPasswordDiv, #changeLatLngDiv

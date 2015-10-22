@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=5" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -779,6 +779,7 @@
         $(document).ready(function () {
             $("#inviteBtn").click(function () {
                 $("#Invite").html("Add");
+                $("#inviteGroups").show();
                 if (isiOS && !$("#contactResults").html()) {
                     window.location = "ios:GetContacts";
                 }
@@ -787,7 +788,11 @@
                 }
             });
             $("#inviteDiv #Invite").click(function () {
-                if ($(this).html() == "Add") {
+                if (!$("#inviteGroups").is(':visible'))
+                {
+                    SendGroupInvites();
+                }
+                else if ($(this).html() == "Add") {
                     AddInvitesToCreate();
                 }
                 else {
@@ -797,6 +802,17 @@
             });
             $("#detailsInviteBtn").click(function () {
                 $("#Invite").html("Invite");
+                $("#inviteGroups").show();
+                if (isiOS && !$("#contactResults").html()) {
+                    window.location = "ios:GetContacts";
+                }
+                else {
+                    OpenAddressBook();
+                }
+            });
+            $("#groupInviteBtn").click(function () {
+                $("#Invite").html("Invite");
+                $("#inviteGroups").hide();
                 if (isiOS && !$("#contactResults").html()) {
                     window.location = "ios:GetContacts";
                 }
@@ -1038,6 +1054,47 @@
             }
         }
 
+        function SendGroupInvites() {
+            var invites = [];
+            var nameList = "";
+            var phoneList = "";
+            $("#inviteResults div.invited").each(function () {
+                var fbId = $(this).attr("facebookId");
+                var name = $(this).find("span").html();
+                if (Contains(name, " "))
+                    name = name.substring(0, name.indexOf(" "));
+
+                nameList += name + ", ";
+                invites.push({ FacebookId: fbId, Name: name });
+            });
+            $("#contactResults div.invited").each(function () {
+                var phone = $(this).attr("phone");
+                var name = $(this).find("span").html();
+                if (Contains(name, " "))
+                    name = name.substring(0, name.indexOf(" "));
+                
+                phoneList += phone + ",";
+            });
+
+            CloseRight($("#inviteDiv"));
+            if (nameList) {
+                nameList = nameList.substring(0, nameList.length - 2);
+                var msg = nameList.indexOf(",") < 0 ? nameList + " has been invited." : nameList + " have been invited.";
+                MessageBox(msg);
+            }
+
+            if (invites && invites.length) {
+                var message = currentUser.FirstName + " invited you to " + currentGroup.Name;
+                Post("SaveGroupInvites", { invites: invites, message });
+            }
+
+            if (phoneList) {
+                var message = "Your invited to " + currentGroup.Name + ". Download the Pow Wow app to join: {Branch}";
+                var evt = { ReferenceId: 0 };
+                GetBranchLink(evt, phoneList, message);
+            }
+        }
+
         function AddGroupsToEvent()
         {
             $("#inviteGroups div.invited").each(function () {
@@ -1105,7 +1162,8 @@
 
             $("#myNotificationsDiv").on("click", "div", function () {
                 var eventId = $(this).attr("eventid");
-                OpenEventFromNotification(eventId);
+                if(eventId)
+                    OpenEventFromNotification(eventId);
             });
 
         });
@@ -2146,6 +2204,7 @@
             </div>
             <div class="screenContent">
                 <div id="groupDetailsDescription"></div>
+                <div id="groupInviteBtn">Invite Friends to Group</div>
             </div>
             <div id="groupEvents"></div>
             <div id="addFromGroupBtn"><img src="../Img/plus.png" /></div>

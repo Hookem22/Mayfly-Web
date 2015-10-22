@@ -195,7 +195,8 @@ public class Event : Base<Event>
                         Notification notification = new Notification(this.Id, user.Id, this.NotificationMessage);
                         notification.Save();
 
-                        //TODO: Send push message
+                        string messageText = "New Message|" + this.Id;
+                        AzureMessagingService.Send(this.NotificationMessage, messageText, user.Id);
                     }
                 }
             }

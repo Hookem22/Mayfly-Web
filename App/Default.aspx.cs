@@ -156,6 +156,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static void SaveGroupInvites(List<EventInvited> invites, string message)
+    {
+        Group.SaveGroupInvites(invites, message);
+    }
+
+    [WebMethod]
     public static Event AddGroupsToEvent(Event evt)
     {
         evt.SaveGroups();

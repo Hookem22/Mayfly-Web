@@ -138,6 +138,24 @@ public class Group : Base<Group>
         users.Delete();
     }
 
+    public static void SaveGroupInvites(List<EventInvited> invites, string message)
+    {
+        foreach (EventInvited invite in invites)
+        {
+            if (!string.IsNullOrEmpty(invite.FacebookId))
+            {
+                Users user = Users.GetByFacebookId(invite.FacebookId);
+                if (user != null)
+                {
+                    Notification notification = new Notification("", user.Id, message);
+                    notification.Save();
+
+                    AzureMessagingService.Send(message, "", user.Id);
+                }
+            }
+        }
+    }
+
     public static void SendPushMessageToGroup(string groupId, string alert, string messageText, string userId)
     {
         foreach (GroupUsers user in GroupUsers.GetByGroup(groupId))
