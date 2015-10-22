@@ -50,11 +50,22 @@ public class Group : Base<Group>
 
     public static Group Get(string id, string latitude, string longitude, Users user)
     {
+        if (id.Contains("|"))
+            id = id.Substring(0, id.IndexOf("|"));
         Group group = Base<Group>.Get(id);
         group.Members = GroupUsers.GetByGroup(id);
         group.EventsHtml = Event.GetByGroup(id, latitude, longitude, user);
         group.Description = group.Description.Replace("\n", "<br/>");
         return group;
+    }
+
+    public static Group GetFast(string id)
+    {
+        List<Group> groups = GetByProcFast("getgroup", string.Format("groupid={0}", id));
+        if (groups.Count > 0)
+            return groups[0];
+
+        return null;
     }
 
     public static List<Group> GetByUserId(string userId)

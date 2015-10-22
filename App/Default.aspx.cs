@@ -156,6 +156,13 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static Event AddGroupsToEvent(Event evt)
+    {
+        evt.SaveGroups();
+        return evt;
+    }
+
+    [WebMethod]
     public static void JoinEvent(Event evt)
     {
         evt.Join();

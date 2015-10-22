@@ -311,12 +311,11 @@ input.error, textarea.error
 .homeList .group
 {
     color: #4285F4;
-    position: absolute;
-    right: 20px;
-    margin-top: 18px;
+    margin: 20px 0 0 3px;
     z-index: 20;
     background-color: white;
     padding: 4px;
+    float: left;
 }
 .homeList .icon
 {
@@ -539,6 +538,7 @@ input.error, textarea.error
 .invitedFriendsScroll > div > img
 {
     height: 50px;
+    width: 50px;
     border-radius: 25px;
 }
 .invitedFriendsScroll > div.nonFb
@@ -549,7 +549,10 @@ input.error, textarea.error
 .invitedFriendsScroll > div.nonFb img
 {
     height: 60px;
-    margin-bottom: -8px;
+}
+.invitedFriendsScroll > div.nonFb div:not(.icon)
+{
+    margin-top:-8px;
 }
 .invitedFbImg 
 {
@@ -599,6 +602,34 @@ input.error, textarea.error
 .ios #Invite
 {
     top: 22px;
+}
+#inviteGroups > div
+{
+    position: relative;
+}
+#inviteGroups img.logo
+{
+    height: 40px;
+    width: 40px;
+    float: left;
+    margin: 5px 10px 5px 20px;
+}
+#inviteGroups > div > div
+{
+    padding: 17px 58px;
+    border-bottom: 1px solid #D8D8D8;
+}
+#inviteGroups img.check
+{
+    display: none;
+    height: 24px;
+    position: absolute;
+    top: 12px;
+    right: 33px;
+}
+#inviteGroups div.invited img.check
+{
+    display: block;
 }
 .addressBookList > div
 {

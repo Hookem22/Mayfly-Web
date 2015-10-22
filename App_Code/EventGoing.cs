@@ -29,7 +29,12 @@ public class EventGoing : UsersPartial<EventGoing>
 
     public static List<string> GetByUser(string userId)
     {
-        return GetByUser(userId, "getgoingbyuser");
+        List<EventGoing> users = GetByProcFast("getgoingbyuser", string.Format("userid={0}", userId));
+        List<string> ids = new List<string>();
+        foreach (EventGoing u in users)
+            ids.Add(u.EventId);
+
+        return ids;
     }
 
     public static EventGoing Get(string eventId, string userId, bool includeDeleted = false)

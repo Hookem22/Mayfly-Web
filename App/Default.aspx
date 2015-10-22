@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -316,9 +316,19 @@
             $("#addFromGroupBtn").click(function () {
                 var group = currentGroup;
                 OpenAdd();
-                var name = $("#groupDetailsDiv .screenTitle").html();
-                $("#AddGroupName").val(name);
-                currentGroup = group;
+                $("#inviteGroups div").each(function () {
+                    var groupId = $(this).attr("groupid");
+                    if (groupId && groupId == group.Id) {
+                        $(this).addClass("invited");
+
+                        var src = $(this).find(".logo").attr("src");
+                        var name = $(this).find("div").html();
+                        if (name.length > 7)
+                            name = name.substring(0, 6) + "...";
+                        var html = "<div groupId='" + groupId + "' ><img src='" + src + "' /><div>" + name + "</div></div>";
+                        $("#addDiv .invitedFriendsScroll").html(html);
+                    }
+                });
             });
         });
 
@@ -336,6 +346,7 @@
                 $("#addDiv .bottomBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
                 $("#addDiv #AddDay").val("Today");
+                $("#addDiv #inviteBtn").show();
                 $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "165px").hide();
                 $("#addDiv .invitedFriends").show();
@@ -364,10 +375,14 @@
                         $("#AddGroupName").val($(this).find("div").html());
                 });
                 
+                $("#addDiv #inviteBtn").hide();
+                $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "135px");
                 PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
                 $("#deleteEventBtn").show();
             }
+
+            $("#inviteDiv div").removeClass("invited");
         }
 
         function SaveEvent() {
@@ -409,12 +424,12 @@
                 else if (event.GroupId) {
                     GetGroup(event.GroupId);
 
-                    var alert = "New event posted to your group " + currentGroup.Name + ".";
-                    var messageText = "";
-                    Post("SendMessageToGroup", { groupId: event.GroupId, alert: alert, messageText: messageText, userId: currentUser.Id });
+                //    var alert = "New event posted to your group " + currentGroup.Name + ".";
+                //    var messageText = "";
+                //    Post("SendMessageToGroup", { groupId: event.GroupId, alert: alert, messageText: messageText, userId: currentUser.Id });
 
-                    var message = "New: " + event.Name;
-                    Post("SaveNotificationToGroup", { groupId: event.GroupId, message: message, userId: currentUser.Id, eventId: event.Id });
+                //    var message = "New: " + event.Name;
+                //    Post("SaveNotificationToGroup", { groupId: event.GroupId, message: message, userId: currentUser.Id, eventId: event.Id });
                 }
             });
             Post("SaveEvent", { evt: event }, success);
@@ -457,7 +472,12 @@
             var max = +$("#AddMax").val();
             var min = +$("#AddMin").val();
 
-            var groupId = currentGroup.Id;
+            var groupId = "";
+            $("#addDiv .invitedFriendsScroll div").each(function () {
+                var g = $(this).attr("groupid");
+                if(g)
+                    groupId += groupId ? "|" + g : g;
+            });
 
             var event = {
                 Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
@@ -524,7 +544,7 @@
             currentEvent = event;
             if (event.GroupId) {
                 $("#detailsDiv").removeClass("nonGroup");
-                if (!currentGroup || !currentGroup.Id || currentGroup.Id != event.GroupId) {
+                if (!currentGroup || !currentGroup.Id || event.GroupId.indexOf(currentGroup.Id) < 0) {
                     var success = function (results) {
                         currentGroup = results;
                         $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
@@ -587,6 +607,7 @@
                         $(".messageBtn").attr("src", "/Img/newmessage.png");
                 });
             }
+            $("#inviteDiv div").removeClass("invited");
             $(".messageBtn").attr("src", "/Img/message.png");
             Post("GetMessages", { eventId: currentEvent.Id }, messageSuccess);
         }
@@ -615,7 +636,7 @@
             for (var i = 0; i < event.Invited.length; i++) {
                 var user = event.Invited[i];
                 var isGoing = false;
-                for (var j = 0; i < event.Going.length; j++)
+                for (var j = 0; j < event.Going.length; j++)
                 {
                     if(user.FacebookId == event.Going[j].FacebookId)
                     {
@@ -771,6 +792,7 @@
                 }
                 else {
                     SendInvites();
+                    AddGroupsToEvent();
                 }
             });
             $("#detailsInviteBtn").click(function () {
@@ -785,6 +807,9 @@
             $("#filterFriendsTextbox").keyup(function () {
                 FilterFriends();
             });
+            $("#inviteGroups").on("click", "div", function () {
+                $(this).toggleClass("invited");
+            });
             $("#inviteResults").on("click", "div", function () {
                 $(this).toggleClass("invited");
             });
@@ -796,24 +821,34 @@
         function OpenAddressBook() {
             OpenFromBottom("inviteDiv");
             $("#filterFriendsTextbox").val("");
-            $("#inviteResults div").removeClass("invited").show();
-            $("#contactResults div").removeClass("invited").show();
-            $("#addDiv .invitedFriendsScroll div").each(function () {
-                if ($(this).attr("facebookId")) {
-                    var fbId = $(this).attr("facebookId");
-                    $("#inviteResults div").each(function () {
-                        if ($(this).attr("facebookId") == fbId)
+            //$("#inviteResults div").removeClass("invited").show();
+            //$("#contactResults div").removeClass("invited").show();
+            //$("#addDiv .invitedFriendsScroll div").each(function () {
+            //    if ($(this).attr("facebookId")) {
+            //        var fbId = $(this).attr("facebookId");
+            //        $("#inviteResults div").each(function () {
+            //            if ($(this).attr("facebookId") == fbId)
+            //                $(this).addClass("invited");
+            //        });
+            //    }
+            //    if ($(this).attr("phone")) {
+            //        var phone = $(this).attr("phone");
+            //        $("#contactResults div").each(function () {
+            //            if ($(this).attr("phone") == phone)
+            //                $(this).addClass("invited");
+            //        });
+            //    }
+            //});
+            if (currentEvent && currentEvent.GroupId)
+            {
+                $(currentEvent.GroupId.split("|")).each(function () {
+                    var groupId = this;
+                    $("#inviteGroups div").each(function () {
+                        if ($(this).attr("groupid") == groupId)
                             $(this).addClass("invited");
                     });
-                }
-                if ($(this).attr("phone")) {
-                    var phone = $(this).attr("phone");
-                    $("#contactResults div").each(function () {
-                        if ($(this).attr("phone") == phone)
-                            $(this).addClass("invited");
-                    });
-                }
-            });
+                });
+            }
             if (!$("#inviteResults").html())
                 Post("GetFriends", { facebookAccessToken: fbAccessToken }, PopulateAddressBook);
         }
@@ -914,6 +949,16 @@
             }
             else {
                 var html = "";
+                $("#inviteGroups div.invited").each(function () {
+                    var groupId = $(this).attr("groupid");
+                    if (!groupId)
+                        return true;
+                    var src = $(this).find(".logo").attr("src");
+                    var name = $(this).find("div").html();
+                    if (name.length > 7)
+                        name = name.substring(0, 6) + "...";
+                    html += "<div groupId='" + groupId + "' ><img src='" + src + "' /><div>" + name + "</div></div>";
+                });
                 $("#inviteResults div.invited").each(function () {
                     var fbId = $(this).attr("facebookId");
                     var name = $(this).find("span").html();
@@ -928,7 +973,7 @@
                         name = name.substring(0, name.indexOf(" "));
                     html += "<div phone='" + phone + "' class='nonFb' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + name + "</div></div>";
                 });
-                var width = $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
+                var width = $("#inviteGroups div.invited").length / 2 * 70 + $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
                 $("#addDiv .invitedFriendsScroll").css("width", width + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
                 CloseToBottom("inviteDiv");
@@ -972,15 +1017,20 @@
                     var fbId = $(this).attr("facebookId");
                     var phone = $(this).attr("phone");
                     var name = $(this).find("div").html();
-                    
+                    if (!fbId && !phone)
+                        return true;
+
                     event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name });
                     if(phone)
                         phoneList += phone + ",";
                 });
             }
 
-            event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
-            Post("SaveInvites", { evt: event }, UpdateDetailsGoing);
+            if (event.Invited && event.Invited.length)
+            {
+                event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
+                Post("SaveInvites", { evt: event }, UpdateDetailsGoing);
+            }
 
             if (phoneList) {
                 var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
@@ -988,39 +1038,30 @@
             }
         }
 
-        //function SendInvites(event) {
-        //    if()
-
-        //    event.NotificationMessage = currentUser.FirstName + " invited you to " + event.Name;
-        //    Post("SaveInvites", { evt: event });
-        //    var phoneList = "";
-        //    $(event.Invited.split("|")).each(function () {
-        //        var info = this.split(":");
-        //        if (info.length == 2 && info[0].indexOf("p") == 0) {
-        //            phoneList += info[0].substring(1) + ",";
-        //        }
-        //    });
-        //    if (phoneList) {
-        //        var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
-        //        GetBranchLink(event, phoneList, message);
-        //    }
-        //}
+        function AddGroupsToEvent()
+        {
+            $("#inviteGroups div.invited").each(function () {
+                var groupId = $(this).attr("groupid");
+                if (groupId)
+                {
+                    if(currentEvent.GroupId && currentEvent.GroupId.length)
+                    {
+                        if (currentEvent.GroupId.indexOf(groupId) < 0)
+                            currentEvent.GroupId += "|" + groupId;
+                    }
+                    else
+                        currentEvent.GroupId = groupId;
+                }
+            });
+            currentEvent.UserId = currentUser.Id;
+            Post("AddGroupsToEvent", { evt: currentEvent }, OpenEventDetails);
+        }
 
         function SendText(phoneList, message) {
             if (isiOS) {
-                var params = "?name=" + event.Name + "&referenceId=" + event.ReferenceId;
-                var phone = "";
-                $(event.Invited.split("|")).each(function () {
-                    var info = this.split(":");
-                    if (info.length == 2 && info[0].indexOf("p") == 0) {
-                        phone += info[0].substring(1) + ",";
-                    }
-                });
-                if (phone.length > 0) {
-                    phone = phone.substring(0, phone.length - 1);
-                    params += "&phone=" + phone;
-                    window.location = "ios:SendSMS" + params;
-                }
+                phoneList = phoneList.substring(0, phoneList.length - 1);
+                var params = "?message=" + message + "&phone=" + phoneList;
+                window.location = "ios:SendSMS" + params;
             }
             else if (isAndroid) {
                 if (typeof androidAppProxy !== "undefined") {
@@ -1119,6 +1160,8 @@
 
                 $('#changeLatLngDiv').hide();
                 $('.modal-backdrop').hide();
+                $("#groupAddDiv").hide();
+                GroupsClick();
             });
 
             $("#groupDetailsDiv .screenSubheader, #groupDetailsDiv .screenContent").swipe({
@@ -1388,17 +1431,18 @@
 
             $("#myGroupsDiv").html(html);
 
-            html = "";
+            html = "<div style='color:white;background:#AAAAAA;padding: 4px 20px;border-bottom: 1px solid #D8D8D8;'>My Groups</div>";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                var groupHtml = '<div groupid="{GroupId}" ><img src="{PictureUrl}" onerror="this.style.display=\'none\';" /><div>{Name}</div></div>';
+                var groupHtml = '<div groupid="{GroupId}" ><img class="logo" src="{PictureUrl}" onerror="this.src=\'../Img/group.png\';" /><div>{Name}</div><img class="check" src="/Img/check.png"></div>';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{PictureUrl}", group.PictureUrl).replace("{Name}", group.Name);
                 html += groupHtml;
             }
             if (!html)
                 html = "<div style='text-align: center;'>You are not a member of any groups.</div><div class='blueBtn joinGroupBtn' style='margin: 24px 16%;'>Join Groups</div>";
 
-            $("#addGroupsResultsDiv").html(html);
+            html += "</div>";
+            $("#inviteGroups").html(html);
         }
 
         function LoadGroups() {
@@ -2179,6 +2223,7 @@
                 <div id="Invite">Add</div>
             </div>
             <input id="filterFriendsTextbox" type="text" placeholder="Search" style="margin: 14px 14px;width: 85%;" />
+            <div id="inviteGroups"></div>
             <div id="inviteResults" class="addressBookList"></div>
             <div id="contactResults" class="addressBookList" style="margin-bottom: 90px;"></div>
         </div>

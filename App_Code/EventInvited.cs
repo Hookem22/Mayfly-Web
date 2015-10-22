@@ -32,7 +32,12 @@ public class EventInvited : UsersPartial<EventInvited>
 
     public static List<string> GetByUser(string facebookId)
     {
-        return GetByUser(facebookId, "getinvitedbyuser");
+        List<EventInvited> users = GetByProcFast("getinvitedbyuser", string.Format("userid={0}", facebookId));
+        List<string> ids = new List<string>();
+        foreach (EventInvited u in users)
+            ids.Add(u.EventId);
+
+        return ids;
     }
 
     public static EventInvited Get(string eventId, string userId, bool includeDeleted = false)

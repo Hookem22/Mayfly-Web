@@ -38,16 +38,6 @@ public abstract class UsersPartial<T> : Base<T>
         return GetByProcFast(procName, string.Format("eventid={0}", eventId));
     }
 
-    public static List<string> GetByUser(string userId, string procName)
-    {
-        List<T> users = GetByProcFast(procName, string.Format("userid={0}", userId));
-        List<string> ids = new List<string>();
-        foreach (dynamic u in users)
-            ids.Add(u.GetType().GetProperty("EventId").GetValue(u, null));
-
-        return ids;
-    }
-
     public static T Get(string eventId, string userId, string includeDeletedProc = "")
     {
         if (string.IsNullOrEmpty(includeDeletedProc))

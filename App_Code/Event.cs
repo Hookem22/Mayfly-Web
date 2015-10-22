@@ -134,6 +134,47 @@ public class Event : Base<Event>
             Notification notification = new Notification(this.Id, this.UserId, this.NotificationMessage);
             notification.Save();
         }
+
+        if(!string.IsNullOrEmpty(this.GroupId))
+        {
+            string[] ids = this.GroupId.Split('|');
+            foreach (string id in ids)
+            {
+                SendToGroup(id);
+            }
+        }
+    }
+
+    public void SaveGroups()
+    {
+        Event evt = Event.Get(this.Id);
+        string[] ids = this.GroupId.Split('|');
+        foreach (string id in ids)
+        {
+            if (string.IsNullOrEmpty(evt.GroupId) || !evt.GroupId.Contains(id))
+            {
+                SendToGroup(id);
+            }
+        }
+
+        base.Save();
+    }
+
+    public void SendToGroup(string groupId)
+    {
+        Group group = Group.Get(groupId);
+        foreach (GroupUsers user in GroupUsers.GetByGroup(groupId))
+        {
+            if (user.UserId == this.UserId)
+                continue;
+
+            string msg = "New event in your group " + group.Name;
+            AzureMessagingService.Send(msg, "", user.UserId);
+
+            msg = "New: " + this.Name;
+            Notification notification = new Notification(this.Id, user.UserId, msg);
+            notification.Save();
+        }
     }
 
     public void SaveInvites()
@@ -154,7 +195,7 @@ public class Event : Base<Event>
                         Notification notification = new Notification(this.Id, user.Id, this.NotificationMessage);
                         notification.Save();
 
-                        //Send push message
+                        //TODO: Send push message
                     }
                 }
             }
@@ -255,11 +296,11 @@ public class Event : Base<Event>
             if (i == events.Count - 1 || events[i].DayOfWeek != events[i + 1].DayOfWeek)
                 addClass += " last";
 
-            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='group' groupid='{GroupId}'>{Group}</div></div>";
+            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div>{Group}</div>";
             string details = AddGoing(evt);
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
-            groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", details).Replace("{StartDay}", evt.LocalTime).Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
+            groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", details).Replace("{StartDay}", evt.LocalTime).Replace("{Group}", AddGroups(evt));
             string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
             if (!string.IsNullOrEmpty(evt.GroupId))
                 img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
@@ -276,7 +317,6 @@ public class Event : Base<Event>
         }
 
         return html;
-
     }
 
     private static string GetGroupEventsHtml(List<Event> events, Users user)
@@ -319,55 +359,81 @@ public class Event : Base<Event>
         }
         return events;
 
-        List<Event> eventGoing = new List<Event>();
-        List<Event> eventInvited = new List<Event>();
-        List<Event> eventOther = new List<Event>();
+        //List<Event> eventGoing = new List<Event>();
+        //List<Event> eventInvited = new List<Event>();
+        //List<Event> eventOther = new List<Event>();
 
-        foreach(Event evt in events)
+        //foreach(Event evt in events)
+        //{
+        //    bool isGoing = false;
+        //    foreach (EventGoing going in evt.Going)
+        //    {
+        //        if (user.Id == going.UserId)
+        //        {
+        //            isGoing = true;
+        //            break;
+        //        }
+        //    }
+        //    if (isGoing)
+        //    {
+        //        evt.IsGoing = true;
+        //        eventGoing.Add(evt);
+        //    }
+        //    else
+        //    {
+        //        evt.IsGoing = false;
+        //        eventOther.Add(evt);
+        //    }
+        //    bool isInvited = false;
+        //    foreach (EventInvited invited in evt.Invited)
+        //    {
+        //        if (user.FacebookId == invited.FacebookId)
+        //        {
+        //            isInvited = true;
+        //            break;
+        //        }
+        //    }
+        //    if (isInvited)
+        //    {
+        //        evt.IsInvited = true;
+        //        eventInvited.Add(evt);
+        //    }
+        //    else
+        //    {
+        //        evt.IsInvited = false;
+        //        eventOther.Add(evt);
+        //    } 
+        //}
+
+        ////events = eventGoing;
+        ////events.AddRange(eventOther);
+        //return events;
+    }
+
+    private static string AddGroups(Event evt)
+    {
+        if (string.IsNullOrEmpty(evt.GroupId))
+            return "";
+
+        string html = "<div style='position: absolute;left: 72px;height: 42px;overflow: hidden;'>";
+        if(!string.IsNullOrEmpty(evt.GroupId) && !evt.GroupId.Contains('|') && !string.IsNullOrEmpty(evt.GroupName))
         {
-            bool isGoing = false;
-            foreach (EventGoing going in evt.Going)
-            {
-                if (user.Id == going.UserId)
-                {
-                    isGoing = true;
-                    break;
-                }
-            }
-            if (isGoing)
-            {
-                evt.IsGoing = true;
-                eventGoing.Add(evt);
-            }
-            else
-            {
-                evt.IsGoing = false;
-                eventOther.Add(evt);
-            }
-            bool isInvited = false;
-            foreach (EventInvited invited in evt.Invited)
-            {
-                if (user.FacebookId == invited.FacebookId)
-                {
-                    isInvited = true;
-                    break;
-                }
-            }
-            if (isInvited)
-            {
-                evt.IsInvited = true;
-                eventInvited.Add(evt);
-            }
-            else
-            {
-                evt.IsInvited = false;
-                eventOther.Add(evt);
-            } 
+            html += "<div class='group' groupid='{GroupId}'>#{Group}</div></div>";
+            html = html.Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
+            return html;
         }
 
-        //events = eventGoing;
-        //events.AddRange(eventOther);
-        return events;
+        foreach(string groupId in evt.GroupId.Split('|'))
+        {
+            Group group = Group.GetFast(groupId);
+            if (string.IsNullOrEmpty(evt.GroupPictureUrl) && !string.IsNullOrEmpty(group.PictureUrl))
+                evt.GroupPictureUrl = group.PictureUrl;
+
+            html += "<div class='group' groupid='{GroupId}'>#{Group}</div>";
+            html = html.Replace("{GroupId}", group.Id).Replace("{Group}", group.Name);
+        }
+        html += "</div>";
+        return html;
     }
 
     private static string AddGoing(Event evt)
