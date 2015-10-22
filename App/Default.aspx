@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=5" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=6" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -1273,6 +1273,7 @@
                 var search = $("#groupFilterTextBox").val().toLowerCase();
                 if (search.length == 0) {
                     $("#groupsListDiv > div").show();
+                    $("#groupsListDiv > div.private").hide();
                     return;
                 }
                 $("#groupsListDiv > div").each(function () {
@@ -1512,7 +1513,7 @@
             var html = "";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                var groupHtml = '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>';
+                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" class="private" >{Img}<div>{Name}</div></div>';
                 var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" onerror="this.src=\'../Img/group.png\';" />' : '<img src="../Img/group.png" class="logo" />';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
