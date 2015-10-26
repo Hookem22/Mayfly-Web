@@ -297,6 +297,11 @@ input.error, textarea.error
     overflow: hidden;
     height: 20px;
 }
+#groupDetailsDiv .homeList .name
+{
+    right: 116px;
+    height: 36px;
+}
 .homeList .details
 {
     position: absolute;

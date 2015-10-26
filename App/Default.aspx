@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=6" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=7" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -548,15 +548,13 @@
                     var success = function (results) {
                         currentGroup = results;
                         $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
-                        if (!event.GroupIsPublic && IsGoing(currentGroup.Members, currentUser.Id))
+                        if (currentGroup.IsPublic || IsGoing(currentGroup.Members, currentUser.Id))
                             OpenEventDetails(currentEvent);
-                        else if (!event.GroupIsPublic)
+                        else if (!currentGroup.IsPublic)
                             MessageBox("This event is private. Please join the group to attend this event.")
                     };
                     Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
-
-                    if (!event.GroupIsPublic)
-                        return;
+                    return;
                 }
             }
             else {
@@ -1301,6 +1299,10 @@
 
             $("#groupDetailsDiv #groupDetailsDescription").on("click", ".readMore", function () {
                 $("#groupDetailsDiv #groupDetailsDescription").html(currentGroup.Description);
+            });
+
+            $("#detailsDiv #detailsDescription").on("click", ".readMore", function () {
+                $("#detailsDiv #detailsDescription").html(currentEvent.Description);
             });
 
             $("#groupJoinBtn").click(function () {
