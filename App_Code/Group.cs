@@ -22,6 +22,8 @@ public class Group : Base<Group>
 
     public string PictureUrl { get; set; }
 
+    public string SchoolId { get; set; }
+
     public double Latitude { get; set; }
 
     public double? Longitude { get; set; }
@@ -45,6 +47,9 @@ public class Group : Base<Group>
 
     [NonSave]
     public double? Distance { get; set; }
+    
+    [NonSave]
+    public string SchoolName { get; set; }
 
     #endregion
 
@@ -56,6 +61,12 @@ public class Group : Base<Group>
         group.Members = GroupUsers.GetByGroup(id);
         group.EventsHtml = Event.GetByGroup(id, latitude, longitude, user);
         group.Description = group.Description.Replace("\n", "<br/>");
+        if(!string.IsNullOrEmpty(group.SchoolId))
+        {
+            School school = School.Get(group.SchoolId);
+            if (school != null)
+                group.SchoolName = school.Name;
+        }
         return group;
     }
 
@@ -73,10 +84,11 @@ public class Group : Base<Group>
         return GetByProc("getgroupsbyuser", string.Format("userid={0}", userId));
     }
 
-    public static List<Group> Get(string latitude, string longitude)
+    public static List<Group> GetBySchoolId(string schoolId)
     {
-        List<Group> groups = GetByProc("getgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
-        return ReorderByDistance(groups, latitude, longitude);
+        List<Group> groups = GetByProc("getgroupsbyschool", string.Format("schoolid={0}", schoolId));
+        return groups;
+        //return ReorderByDistance(groups, latitude, longitude);
     }
 
     private static List<Group> ReorderByDistance(List<Group> groups, string latitude, string longitude)

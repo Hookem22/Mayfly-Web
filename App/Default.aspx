@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=7" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -21,6 +21,7 @@
         var isAndroid;
         var currentLat;
         var currentLng;
+        var currentSchool;
         var currentEvent = {};
         var currentUser;
 
@@ -182,18 +183,33 @@
                 currentLng = currentUser.Longitude;
             }
 
-            if (currentUser)
+            if (currentUser) {
+                GetSchool();
                 LoadMyGroups();
-                
+            }
+        }
+
+        function GetSchool() {
+            var success = function(results) {
+                currentSchool = results;
+                currentUser.SchoolId = currentSchool.Id;
+                $("#groupsDiv .menuHeader").html(currentSchool.Name.toUpperCase() + " GROUPS");
+                $("#loginHeader").html("Log In to Find Activities at " + currentSchool.Name + ".");
+
+                LoadEvents();
+            };
+            Post("GetSchool", { user: currentUser }, success);
         }
 
         function ReceiveLocation(lat, lng)
         {
-            if (!(currentLat && currentLng && Math.abs(currentLat - (+lat)) < 1 && Math.abs(currentLng - (+lng)) < 1))
+            if (!(currentLat && currentLng && Math.abs(currentLat - (+lat)) < 0.2 && Math.abs(currentLng - (+lng)) < 0.2))
             {
                 currentLat = +lat;
                 currentLng = +lng;
-                LoadEvents();
+                currentUser.Latitude = currentLat;
+                currentUser.Longitude = currentLng;
+                GetSchool();
             }
 
             if(currentUser && currentUser.Id)
@@ -221,7 +237,7 @@
 
         function LoadEvents()
         {
-            Post("GetEvents", { latitude: currentLat, longitude: currentLng, user: currentUser }, PopulateEvents);
+            Post("GetEvents", { user: currentUser, latitude: currentLat, longitude: currentLng }, PopulateEvents);
         }
 
         function PopulateEvents(results)
@@ -351,8 +367,9 @@
                 $("#AddMap").css("height", "165px").hide();
                 $("#addDiv .invitedFriends").show();
                 $("#deleteEventBtn").hide();
+                currentLocation = { Name: currentSchool.Name, Address: "", Latitude: currentSchool.Latitude, Longitude: currentSchool.Longitude };
+
                 currentEvent = {};
-                currentLocation = {};
                 currentGroup = {};
             }
             else {
@@ -393,10 +410,10 @@
                 $("#AddName").addClass("error");
                 error = true;
             }
-            if (!$("#AddLocation").val()) {
-                $("#AddLocation").addClass("error");
-                error = true;
-            }
+            //if (!$("#AddLocation").val()) {
+            //    $("#AddLocation").addClass("error");
+            //    error = true;
+            //}
             if (!$("#AddStartTime").val()) {
                 $("#AddStartTime").addClass("error");
                 error = true;
@@ -482,7 +499,7 @@
             var event = {
                 Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
                 LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
-                MinParticipants: min, MaxParticipants: max, StartTime: startTime, DayOfWeek: dayOfWeek, LocalTime: localTime,
+                SchoolId: currentSchool.Id, MinParticipants: min, MaxParticipants: max, StartTime: startTime, DayOfWeek: dayOfWeek, LocalTime: localTime,
                 NotificationMessage: "Created " + $("#AddName").val(), UserId: currentUser.Id
             };
 
@@ -1378,7 +1395,7 @@
                 $("#groupAddDiv input").removeClass("error");
                 $("#AddGroupDivName").val("");
                 $("#AddGroupDescription").val("");
-                GetCityName();
+                $("#AddGroupSchool").val(currentSchool.Name);
                 SetPublic(true);
                 $("#AddGroupPassword").val("");
                 $("#AddGroupPictureUrl").val("");
@@ -1391,7 +1408,7 @@
                 $("#groupAddDiv .bottomBtn").html("Save");
                 $("#groupAddDiv input").removeClass("error");
                 $("#AddGroupDivName").val(group.Name);
-                $("#AddGroupCity").val(group.City);
+                $("#AddGroupSchool").val(group.SchoolName);
                 $("#AddGroupDescription").val(group.Description);
                 SetPublic(group.IsPublic);
                 $("#AddGroupPassword").val(group.Password);
@@ -1420,16 +1437,12 @@
                 $("#AddGroupDivName").addClass("error");
                 error = true;
             }
-            if (!$("#AddGroupCity").val()) {
-                $("#AddGroupCity").addClass("error");
-                error = true;
-            }
             if (error)
                 return;
 
             currentGroup.Name = $("#AddGroupDivName").val();
             currentGroup.Description = $("#AddGroupDescription").val();
-            currentGroup.City = $("#AddGroupCity").val();
+            currentGroup.SchoolId = currentSchool.Id;
             currentGroup.IsPublic = $("#isPublicBtn .selected").html() == "Public";
             currentGroup.Password = $("#AddGroupPassword").val();
             currentGroup.PictureUrl = $("#AddGroupPictureUrl").val();
@@ -1507,7 +1520,7 @@
         }
 
         function LoadGroups() {
-            Post("GetGroups", { latitude: currentLat, longitude: currentLng }, PopulateGroups);
+            Post("GetGroups", { schoolId:currentSchool.Id }, PopulateGroups);
         }
 
         function PopulateGroups(results) {
@@ -1550,7 +1563,7 @@
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
             $("#groupDetailsLogo").show().attr("src", currentGroup.PictureUrl);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
+            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             var descHtml = currentGroup.Description;
@@ -1590,7 +1603,7 @@
             currentGroup.UserId = currentUser.Id;
             var user = { GroupId: currentGroup.Id, UserId: currentUser.Id, FacebookId: currentUser.FacebookId, FirstName: currentUser.FirstName, IsAdmin: false };
             currentGroup.Members.push(user);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
+            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             if ($("#myGroupsDiv div").not(".joinGroupBtn").length <= 0)
@@ -1607,7 +1620,7 @@
 
             currentGroup.UserId = currentUser.Id;
             RemoveByUserId(currentGroup.Members, currentUser.Id);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.City;
+            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             Post("UnjoinGroup", { group: currentGroup }, LoadMyGroups);
@@ -2179,7 +2192,7 @@
             </div>
             <div class="screenContent">
                 <input id="AddGroupDivName" type="text" placeholder="Your Group Name" style="margin:12px 0 4px;" />
-                <input id="AddGroupCity" type="text" placeholder="City" style="margin-bottom:4px;" />
+                <input id="AddGroupSchool" type="text" placeholder="School" style="margin-bottom:4px;" readonly="readonly" />
                 <textarea id="AddGroupDescription" rows="4" placeholder="Description"></textarea>
                 <div id="isPublicBtn" class="pillBtn" style="margin:10px 0 12px;clear:both;">
                     <div class="slider"></div>
@@ -2301,7 +2314,7 @@
         </div>--%>
          <div id="facebookLoginDiv" class="screen swipe">
              <img src="../Img/bluebackarrow.png" onclick="$('#facebookLoginDiv').hide();" style="position: absolute;height: 28px;width: 30px;left: 16px;top: 14px;" />            
-             <div id="loginHeader" style="margin:15px 44px 25px;text-align: center;font-size: 20px;line-height: 28px;">Log In to Discover Activities Near You Today</div>
+             <div id="loginHeader" style="margin:15px 44px 25px;text-align: center;font-size: 20px;line-height: 28px;">Log In to Find Activities Near You Today</div>
             <img src="../Img/appScreenshot.png" style="margin: 12px auto;height: 64%;display:block;" />
             <div style="text-align: center;position: absolute;width: 100%;top: 100%;margin-top: -80px;">
                 <div onclick="FacebookLogin();" style="display:block;margin:0 auto;width: 80%;background-color:#3B5998;color:white;padding: 10px 0;border-radius: 5px;">Log In with Facebook</div>

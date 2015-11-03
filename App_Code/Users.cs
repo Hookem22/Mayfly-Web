@@ -38,6 +38,8 @@ public class Users : Base<Users>
 
     public double? Longitude { get; set; }
 
+    public string SchoolId { get; set; }
+
     #endregion
 
     public static Users InitialLogin(string pushDeviceToken)
@@ -183,10 +185,17 @@ public class Users : Base<Users>
             if (data.Contains("\"longitude\":"))
             {
                 string longitude = data.Substring(data.IndexOf("\"longitude\":") + 12);
-                longitude = longitude.Substring(0, longitude.IndexOf("}"));
+                longitude = longitude.Substring(0, longitude.IndexOf(",\""));
                 double lng;
                 if (double.TryParse(longitude, out lng))
                     user.Longitude = lng;
+            }
+            if (data.Contains("\"schoolid\":"))
+            {
+                string schoolId = data.Substring(data.IndexOf("\"schoolid\":") + 11);
+                schoolId = schoolId.Substring(0, schoolId.IndexOf("}"));
+                if(schoolId != "null")
+                    user.SchoolId = schoolId;
             }
             return user;
         }

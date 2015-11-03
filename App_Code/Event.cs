@@ -30,6 +30,8 @@ public class Event : Base<Event>
 
     public double LocationLongitude { get; set; }
 
+    public string SchoolId { get; set; }
+
     public int MinParticipants { get; set; }
 
     public int MaxParticipants { get; set; }
@@ -91,12 +93,12 @@ public class Event : Base<Event>
         return evt;
     }
 
-    public static string GetHome(Users user, string latitude, string longitude)
+    public static string GetHome(Users user)
     {
-        List<Event> events = GetByProcFast("geteventswithgroups", string.Format("latitude={0}&longitude={1}", latitude, longitude));
+        List<Event> events = GetByProcFast("geteventswithgroupsbyschoolid", string.Format("schoolid={0}", user.SchoolId));
         if (events.Count == 0)
             return defaultHomeHtml;
-        AddHelperProperties(events, latitude, longitude);
+        AddHelperProperties(events);
         return GetHomeHtml(events, user);
     }
 
@@ -105,7 +107,7 @@ public class Event : Base<Event>
         List<Event> events = GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
         if(events.Count > 0)
         {
-            AddHelperProperties(events, latitude, longitude);
+            AddHelperProperties(events);
             return GetGroupEventsHtml(events, user);
         }
         return "";
@@ -237,7 +239,7 @@ public class Event : Base<Event>
         }
     }
 
-    public static Event GetByRefernce(int referenceId)
+    public static Event GetByReference(int referenceId)
     {
         List<Event> events = GetByWhere(string.Format("(referenceid%20eq%20{0})", referenceId));
         if (events.Count > 0)
@@ -246,7 +248,7 @@ public class Event : Base<Event>
         return null;
     }
 
-    private static void AddHelperProperties(List<Event> events, string latitude, string longitude)
+    private static void AddHelperProperties(List<Event> events)
     {
         foreach (Event evt in events)
         {
@@ -416,7 +418,7 @@ public class Event : Base<Event>
         if (string.IsNullOrEmpty(evt.GroupId))
             return "";
 
-        string html = "<div style='position: absolute;left: 72px;height: 42px;overflow: hidden;'>";
+        string html = "<div class='groupList'>";
         if(!string.IsNullOrEmpty(evt.GroupId) && !evt.GroupId.Contains('|') && !string.IsNullOrEmpty(evt.GroupName))
         {
             html += "<div class='group' groupid='{GroupId}'>#{Group}</div></div>";

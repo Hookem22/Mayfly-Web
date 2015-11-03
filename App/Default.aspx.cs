@@ -20,19 +20,12 @@ public partial class App_Default : System.Web.UI.Page
         Users user = Users.InitialLogin(pushDeviceToken);
 
         string html = "";
-        double lat, lng;
-        double.TryParse(latitude, out lat);
-        double.TryParse(longitude, out lng);
-
-        if (lat == 0 && lng == 0 && user != null && user.Latitude != null && user.Longitude != null)
+        if (user == null || string.IsNullOrEmpty(user.SchoolId))
         {
-            lat = (double)user.Latitude;
-            lng = (double)user.Longitude;
+            School school = School.GetClosest(latitude, longitude);
+            user.SchoolId = school.Id;
         }
-        if (lat != 0 && lng != 0)
-        {
-            html = Event.GetHome(user, lat.ToString(), lng.ToString());
-        }
+        html = Event.GetHome(user);
         return html;
     }
 
@@ -42,8 +35,13 @@ public partial class App_Default : System.Web.UI.Page
         dynamic me = null;
         if (!string.IsNullOrEmpty(facebookAccessToken))
         {
-            var client = new FacebookClient(facebookAccessToken);
-            me = client.Get("me");
+            try
+            {
+                var client = new FacebookClient(facebookAccessToken);
+                me = client.Get("me");
+
+            }
+            catch { }
         }
         return Users.Login(me, deviceId, pushDeviceToken, email, password);
     }
@@ -69,13 +67,13 @@ public partial class App_Default : System.Web.UI.Page
     [WebMethod]
     public static Event GetEventByReference(int referenceId)
     {
-        return Event.GetByRefernce(referenceId);
+        return Event.GetByReference(referenceId);
     }
 
     [WebMethod]
-    public static string GetEvents(string latitude, string longitude, Users user)
+    public static string GetEvents(Users user, string latitude, string longitude)
     {
-        return Event.GetHome(user, latitude, longitude);
+        return Event.GetHome(user);
     }
 
     [WebMethod]
@@ -91,9 +89,9 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static List<Group> GetGroups(string latitude, string longitude)
+    public static List<Group> GetGroups(string schoolId)
     {
-        return Group.Get(latitude, longitude);
+        return Group.GetBySchoolId(schoolId);
     }
 
     [WebMethod]
@@ -118,6 +116,18 @@ public partial class App_Default : System.Web.UI.Page
     public static List<Messages> GetMessages(string eventId)
     {
         return Messages.GetByEvent(eventId);
+    }
+
+    [WebMethod]
+    public static School GetSchool(Users user)
+    {
+        School school = School.GetClosest(user.Latitude.ToString(), user.Longitude.ToString());
+        if(school != null && user.SchoolId != school.Id)
+        {
+            user.SchoolId = school.Id;
+            user.Save();
+        }
+        return school;
     }
 
     [WebMethod]
