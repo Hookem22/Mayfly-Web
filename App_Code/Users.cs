@@ -40,6 +40,9 @@ public class Users : Base<Users>
 
     public string SchoolId { get; set; }
 
+    [NonSave]
+    public bool? NewUser { get; set; }
+
     #endregion
 
     public static Users InitialLogin(string pushDeviceToken)
@@ -53,26 +56,26 @@ public class Users : Base<Users>
     public static Users Login(dynamic me, string deviceId, string pushDeviceToken, string email, string password)
     {
         Users user = new Users();
-        if(!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
-        {
-            user = GetByEmail(email);
-            if (user == null || string.IsNullOrEmpty(user.Password))
-                return null;
+        //if(!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
+        //{
+        //    user = GetByEmail(email);
+        //    if (user == null || string.IsNullOrEmpty(user.Password))
+        //        return null;
 
-            string pwd = Decrypt(ENCRYPT_KEY, user.Password, true);
-            if (pwd == password)
-            {
-                if((!string.IsNullOrEmpty(deviceId) && deviceId != user.DeviceId) || (!string.IsNullOrEmpty(pushDeviceToken) && pushDeviceToken != user.PushDeviceToken))
-                {
-                    user.DeviceId = deviceId;
-                    user.PushDeviceToken = pushDeviceToken;
-                    user.Save();
-                }
-                return user;
-            }
+        //    string pwd = Decrypt(ENCRYPT_KEY, user.Password, true);
+        //    if (pwd == password)
+        //    {
+        //        if((!string.IsNullOrEmpty(deviceId) && deviceId != user.DeviceId) || (!string.IsNullOrEmpty(pushDeviceToken) && pushDeviceToken != user.PushDeviceToken))
+        //        {
+        //            user.DeviceId = deviceId;
+        //            user.PushDeviceToken = pushDeviceToken;
+        //            user.Save();
+        //        }
+        //        return user;
+        //    }
                 
-            return null;
-        }
+        //    return null;
+        //}
 
         if (string.IsNullOrEmpty(pushDeviceToken))
             return null;
@@ -88,6 +91,7 @@ public class Users : Base<Users>
             if (user == null)
             {
                 user = SignUpFromFacebook(me, deviceId, pushDeviceToken);
+                user.NewUser = true;
             }
         }
         if ((user.PushDeviceToken != pushDeviceToken && !string.IsNullOrEmpty(pushDeviceToken)) ||
@@ -113,6 +117,12 @@ public class Users : Base<Users>
         user.Save();
 
         EmailService.SendWelcomeEmail(user.Email);
+
+        string body = string.Format("{0}<br/><br/>{1}", user.Name, user.Email);
+        EmailService email1 = new EmailService("PowWow@joinpowwow.com", "bob@joinpowwow.com", "New Pow Wow Sign Up", body);
+        email1.Send();
+        EmailService email2 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "New Pow Wow Sign Up", body);
+        email2.Send();
 
         return user;
     }

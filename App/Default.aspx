@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -25,7 +25,7 @@
         var currentEvent = {};
         var currentUser;
 
-        $(document).ready(function () {
+        $(document).ready(function () {           
             Init();
 
             var scrollTimer;
@@ -150,10 +150,18 @@
                 currentLat = +getParameterByName("lat");// || 30.25;
                 currentLng = +getParameterByName("lng");// || -97.75;
 
-                Post("InitEvents", { pushDeviceToken: pushDeviceToken, latitude: currentLat, longitude: currentLng }, InitSuccess);
+                if(currentLat && currentLng) {
+                    Post("InitEvents", { pushDeviceToken: pushDeviceToken, latitude: currentLat, longitude: currentLng }, InitSuccess);
+                    GetSchool();
+                }
 
                 $(".content").scrollTop(90);
             }
+
+            fbAccessToken = getParameterByName("fbAccessToken");
+            var deviceId = getParameterByName("deviceId");
+            var pushDeviceToken = getParameterByName("pushDeviceToken");
+            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email:"", password:"" }, LoginSuccess);
 
             if (!isMobile) {
                 $("body").addClass("NonMobile");
@@ -166,12 +174,6 @@
         function InitSuccess(results) {
             if(results)
                 PopulateEvents(results);
-
-            fbAccessToken = getParameterByName("fbAccessToken");
-            var deviceId = getParameterByName("deviceId");
-            var pushDeviceToken = getParameterByName("pushDeviceToken");
-
-            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email: "", password: "" }, LoginSuccess);
         }
 
         function LoginSuccess(results) {
@@ -183,8 +185,17 @@
                 currentLng = currentUser.Longitude;
             }
 
-            if (currentUser) {
+            if(currentUser && currentUser.NewUser) {
+                ShowNewUserScreen();
+            }
+
+            if(currentUser) {
+                currentUser.Latitude = currentLat;
+                currentUser.Longitude = currentLng;
                 GetSchool();
+            }
+
+            if (currentUser) {
                 LoadMyGroups();
             }
         }
@@ -192,13 +203,16 @@
         function GetSchool() {
             var success = function(results) {
                 currentSchool = results;
-                currentUser.SchoolId = currentSchool.Id;
-                $("#groupsDiv .menuHeader").html(currentSchool.Name.toUpperCase() + " GROUPS");
-                $("#loginHeader").html("Log In to Find Activities at " + currentSchool.Name + ".");
-
+                if(currentUser && currentSchool)
+                    currentUser.SchoolId = currentSchool.Id;
+                if(currentSchool){
+                    $("#groupsDiv .menuHeader").html(currentSchool.Name.toUpperCase() + " GROUPS");
+                    $("#loginHeader").html("Log in to find and join events at " + currentSchool.Name + ".");
+                }
                 LoadEvents();
             };
-            Post("GetSchool", { user: currentUser }, success);
+            var user = currentUser && currentUser.Id ? currentUser : { Latitude: currentLat, Longitude: currentLng };
+            Post("GetSchool", { user: user }, success);
         }
 
         function ReceiveLocation(lat, lng)
@@ -207,8 +221,10 @@
             {
                 currentLat = +lat;
                 currentLng = +lng;
-                currentUser.Latitude = currentLat;
-                currentUser.Longitude = currentLng;
+                if(currentUser) {
+                    currentUser.Latitude = currentLat;
+                    currentUser.Longitude = currentLng;
+                }
                 GetSchool();
             }
 
@@ -218,6 +234,8 @@
                 currentUser.Longitude = currentLng;
                 Post("SaveUser", { user: currentUser });
             }
+
+            //$(".content").html(window.location.href);
         }
 
         function GoToEvent(referenceId)
@@ -237,7 +255,8 @@
 
         function LoadEvents()
         {
-            Post("GetEvents", { user: currentUser, latitude: currentLat, longitude: currentLng }, PopulateEvents);
+            var user = currentUser && currentUser.Id ? currentUser : { SchoolId: currentSchool.Id, Latitude: currentLat, Longitude: currentLng };
+            Post("GetEvents", { user: user, latitude: currentLat, longitude: currentLng }, PopulateEvents);
         }
 
         function PopulateEvents(results)
@@ -258,7 +277,8 @@
 
             $(".content").animate({ scrollTop: "90" }, 350);
 
-            HideLoading();
+            if($(".loading").is(':visible'))
+                HideLoading();
         }
 
         function SetLocalTimes(html)
@@ -438,8 +458,8 @@
                     currentEvent = event;
                     OpenEventDetails(currentEvent);
                 }
-                else if (event.GroupId) {
-                    GetGroup(event.GroupId);
+                //else if (event.GroupId) {
+                //    GetGroup(event.GroupId);
 
                 //    var alert = "New event posted to your group " + currentGroup.Name + ".";
                 //    var messageText = "";
@@ -447,7 +467,7 @@
 
                 //    var message = "New: " + event.Name;
                 //    Post("SaveNotificationToGroup", { groupId: event.GroupId, message: message, userId: currentUser.Id, eventId: event.Id });
-                }
+                //}
             });
             Post("SaveEvent", { evt: event }, success);
 
@@ -594,13 +614,14 @@
 
             UpdateDetailsGoing(event);
 
-            setTimeout(function () {
-                var mapHt = $(window).height() - $("#detailsMap").offset().top - 20;
-                if (mapHt < 165)
-                    mapHt = 165;
-                $("#detailsMap").css("height", mapHt + "px");
-                PlotMap("detailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
-            }, 400);
+            $("#detailsMap").hide();
+            //setTimeout(function () {
+            //    var mapHt = $(window).height() - $("#detailsMap").offset().top - 20;
+            //    if (mapHt < 165)
+            //        mapHt = 165;
+            //    $("#detailsMap").css("height", mapHt + "px");
+            //    PlotMap("detailsMap", event.LocationName, event.LocationLatitude, event.LocationLongitude);
+            //}, 400);
 
             if (IsGoing(event.Going, currentUser.Id)) {
                 $("#joinBtn").html("GOING");
@@ -710,10 +731,10 @@
             UpdateDetailsGoing(currentEvent);
 
             var success = function (results) {
-                if (currentEvent.GroupId) {
-                    GetGroup(currentEvent.GroupId);
-                }
-                LoadEvents()
+                //if (currentEvent.GroupId) {
+                //    GetGroup(currentEvent.GroupId);
+                //}
+                LoadEvents();
             };
 
             Post("JoinEvent", { evt: currentEvent }, success);
@@ -730,10 +751,10 @@
             UpdateDetailsGoing(currentEvent);
 
             var success = function (results) {
-                if (currentEvent.GroupId) {
-                    GetGroup(currentEvent.GroupId);
-                }
-                LoadEvents()
+                //if (currentEvent.GroupId) {
+                //    GetGroup(currentEvent.GroupId);
+                //}
+                LoadEvents();
             };
 
             Post("UnjoinEvent", { evt: currentEvent }, success);
@@ -744,23 +765,28 @@
     <!-- Login -->
     <script type="text/javascript">
         var fbAccessToken;
-        window.fbAsyncInit = function () {
 
-            FB.init({
-                appId: '397533583786525', // App ID
-                status: true, // check login status
-                cookie: true, // enable cookies to allow the server to access the session
-                xfbml: true  // parse XFBML
-            });
-            fbAccessToken = getParameterByName("fbAccessToken");
-            if (!fbAccessToken) {
-                FB.getLoginStatus(function (response) {
-                    if (response.status === 'connected') {
-                        fbAccessToken = response.authResponse.accessToken;
-                    }
-                });
-            }
-        };
+        //window.fbAsyncInit = function () {
+
+        //    FB.init({
+        //        appId: '397533583786525', // App ID
+        //        status: true, // check login status
+        //        cookie: true, // enable cookies to allow the server to access the session
+        //        xfbml: true  // parse XFBML
+        //    });
+        //    fbAccessToken = getParameterByName("fbAccessToken");
+        //    if (!fbAccessToken) {
+        //        FB.getLoginStatus(function (response) {
+        //            if (response.status === 'connected') {
+        //                fbAccessToken = response.authResponse.accessToken;
+        //            }
+        //        });
+        //    }
+
+        //    var deviceId = getParameterByName("deviceId");
+        //    var pushDeviceToken = getParameterByName("pushDeviceToken");
+        //    Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email:"", password:"" }, LoginSuccess);
+        //};
 
         function OpenLogin()
         {
@@ -768,6 +794,7 @@
         }
 
         function FacebookLogin() {
+            ShowLoading();
             if (isiOS) {
                 window.location = "ios:FacebookLogin";
             }
@@ -779,13 +806,13 @@
         }
 
         // Load the SDK Asynchronously
-        (function (d) {
-            var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
-            if (d.getElementById(id)) { return; }
-            js = d.createElement('script'); js.id = id; js.async = true;
-            js.src = "//connect.facebook.net/en_US/all.js";
-            ref.parentNode.insertBefore(js, ref);
-        }(document));
+        //(function (d) {
+        //    var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+        //    if (d.getElementById(id)) { return; }
+        //    js = d.createElement('script'); js.id = id; js.async = true;
+        //    js.src = "//connect.facebook.net/en_US/all.js";
+        //    ref.parentNode.insertBefore(js, ref);
+        //}(document));
 
         </script>
 
@@ -1219,7 +1246,7 @@
         $(document).ready(function () {
 
             $("#groupAddDiv .screenTitle").click(function () {
-                if (currentUser && currentUser.Id == "D2049B98-E7E7-42BE-96C4-3229ADF52CD6" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
+                if (currentUser && currentUser.Id == "2F54A644-31C6-405A-A05C-8E321EF47EF8" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
                 {
                     $('#changeLatLngDiv').show();
                     $('.modal-backdrop').show();
@@ -1383,6 +1410,22 @@
                 $("#groupAddDiv .deleteBtn").hide();
             });
 
+            $("#newUserResultsDiv").on("click", "div", function() {
+                $(this).find("img.checkmark").toggleClass("unchecked");
+            });
+
+            $("#newUserDiv .okBtn").click(function() {
+                $("#newUserResultsDiv img.checkmark").each(function() {
+                    if(!$(this).hasClass("unchecked")) {
+                        var groupId = $(this).closest("div").attr("groupid");
+
+                        var group = { Id: groupId, UserId: currentUser.Id };
+                        Post("JoinGroup", { group: group }, LoadMyGroups);
+                    }
+                });
+                HideNewUserScreen();
+            });
+
         });
 
         function AddEditGroup(group)
@@ -1533,8 +1576,20 @@
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
             }
-
             $("#groupsListDiv").html(html);
+
+            //New User Groups
+            html = "";
+            var length = results.length < 4 ? results.length : 4;
+            for (var i = 0; i < length; i++) {
+                var group = results[i];
+                var groupHtml = '<div groupid="{GroupId}" >{Img}<div>{Name}</div><img class="checkmark" src="/Img/check.png" /></div>';
+                var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" onerror="this.src=\'../Img/group.png\';" />' : '<img src="../Img/group.png" class="logo" />';
+                groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
+                html += groupHtml;
+            }
+
+            $("#newUserResultsDiv").html(html);
         }
 
         function OpenGroupInitial(group) {
@@ -1644,6 +1699,21 @@
             }
             $("#groupLocationsDiv").show();
         }
+    
+        function ShowNewUserScreen() {
+            if(!$("#groupsListDiv").html()) {
+                LoadGroups();
+            }
+            
+            $("#newUserDiv").show();
+            $(".modal-backdrop").show();
+        }
+        
+        function HideNewUserScreen() {
+            $("#newUserDiv").hide();
+            $("#showGroupsBtnDiv").show();
+        }
+
     </script>
 
     <!-- Location -->
@@ -2233,10 +2303,10 @@
             <div class="screenContent" style="margin-bottom: 70px;">
                 <div>
                     <input id="AddName" type="text" placeholder="What do you want to do?" style="margin:12px 0 4px;" />
-                    <input id="AddLocation" type="text" placeholder="Location" style="float:left;margin-bottom:4px;" />
+                    <input id="AddLocation" type="text" placeholder="Location" style="display:none;float:left;margin-bottom:4px;" />
                     <input id="AddDay" type="text" placeholder="Day" readonly="readonly" style="width:48%;float:left;margin-bottom:4px;" />
                     <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
-                    <textarea id="AddDetails" rows="4" placeholder="Details"></textarea>
+                    <textarea id="AddDetails" rows="4" placeholder="Location & Details"></textarea>
                     <div style="float:left;margin:16px 0;">Total People?</div>
                     <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
                     <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
@@ -2335,6 +2405,18 @@
         <div id="addGroupDiv">
             <div id="addGroupsResultsDiv"></div>
             <div class="smallBottomBtn" >Cancel</div>
+        </div>
+        <div id="newUserDiv">
+            <div style="text-align: center;margin: 1em;font-size: 24px;font-weight: 500;">Join Groups</div>
+            <div style="margin: 0 32px 24px;">Join groups to hear about new events from that group.<br /><br />Here are some groups we think you'd like.</div>
+            <div id="newUserResultsDiv"></div>
+            <div class="okBtn smallBottomBtn" style="left:0;right:50%;">Join</div><div onclick="HideNewUserScreen();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Not Now</div>
+        </div>
+        <div id="showGroupsBtnDiv">
+            <div class="arrowup"></div>
+            <img src="/Img/whitegroup.png" class="fakeGroupsBtn" />
+            <div style="margin: 12px 32px 60px;">Click here to find more groups or create your own.</div>
+            <div class="okBtn smallBottomBtn" onclick="$('#showGroupsBtnDiv').hide();$('.modal-backdrop').hide();" >OK</div>
         </div>
         <div id="checkPasswordDiv">
             <div class="messageContent" style="margin-bottom: 12px;line-height: 1.4em;">This group is private. Enter group password.</div>

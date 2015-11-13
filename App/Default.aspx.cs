@@ -11,7 +11,6 @@ public partial class App_Default : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-
     }
 
     [WebMethod]
@@ -23,6 +22,13 @@ public partial class App_Default : System.Web.UI.Page
         if (user == null || string.IsNullOrEmpty(user.SchoolId))
         {
             School school = School.GetClosest(latitude, longitude);
+            user = new Users();
+            double lat;
+            double lng;
+            if (double.TryParse(latitude, out lat))
+                user.Latitude = lat;
+            if (double.TryParse(longitude, out lng))
+                user.Longitude = lng;
             user.SchoolId = school.Id;
         }
         html = Event.GetHome(user);
@@ -122,7 +128,7 @@ public partial class App_Default : System.Web.UI.Page
     public static School GetSchool(Users user)
     {
         School school = School.GetClosest(user.Latitude.ToString(), user.Longitude.ToString());
-        if(school != null && user.SchoolId != school.Id)
+        if(!string.IsNullOrEmpty(user.SchoolId) && school != null && user.SchoolId != school.Id)
         {
             user.SchoolId = school.Id;
             user.Save();
@@ -133,22 +139,26 @@ public partial class App_Default : System.Web.UI.Page
     [WebMethod]
     public static List<Users> GetFriends(string facebookAccessToken)
     {
-        var client = new FacebookClient(facebookAccessToken);
-        dynamic result = client.Get("me/friends");
-        
-        List<Users> users = new List<Users>();
-        if (result != null)
+        try
         {
-            foreach (var item in result.data)
+            var client = new FacebookClient(facebookAccessToken);
+            dynamic result = client.Get("me/friends");
+
+            List<Users> users = new List<Users>();
+            if (result != null)
             {
-                Users user = new Users();
-                user.Name = item.name;
-                user.FacebookId = item.id;
-                users.Add(user);
+                foreach (var item in result.data)
+                {
+                    Users user = new Users();
+                    user.Name = item.name;
+                    user.FacebookId = item.id;
+                    users.Add(user);
+                }
             }
+            return users.OrderBy(u => u.Name).ToList();
         }
-        return users.OrderBy(u => u.Name).ToList();
-        
+        catch { }
+        return null;
     }
 
     [WebMethod]

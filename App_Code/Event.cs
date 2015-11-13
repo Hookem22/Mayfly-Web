@@ -115,9 +115,17 @@ public class Event : Base<Event>
 
     public new void Save()
     {
+        //TODO: hack to create events
+        bool saveParticipants = true;
+        if(this.MinParticipants < 0)
+        {
+            this.MinParticipants = 0;
+            saveParticipants = false;
+        }
+        
         base.Save();
 
-        if(!string.IsNullOrEmpty(this.UserId))
+        if(!string.IsNullOrEmpty(this.UserId) && saveParticipants)
         {
             EventGoing going = new EventGoing(this.Id, this.UserId, true);
             going.Save();

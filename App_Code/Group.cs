@@ -36,6 +36,8 @@ public class Group : Base<Group>
 
     public string Locations { get; set; }
 
+    public double? OrderBy { get; set; }
+
     [NonSave]
     public List<GroupUsers> Members { get; set; }
 
@@ -114,19 +116,19 @@ public class Group : Base<Group>
             GroupUsers going = new GroupUsers(this.Id, this.UserId, true);
             going.Save();
 
-            List<GroupUsers> groups = GroupUsers.GetByWhere(string.Format("(userid%20eq%20'{0}')", this.UserId)).FindAll(delegate (GroupUsers g)
-            {
-                return g.IsAdmin == true;
-            });
+            //List<GroupUsers> groups = GroupUsers.GetByWhere(string.Format("(userid%20eq%20'{0}')", this.UserId)).FindAll(delegate (GroupUsers g)
+            //{
+            //    return g.IsAdmin == true;
+            //});
 
-            if(groups.Count <= 1)
-            {
-                Users user = Users.Get(this.UserId);
+            //if(groups.Count <= 1)
+            //{
+            //    Users user = Users.Get(this.UserId);
 
-                string body = firstGroupEmail.Replace("{Group Name}", this.Name).Replace("{Your Name}", user.FirstName);
-                EmailService email = new EmailService("PowWow@JoinPowWow.com", user.Email, "Your First Group", body);
-                email.Send();
-            }
+            //    string body = firstGroupEmail.Replace("{Group Name}", this.Name).Replace("{Your Name}", user.FirstName);
+            //    EmailService email = new EmailService("PowWow@JoinPowWow.com", user.Email, "Your First Group", body);
+            //    email.Send();
+            //}
         }
     }
 
