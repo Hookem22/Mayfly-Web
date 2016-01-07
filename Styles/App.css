@@ -223,6 +223,8 @@ input.error, textarea.error
     left: 0;
     right: 0;
     overflow: scroll;
+    /*overflow-x:hidden;
+    overflow-y:scroll;*/
     -webkit-overflow-scrolling: touch;
     z-index: 1;
     background-color: #EEEEEE;
@@ -239,14 +241,16 @@ input.error, textarea.error
 }
 .dayHeader
 {
-    padding: 29px 18px 18px;
+    padding: 29px 0 18px;
     font-size: 18px;
     color: #555;
+    float: left;
+    width: 100%;
 }
 .dayHeader > div:first-child 
 {
     border-top: 1px solid #ccc;
-    margin-bottom: -11px;
+    margin: 0 18px -11px;
 }
 .dayHeader > div:last-child
 {
@@ -257,13 +261,14 @@ input.error, textarea.error
 }
 .homeList
 {
-    border: 1px solid #F2F2F2;
-    padding: 10px 20px;
-    height: 64px;
+    border-top: 1px solid #F2F2F2;
+    border-bottom: 1px solid #F2F2F2;
+    padding: 10px 0;
+    min-height: 64px;
     position: relative;
-    left: 0;
-    right: 0;
     background-color: white;
+    float: left;
+    width: 100%;
 }
 .homeList.first 
 {
@@ -276,32 +281,38 @@ input.error, textarea.error
     -webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);
     box-shadow: 0px 2px 5px rgba(0,0,0,.2);
 }
-.homeList img
+.homeList > img
 {
     height: 50px;
-    margin: -5px;
-    float: left;
-    max-width: 56px;
+    max-width: 50px;
+    position: absolute;
+    margin-left: 20px;
 }
 .homeList img.fbPic
 {
     height: 40px;
-    margin: 8px 0 0;
+    margin-top: 8px;
     border-radius: 20px;
 }
 .homeList .name
 {
-    position: absolute;
-    left: 78px;
+    /*position: absolute;
+    left: 82px;
     right: 80px;
     overflow: hidden;
-    height: 40px;
-    top: 16px;
+    height: 44px;
+    top: 20px;*/
+    font-size: 18px;
+    line-height: 22px;
+    margin-left: 80px;
+    margin-top: 10px;
+    margin-right: 105px;
+    float: left;
 }
 #groupDetailsDiv .homeList .name
 {
     right: 116px;
-    height: 36px;
+    min-height: 36px;
 }
 .homeList .details
 {
@@ -312,10 +323,11 @@ input.error, textarea.error
 .homeList .day
 {
     position: absolute;
-    right: 20px;
-    top: 16px;
+    right: 34px;
+    top: 20px;
+    font-size: 18px;
 }
-.homeList .groupList
+/*.homeList .groupList
 {
     position: absolute;
     left: 72px;
@@ -332,6 +344,22 @@ input.error, textarea.error
     background-color: white;
     padding: 4px;
     float: left;
+}*/
+.homeList .groupList
+{
+    float: left;
+    font-size: 18px;
+    line-height: 22px;
+    margin-left: 80px;
+    margin-top: 4px;
+    margin-right: 20px;
+}
+.homeList .group
+{
+    color: #4285F4;
+    z-index: 20;
+    padding-right: 4px;
+    float: left;
 }
 .homeList .icon
 {
@@ -341,7 +369,12 @@ input.error, textarea.error
     position: absolute;
     border-radius: 20px;
     margin-top: 28px;
-    margin-left: 28px;
+    margin-left: 45px;
+}
+.homeList .icon img
+{
+    margin: -5px;
+    position: absolute;
 }
 .homeList .icon.goingIcon
 {
@@ -381,7 +414,7 @@ input.error, textarea.error
 {
     clear: both;
     text-align: center;
-    margin: 60px 0 14px;
+    margin: 16px 0 14px;
     color: #4285F4;
     font-size: 18px;
 }
@@ -531,17 +564,18 @@ input.error, textarea.error
 {
     height: 4px;
 }
-.invitedFriends
+/*.invitedFriends
 {
     height: 80px;
     overflow-y: hidden;
     overflow-x: scroll;
     -webkit-overflow-scrolling: touch;
     margin-right: -16px;
-}
+}*/
 .invitedFriendsScroll
 {
     float: left;
+    margin-bottom: 80px;
 }
 .invitedFriendsScroll > div
 {
@@ -550,6 +584,10 @@ input.error, textarea.error
     margin: 0 8px 8px 6px;
     position: relative;
     width: 55px;
+}
+.invitedFriendsScroll > div > div
+{
+    height: 18px;
 }
 .invitedFriendsScroll > div > img
 {
@@ -1145,11 +1183,19 @@ input.error, textarea.error
 }
 #groupsListDiv > div > div 
 {
-    margin: 16px 8px 14px 60px;
+    margin: 15px 8px 13px 64px;
+    font-size: 18px;
 }
 #groupsListDiv > div.private
 {
-    display: none;
+    /*display: none;*/
+}
+#groupsListDiv .privateImg
+{
+    float: right;
+    height: 26px;
+    width: 28px;
+    margin: -4px 15px 0 0;
 }
 .screen
 {

@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=9" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -106,14 +106,24 @@
                 }
             });
 
-            $("#addDiv .screenContent").children().not(".invitedFriends, #AddMap").swipe({
-                swipeRight: function (event, direction, distance, duration, fingerCount) {
-                    LoadEvents();
-                    CloseRight($("#addDiv"));
-                }
-            });
+            //$("#addDiv").swipe({
+            //    swipeRight: function (event, direction, distance, duration, fingerCount) {
+            //        LoadEvents();
+            //        CloseRight($("#addDiv"));
+            //    }
+            //});
 
-            $("#detailsDiv .screenSubheader, #detailsDescription, #detailsInviteBtn").swipe({
+            //$("#detailsDiv .invitedFriends").swipe({
+            //    swipeLeft: function (event, direction, distance, duration, fingerCount) {
+            //        event.stopImmediatePropagation();
+            //    },
+            //    swipeRight: function (event, direction, distance, duration, fingerCount) {
+            //        event.stopImmediatePropagation();
+            //    }
+            //});
+
+            $("#detailsDiv").swipe({
+                
                 swipeLeft: function (event, direction, distance, duration, fingerCount) {
                     OpenMessages();
                 },
@@ -382,6 +392,7 @@
                 $("#addDiv .bottomBtn").html("Create");
                 $("#addDiv input, #addDiv textarea").val("");
                 $("#addDiv #AddDay").val("Today");
+                InitDay();
                 $("#addDiv #inviteBtn").show();
                 $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "165px").hide();
@@ -402,6 +413,7 @@
                 currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
                 $("#addDiv #AddDay").val(GetDayLabel(currentEvent.DayOfWeek));
                 $("#AddStartTime").val(currentEvent.LocalTime);
+                InitDay(currentEvent.DayOfWeek);
                 var min = currentEvent.MinParticipants > 1 ? currentEvent.MinParticipants : "";
                 $("#AddMin").val(min);
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
@@ -414,8 +426,8 @@
                 
                 $("#addDiv #inviteBtn").hide();
                 $("#addDiv .invitedFriendsScroll").html("");
-                $("#AddMap").css("height", "135px");
-                PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
+                //$("#AddMap").css("height", "135px");
+                //PlotMap("AddMap", currentEvent.LocationName, currentEvent.LocationLatitude, currentEvent.LocationLongitude);
                 $("#deleteEventBtn").show();
             }
 
@@ -506,10 +518,10 @@
                 localTime = $("#AddStartTime").val();
             }
 
-            var max = +$("#AddMax").val();
-            var min = +$("#AddMin").val();
+            var max = +$("#AddMax").val() || 0;
+            var min = +$("#AddMin").val() || 0;
 
-            var groupId = "";
+            var groupId = currentEvent ? currentEvent.GroupId : "";
             $("#addDiv .invitedFriendsScroll div").each(function () {
                 var g = $(this).attr("groupid");
                 if(g)
@@ -577,6 +589,10 @@
         });
 
         function OpenEventDetails(event) {
+            if (!currentUser || !currentUser.Id || !fbAccessToken) {
+                OpenLogin();
+                return;
+            }
 
             currentEvent = event;
             if (event.GroupId) {
@@ -695,9 +711,9 @@
             for (var i = people; i < event.MaxParticipants; i++) {
                 goingHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
             }
-            var notGoing = event.MaxParticipants ? (event.MaxParticipants - people) * 64 : 0;
-            var width = notGoing + (people * 70) + 10;
-            $("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
+            //var notGoing = event.MaxParticipants ? (event.MaxParticipants - people) * 64 : 0;
+            //var width = notGoing + (people * 70) + 10;
+            //$("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
 
             $("#detailsInvitedFriends .invitedFriendsScroll").html(goingHtml);
         }
@@ -1002,7 +1018,7 @@
                     else
                         html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
                 }
-                $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
+                //$("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
             }
             else {
@@ -1031,8 +1047,8 @@
                         name = name.substring(0, name.indexOf(" "));
                     html += "<div phone='" + phone + "' class='nonFb' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + name + "</div></div>";
                 });
-                var width = $("#inviteGroups div.invited").length / 2 * 70 + $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
-                $("#addDiv .invitedFriendsScroll").css("width", width + "px");
+                //var width = $("#inviteGroups div.invited").length / 2 * 70 + $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
+                //$("#addDiv .invitedFriendsScroll").css("width", width + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
                 CloseToBottom("inviteDiv");
             }
@@ -1192,6 +1208,8 @@
 
             $("#myGroupsDiv").on("click", "div", function () {
                 var groupId = $(this).attr("groupid");
+                if(!groupId)
+                    return;
                 var name = $(this).find("span").html();
                 var success = function (group) {
                     OpenGroupDetails(group);
@@ -1571,7 +1589,7 @@
             var html = "";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" class="private" >{Img}<div>{Name}</div></div>';
+                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" >{Img}<div>{Name}<img class="privateImg" src="../Img/whitelock.png"/></div></div>';
                 var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" onerror="this.src=\'../Img/group.png\';" />' : '<img src="../Img/group.png" class="logo" />';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
@@ -1618,7 +1636,7 @@
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
             $("#groupDetailsLogo").show().attr("src", currentGroup.PictureUrl);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
+            var subheaderHtml = currentGroup.Members.length < 6 ? currentGroup.SchoolName : "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             var descHtml = currentGroup.Description;
@@ -1658,7 +1676,7 @@
             currentGroup.UserId = currentUser.Id;
             var user = { GroupId: currentGroup.Id, UserId: currentUser.Id, FacebookId: currentUser.FacebookId, FirstName: currentUser.FirstName, IsAdmin: false };
             currentGroup.Members.push(user);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
+            var subheaderHtml = currentGroup.Members.length < 6 ? currentGroup.SchoolName : "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             if ($("#myGroupsDiv div").not(".joinGroupBtn").length <= 0)
@@ -1675,7 +1693,7 @@
 
             currentGroup.UserId = currentUser.Id;
             RemoveByUserId(currentGroup.Members, currentUser.Id);
-            var subheaderHtml = "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
+            var subheaderHtml = currentGroup.Members.length < 6 ? currentGroup.SchoolName : "<span style='font-weight:bold;'>" + currentGroup.Members.length + "</span> Members - " + currentGroup.SchoolName;
             $("#groupDetailsDiv #groupDetailsInfo").html(subheaderHtml);
 
             Post("UnjoinGroup", { group: currentGroup }, LoadMyGroups);
@@ -1943,7 +1961,8 @@
                 });
 
                 $("#AddDay").click(function () {
-                    InitDay();
+                    $(".modal-backdrop").show();
+                    $("#dateDiv").show();
                 });
 
                 $("#clockCircle").on("click", "div", function () {
@@ -2133,9 +2152,9 @@
 
             }
 
-            function InitDay() {
+            function InitDay(dayOfWeek) {
                 var html = "";
-                var dayNumber = new Date().getDay();
+                var dayNumber = dayOfWeek || new Date().getDay();
                 for(var i = 0; i < 7; i++)
                 {
                     var day = "Today";
@@ -2151,8 +2170,6 @@
                         html += "<div>" + day + "</div>";
                 }
                 $("#dateDivResults").html(html);
-                $(".modal-backdrop").show();
-                $("#dateDiv").show();
             }
 
             function GetDayLabel(dayNumber)
@@ -2270,7 +2287,7 @@
                     <div style="margin: -26px 18% 0 0;float:right;">Private</div>
                 </div>
                 <input id="AddGroupPassword" type="text" placeholder="Private Password" style="margin-bottom:4px;" readonly="readonly" />
-                <input id="AddGroupPictureUrl" type="text" placeholder="Logo Image Url"  />
+                <input id="AddGroupPictureUrl" type="text" placeholder="Logo Image Url" style="display:none;"  />
                 <img id="AddGroupPicture" style="height: 80px;margin: 10px 0;" onerror="this.style.display='none';" />
                 <img class="deleteBtn" src="../Img/delete.png" />
             </div>
@@ -2307,9 +2324,9 @@
                     <input id="AddDay" type="text" placeholder="Day" readonly="readonly" style="width:48%;float:left;margin-bottom:4px;" />
                     <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
                     <textarea id="AddDetails" rows="4" placeholder="Location & Details"></textarea>
-                    <div style="float:left;margin:16px 0;">Total People?</div>
+                    <%--<div style="float:left;margin:16px 0;">Total People?</div>
                     <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
-                    <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />
+                    <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />--%>
                     <div id="inviteBtn" >Invite Friends or Groups</div>
                 </div>
                 <div class="invitedFriends"><div class="invitedFriendsScroll"></div></div>

@@ -202,8 +202,8 @@ public class Users : Base<Users>
             }
             if (data.Contains("\"schoolid\":"))
             {
-                string schoolId = data.Substring(data.IndexOf("\"schoolid\":") + 11);
-                schoolId = schoolId.Substring(0, schoolId.IndexOf("}"));
+                string schoolId = data.Substring(data.IndexOf("\"schoolid\":") + 12);
+                schoolId = schoolId.Substring(0, schoolId.IndexOf("\"}"));
                 if(schoolId != "null")
                     user.SchoolId = schoolId;
             }

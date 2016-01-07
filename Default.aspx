@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="img/favicon.png" />
-    <link href="/Styles/StyleSheet.css?i=3" rel="stylesheet" type="text/css" />
+    <link href="/Styles/StyleSheet.css?i=4" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
     <script type="text/javascript">
@@ -130,14 +130,14 @@
         </div>
         <a id="loginLink" href="#" style="left: 50%;position: absolute;margin-left: -124px;"><img src="Img/facebookLoginButton.png" style="width: 248px;" /></a>
         --%>
-        <img src="Img/whitearrows.png" style="left: 50%;position: relative;width: 130px;margin: 35px 0 40px -65px;" />
+        <img src="Img/whitearrows.png" style="left: 50%;position: relative;width: 174px;margin: 18px 0 33px -87px;" />
         <div style="position: relative;width: 60%;left: 20%;text-align: center;line-height: 32px;font-size: 24px;margin-bottom: 30px;">Get a live feed of activities on your campus.</div>
         <div class="buttons" style="margin:0 auto;width: 203px;">
             <a href="https://geo.itunes.apple.com/us/app/pow-wow-events/id1009503264?mt=8" style="float:left;"><img src="Img/app-store.png" style="width: 203px;height: 60px;margin: 4px 2px 4px;" /></a>
             <a href="https://play.google.com/store/apps/details?id=com.joinpowwow.powwow&hl=en" style="float:left;""><img src="Img/goog-play.png" style="width: 203px;height: 60px;margin: 4px 2px;" /></a>
         </div>
-        <div style="margin-top:230px;border-bottom: 1px solid rgba(0,0,0,.12);-moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);-webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);box-shadow: 0px 5px 5px rgba(0,0,0,.2);"></div>
-        <div style="margin: 0 0 45px;position: relative;background-color: #EEEEEE;border-top: 1px solid #ccc;color:#333;border-bottom: 1px solid rgba(0,0,0,.12);-moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);-webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);box-shadow: 0px 2px 5px rgba(0,0,0,.2);">
+        <div style="display:none;margin-top:230px;border-bottom: 1px solid rgba(0,0,0,.12);-moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);-webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);box-shadow: 0px 5px 5px rgba(0,0,0,.2);"></div>
+        <div style="display:none;margin: 0 0 45px;position: relative;background-color: #EEEEEE;border-top: 1px solid #ccc;color:#333;border-bottom: 1px solid rgba(0,0,0,.12);-moz-box-shadow: 0px 5px 5px rgba(0,0,0,.2);-webkit-box-shadow: 0px 5px 5px rgba(0,0,0,.2);box-shadow: 0px 2px 5px rgba(0,0,0,.2);">
             <div style="padding: 29px 18px 18px;font-size: 18px;color: #555;" >
                 <div style="border-top: 1px solid #ccc;margin-bottom: -11px;"></div>
                 <div style="margin: 0 auto; width: 35%;text-align: center;background-color: #EEEEEE;">Upcoming</div>
@@ -163,7 +163,7 @@
                 <div style="position: absolute;top: 10px;right: 15px;">8:00 PM</div>
             </div>
         </div>
-        <img style="margin:1em 0 2em 10%;width:80%;" src="Img/appcombined.png" />
+        <img style="margin:2em 0 2em 10%;width:80%;" src="Img/appcombined.png" />
 
     </div>
     </form>

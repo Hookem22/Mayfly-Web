@@ -179,7 +179,7 @@ public class Event : Base<Event>
                 continue;
 
             string msg = "New event in your group " + group.Name;
-            AzureMessagingService.Send(msg, "", user.UserId);
+            //AzureMessagingService.Send(msg, "", user.UserId);
 
             msg = "New: " + this.Name;
             Notification notification = new Notification(this.Id, user.UserId, msg);
@@ -307,8 +307,8 @@ public class Event : Base<Event>
             if (i == events.Count - 1 || events[i].DayOfWeek != events[i + 1].DayOfWeek)
                 addClass += " last";
 
-            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div>{Group}</div>";
-            string details = AddGoing(evt);
+            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div>{Group}<div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
+            string details = ""; //AddGoing(evt);
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
             groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", details).Replace("{StartDay}", evt.LocalTime).Replace("{Group}", AddGroups(evt));
@@ -429,7 +429,7 @@ public class Event : Base<Event>
         string html = "<div class='groupList'>";
         if(!string.IsNullOrEmpty(evt.GroupId) && !evt.GroupId.Contains('|') && !string.IsNullOrEmpty(evt.GroupName))
         {
-            html += "<div class='group' groupid='{GroupId}'>#{Group}</div></div>";
+            html += "<a class='group' groupid='{GroupId}'>#{Group}</a></div>";
             html = html.Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
             return html;
         }
@@ -440,7 +440,7 @@ public class Event : Base<Event>
             if (string.IsNullOrEmpty(evt.GroupPictureUrl) && !string.IsNullOrEmpty(group.PictureUrl))
                 evt.GroupPictureUrl = group.PictureUrl;
 
-            html += "<div class='group' groupid='{GroupId}'>#{Group}</div>";
+            html += "<a class='group' groupid='{GroupId}'>#{Group}</a>";
             html = html.Replace("{GroupId}", group.Id).Replace("{Group}", group.Name);
         }
         html += "</div>";
@@ -449,17 +449,17 @@ public class Event : Base<Event>
 
     private static string AddGoing(Event evt)
     {
-        //string html = "<div class='homeGoing'>";
-        //Random rnd = new Random();
-        //foreach(EventGoing going in evt.Going)
-        //{
-        //    if (!string.IsNullOrEmpty(going.FacebookId))
-        //        html += "<img src='https://graph.facebook.com/" + going.FacebookId + "/picture' />";
-        //    else
-        //        html += "<img style='height: 25px;margin: -3px 0;' src='../Img/face" + rnd.Next(8) + ".png' />";
-        //}
-        //html += "</div>";
-        return "";
+        string html = "<div class='homeGoing'>";
+        Random rnd = new Random();
+        foreach (EventGoing going in evt.Going)
+        {
+            if (!string.IsNullOrEmpty(going.FacebookId))
+                html += "<img src='https://graph.facebook.com/" + going.FacebookId + "/picture' />";
+            else
+                html += "<img style='height: 25px;margin: -3px 0;' src='../Img/face" + rnd.Next(8) + ".png' />";
+        }
+        html += "</div>";
+        return html;
     }
 
     private static string defaultHomeHtml = "<div style='background-color: white;margin: 15px 12px;padding: 34px 24px;box-shadow: 0 1px 2px 0 rgba(0,0,0,0.22);border-radius: 6px;'><div style='text-align: center;color: #555;'><div style='font-size: 1.5em;'>Welcome to Pow Wow!</div><div style='font-size: 1.1em;margin: .8em 32px;line-height: 1.4em;'>The place to find events near you today</div><div style='font-size: 1.25em;line-height: 1.8em;'><a style='color: #4285F4;' onclick='OpenAdd();'>Create an Event</a><br/>or<br/><a style='color: #4285F4;' onclick='OpenGroups();'>Join a Group</a></div></div></div>";
