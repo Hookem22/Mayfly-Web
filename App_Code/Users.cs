@@ -232,7 +232,7 @@ public class Users : Base<Users>
 
     public static string GetInternHtml(string schoolId)
     {
-        string html = "<table><tr class='header'><td>Name</td><td>Events Created</td><td>Attending</td><td>Created</td><td>Attending</td></tr>";
+        string html = "<table><tr class='header'><td>Name</td><td>Events Created</td><td>Attending</td><td>Groups Created</td><td>Member</td><td>Events Created</td><td>Events Attending</td><td>Groups Created</td><td>Group Member</td></tr>";
         List<Users> users = GetByWhere(string.Format("(schoolid%20eq%20'{0}')", schoolId));
         users = users.OrderBy(u => u.Name).ToList();
         bool even = false;
@@ -243,10 +243,11 @@ public class Users : Base<Users>
 
             List<Event> events = Event.GetByUser(user.Id);
             List<Group> groups = Group.GetByUserId(user.Id);
+            bool hide = events.Count > 4 || groups.Count > 4;
 
             html += even ? "<tr class='even'>" : "<tr>";
-            html += events.Count > 4 ? string.Format("<td><a>{0}</a></td>", user.Name) : string.Format("<td>{0}</td>", user.Name);
-            int createdCt = 0;
+            html += hide ? string.Format("<td><a>{0}</a></td>", user.Name) : string.Format("<td>{0}</td>", user.Name);
+            int eventAdminCt = 0;
             string createdInfo = "";
             string attendingInfo = "";
             foreach (Event evt in events)
@@ -257,7 +258,7 @@ public class Users : Base<Users>
 
                 if (evt.IsAdmin == true)
                 {
-                    createdCt++;
+                    eventAdminCt++;
                     createdInfo += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
                 }
                 else
@@ -265,12 +266,40 @@ public class Users : Base<Users>
                     attendingInfo += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
                 }
             }
-            html += string.Format("<td>{0}</td><td>{1}</td>", createdCt.ToString(), (events.Count - createdCt).ToString());
-            if(events.Count > 4)
-                html += string.Format("<td class='details hide'>{0}</td><td class='details hide'>{1}</td>", createdInfo, attendingInfo);
-            else
-                html += string.Format("<td class='details'>{0}</td><td class='details'>{1}</td>", createdInfo, attendingInfo);
+            html += string.Format("<td>{0}</td><td>{1}</td>", eventAdminCt.ToString(), (events.Count - eventAdminCt).ToString());
             
+            
+            int groupAdminCt = 0;
+            string createdGroupInfo = "";
+            string attendingGroupInfo = "";
+            foreach (Group group in groups)
+            {
+                GroupUsers groupUser = GroupUsers.Get(group.Id, user.Id, false);
+                if (groupUser.IsAdmin)
+                {
+                    groupAdminCt++;
+                    group.Members = GroupUsers.GetByGroup(group.Id);
+                    createdGroupInfo += string.Format("{0} - {1} Members<br/>", group.Name, group.Members.Count.ToString());
+                }
+                else
+                {
+                    attendingGroupInfo += string.Format("{0}<br/>", group.Name);
+                }
+            }
+
+            html += string.Format("<td>{0}</td><td>{1}</td>", groupAdminCt.ToString(), (groups.Count - groupAdminCt).ToString());
+
+            if (hide) 
+            {
+                html += string.Format("<td><div class='details hide'>{0}</div></td><td><div class='details hide'>{1}</div></td>", createdInfo, attendingInfo);
+                html += string.Format("<td><div class='details hide'>{0}</div></td><td><div class='details hide'>{1}</div></td>", createdGroupInfo, attendingGroupInfo);
+            }   
+            else
+            {
+                html += string.Format("<td class='details'>{0}</td><td class='details'>{1}</td>", createdInfo, attendingInfo);
+                html += string.Format("<td class='details'>{0}</td><td class='details'>{1}</td>", createdGroupInfo, attendingGroupInfo);
+            }
+
             html += "</tr>";
             even = !even;
         }

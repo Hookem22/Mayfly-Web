@@ -15,15 +15,13 @@
         a {
             color:#1a0dab;
             text-decoration: none;
-            line-height: 24px;
-            font-size: 16px;
         }
         a:hover {
             text-decoration: underline;
             cursor: pointer;
         }
         #content {
-            margin: 20px;
+            margin: 20px 5px;
         }
         tr.header {
             color: white;
@@ -31,6 +29,11 @@
         }
         tr.even {
             background-color: #f1f1f1;
+        }
+        td
+        {
+            line-height: 24px;
+            font-size: 16px;
         }
         .hide {
             display: none;
@@ -48,7 +51,7 @@
             Post("GetInternHtml", {}, success);
 
             $("#content").on("click", "td a", function (e) {
-                if ($(e.target).closest("td").hasClass("details"))
+                if ($(e.target).closest("td div").hasClass("details"))
                     return;
 
                 var tr = $(e.target).closest("tr");
@@ -61,7 +64,7 @@
 </head>
 <body>
     <form id="form1" runat="server">
-        <div id="content"></div>
+        <div id="content"><img src="../Img/loading.gif" style="height:50px;left:50%;position:absolute;top:100px;margin-left:-25px;" /></div>
 
     </form>
 </body>
