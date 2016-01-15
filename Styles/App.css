@@ -438,9 +438,11 @@ input.error, textarea.error
 {
     clear: both;
     text-align: center;
-    margin: 2px 0 16px;
+    margin: 2px -16px 14px;
     color: #4285F4;
     font-size: 18px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
 }
 
 #messageDiv
@@ -597,12 +599,14 @@ input.error, textarea.error
 }
 .invitedFriendsScroll > div.nonFb
 {
-    margin: 0 2px 8px;
+    margin: 0 4px 8px;
     width: 60px;
 }
 .invitedFriendsScroll > div.nonFb img
 {
-    height: 60px;
+    height: 64px;
+    width: 64px;
+    margin: -8px -5px 3px;
 }
 .invitedFriendsScroll > div.nonFb div:not(.icon)
 {
@@ -640,7 +644,9 @@ input.error, textarea.error
 .invitedFriendsScroll > div .icon.invitedIcon img
 {
     height: 16px;
+    width: 16px;
     padding-top: 2px;
+    margin: -1px 0 0;
 }
 #inviteDiv
 {

@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=9" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -37,6 +37,8 @@
                     if ($(".content").scrollTop() < 15) {
                         ShowLoading();
                         LoadEvents();
+                        if(currentEvent && currentEvent.Id)
+                            LoadMessages();
                     }
                     else if ($(".content").scrollTop() < 90) {
                         $(".content").animate({ scrollTop: "90" }, 350);
@@ -86,6 +88,11 @@
             });
 
             $(".screenHeader .backArrow").click(function () {
+                if ($(this).closest(".screen").attr('id') == "groupDetailsDiv")
+                    currentGroup = {};
+                else if ($(this).closest(".screen").attr('id') == "detailsDiv")
+                    currentEvent = {};
+                
                 CloseRight($(this).closest(".screen"));
             });
 
@@ -101,17 +108,17 @@
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
                     if ($(this).closest(".screen").attr('id') == "groupDetailsDiv")
                         currentGroup = {};
-
+                    
                     CloseRight(this);
                 }
             });
 
-            //$("#addDiv").swipe({
-            //    swipeRight: function (event, direction, distance, duration, fingerCount) {
-            //        LoadEvents();
-            //        CloseRight($("#addDiv"));
-            //    }
-            //});
+            $("#addDiv").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    LoadEvents();
+                    CloseRight($("#addDiv"));
+                }
+            });
 
             //$("#detailsDiv .invitedFriends").swipe({
             //    swipeLeft: function (event, direction, distance, duration, fingerCount) {
@@ -129,15 +136,10 @@
                 },
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
                     CloseRight($(this).closest(".screen"));
+                    currentEvent = {};
                     LoadEvents();
                 }
             });
-
-            $("#groupDetailsDiv .screenHeader .backArrow").click(function () {
-                currentGroup = {};
-            });
-
-
         });
 
         function Init()
@@ -521,7 +523,7 @@
             var max = +$("#AddMax").val() || 0;
             var min = +$("#AddMin").val() || 0;
 
-            var groupId = currentEvent ? currentEvent.GroupId : "";
+            var groupId = currentEvent && currentEvent.GroupId ? currentEvent.GroupId : "";
             $("#addDiv .invitedFriendsScroll div").each(function () {
                 var g = $(this).attr("groupid");
                 if(g)
@@ -617,7 +619,9 @@
 
             $("#detailsDiv").show();
             $("#detailsDiv .screenTitle").html(event.Name);
-            var subheaderHtml = ToLocalDay(event.StartTime) + " " + ToLocalTime(event.StartTime) + " - " + event.LocationName;
+            var subheaderHtml = ToLocalDay(event.StartTime) + " " + ToLocalTime(event.StartTime);
+            if(currentGroup && currentGroup.Name)
+                subheaderHtml += " - " + currentGroup.Name;
             $("#detailsDiv #detailsInfo").html(subheaderHtml);
 
             var descHtml = event.Description;
@@ -1264,7 +1268,7 @@
         $(document).ready(function () {
 
             $("#groupAddDiv .screenTitle").click(function () {
-                if (currentUser && currentUser.Id == "2F54A644-31C6-405A-A05C-8E321EF47EF8" || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
+                if (currentUser && currentUser.FacebookId == "10106153174286280" || currentUser.FacebookId == "10106610968977054")
                 {
                     $('#changeLatLngDiv').show();
                     $('.modal-backdrop').show();
@@ -1658,7 +1662,7 @@
                 $("#groupJoinBtn").removeClass("selected");
             }
 
-            if (IsAdmin(currentGroup.Members, currentUser.Id) || currentUser.Id == "FE7D9908-1829-41B1-97F1-7C85F2C48145")
+            if (IsAdmin(currentGroup.Members, currentUser.Id) || currentUser.FacebookId == "10106610968977054")
                 $("#groupDetailsDiv .detailMenuBtn").show();
             else
                 $("#groupDetailsDiv .detailMenuBtn").hide();
@@ -2350,9 +2354,9 @@
             </div>
             <div class="screenContent">
                 <div id="detailsDescription"></div>
-                <div id="detailsHowMany" style="text-align:center;margin-bottom: 10px;"></div>
-                <div id="detailsInvitedFriends" class="invitedFriends" ><div class="invitedFriendsScroll"></div></div>
                 <div id="detailsInviteBtn" >Invite Friends or Groups</div>
+                <div id="detailsHowMany" style="text-align:center;margin-bottom: 12px;"></div>
+                <div id="detailsInvitedFriends" class="invitedFriends" ><div class="invitedFriendsScroll"></div></div>
                 <div id="detailsMap"></div>
             </div>
         </div>

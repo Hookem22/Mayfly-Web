@@ -29,7 +29,10 @@ public class School : Base<School>
     {
         List<School> schools = GetByProcFast("getcloseschools", string.Format("latitude={0}&longitude={1}", latitude, longitude));
         if (schools.Count == 0)
-            return null;
+        {
+            schools = GetByProcFast("getcloseschools", string.Format("latitude={0}&longitude={1}", "0.1", "0.1"));
+            return schools[0];
+        }
         else if (schools.Count == 1)
             return schools[0];
 
