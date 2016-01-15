@@ -230,6 +230,54 @@ public class Users : Base<Users>
         return null;
     }
 
+    public static string GetInternHtml(string schoolId)
+    {
+        string html = "<table><tr class='header'><td>Name</td><td>Events Created</td><td>Attending</td><td>Created</td><td>Attending</td></tr>";
+        List<Users> users = GetByWhere(string.Format("(schoolid%20eq%20'{0}')", schoolId));
+        users = users.OrderBy(u => u.Name).ToList();
+        bool even = false;
+        foreach(Users user in users)
+        {
+            if(string.IsNullOrEmpty(user.Name))
+                continue;
+
+            List<Event> events = Event.GetByUser(user.Id);
+            List<Group> groups = Group.GetByUserId(user.Id);
+
+            html += even ? "<tr class='even'>" : "<tr>";
+            html += events.Count > 4 ? string.Format("<td><a>{0}</a></td>", user.Name) : string.Format("<td>{0}</td>", user.Name);
+            int createdCt = 0;
+            string createdInfo = "";
+            string attendingInfo = "";
+            foreach (Event evt in events)
+            {
+                DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
+                TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+                DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
+
+                if (evt.IsAdmin == true)
+                {
+                    createdCt++;
+                    createdInfo += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
+                }
+                else
+                {
+                    attendingInfo += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
+                }
+            }
+            html += string.Format("<td>{0}</td><td>{1}</td>", createdCt.ToString(), (events.Count - createdCt).ToString());
+            if(events.Count > 4)
+                html += string.Format("<td class='details hide'>{0}</td><td class='details hide'>{1}</td>", createdInfo, attendingInfo);
+            else
+                html += string.Format("<td class='details'>{0}</td><td class='details'>{1}</td>", createdInfo, attendingInfo);
+            
+            html += "</tr>";
+            even = !even;
+        }
+        html += "</table>";
+        return html;
+    }
+
     /// <summary>
     /// Encrypts the specified to encrypt.
     /// </summary>

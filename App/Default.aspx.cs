@@ -21,7 +21,6 @@ public partial class App_Default : System.Web.UI.Page
         string html = "";
         if (user == null || string.IsNullOrEmpty(user.SchoolId))
         {
-            School school = School.GetClosest(latitude, longitude);
             user = new Users();
             double lat;
             double lng;
@@ -29,6 +28,8 @@ public partial class App_Default : System.Web.UI.Page
                 user.Latitude = lat;
             if (double.TryParse(longitude, out lng))
                 user.Longitude = lng;
+
+            School school = Math.Abs(lat) < 10 ? School.StEds : School.GetClosest(latitude, longitude);
             user.SchoolId = school.Id;
         }
         html = Event.GetHome(user);

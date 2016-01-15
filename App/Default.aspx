@@ -9,7 +9,7 @@
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
     <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
-    <link href="/Styles/NonMobileApp.css" rel="stylesheet" type="text/css" />
+    <link href="/Styles/NonMobileApp.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
@@ -162,10 +162,12 @@
                 currentLat = +getParameterByName("lat");// || 30.25;
                 currentLng = +getParameterByName("lng");// || -97.75;
 
-                if(currentLat && currentLng) {
-                    Post("InitEvents", { pushDeviceToken: pushDeviceToken, latitude: currentLat, longitude: currentLng }, InitSuccess);
+                Post("InitEvents", { pushDeviceToken: pushDeviceToken, latitude: currentLat, longitude: currentLng }, InitSuccess);
+
+                if(currentLat && currentLng) //Default to St. Edwards
                     GetSchool();
-                }
+                else
+                    currentSchool = { Id: "E1668987-C219-484C-B5BB-1ACACDCADE17", Name: "St. Edward's", Latitude: 30.231, Longitude: -97.758 }; //St Edward's
 
                 $(".content").scrollTop(90);
             }
@@ -181,6 +183,9 @@
             if (isiOS) {
                 $("body").addClass("ios");
             }
+            var eventId = getParameterByName("eventId");
+            if(eventId)
+                Post("GetEvent", { id: eventId }, OpenEventDetails);
         }
 
         function InitSuccess(results) {
@@ -591,7 +596,7 @@
         });
 
         function OpenEventDetails(event) {
-            if (!currentUser || !currentUser.Id || !fbAccessToken) {
+            if ((!currentUser || !currentUser.Id || !fbAccessToken) && !getParameterByName("eventId")) {
                 OpenLogin();
                 return;
             }

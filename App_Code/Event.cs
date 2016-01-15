@@ -55,6 +55,9 @@ public class Event : Base<Event>
     public List<EventInvited> Invited { get; set; }
 
     [NonSave]
+    public bool? IsAdmin { get; set; }
+
+    [NonSave]
     public int? ReferenceId { get; set; }
 
     [NonSave]
@@ -111,6 +114,11 @@ public class Event : Base<Event>
             return GetGroupEventsHtml(events, user);
         }
         return "";
+    }
+
+    public static List<Event> GetByUser(string userId)
+    {
+        return GetByProc("geteventsbyuser", string.Format("userid={0}", userId));
     }
 
     public new void Save()

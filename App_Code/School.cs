@@ -23,6 +23,8 @@ public class School : Base<School>
 
     public double Longitude { get; set; }
 
+    public static School StEds = new School() { Id = "E1668987-C219-484C-B5BB-1ACACDCADE17", Name = "St. Edward's", Latitude = 30.231, Longitude = -97.758 };
+
     #endregion
 
     public static School GetClosest(string latitude, string longitude)
@@ -30,8 +32,7 @@ public class School : Base<School>
         List<School> schools = GetByProcFast("getcloseschools", string.Format("latitude={0}&longitude={1}", latitude, longitude));
         if (schools.Count == 0)
         {
-            schools = GetByProcFast("getcloseschools", string.Format("latitude={0}&longitude={1}", "0.1", "0.1"));
-            return schools[0];
+            return StEds;
         }
         else if (schools.Count == 1)
             return schools[0];
