@@ -22,6 +22,8 @@ public class EventGoing : UsersPartial<EventGoing>
 
     public bool IsAdmin { get; set; }
 
+    public DateTime? CheckedMessagesAt { get; set; }
+
     public static List<EventGoing> GetByEvent(string eventId)
     {
         return GetByEvent(eventId, "getgoingbyevent");

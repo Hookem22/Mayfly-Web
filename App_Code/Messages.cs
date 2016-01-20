@@ -21,7 +21,8 @@ public class Messages : Base<Messages>
 
     public string Message { get; set; }
 
-    public DateTime SentDate { get; set; }
+    [NonSave]
+    public DateTime? SentDate { get; set; }
 
     public string UserId { get; set; }
 
@@ -30,6 +31,8 @@ public class Messages : Base<Messages>
 
     [NonSave]
     public string SinceSent { get; set; }
+
+    public string ViewedBy { get; set; }
 
     #endregion
 
@@ -57,10 +60,47 @@ public class Messages : Base<Messages>
                 else if (message.Seconds < 60 * 60 * 24)
                     message.SinceSent = (message.Seconds / (60 * 60)).ToString() + " hours ago";
                 else
-                    message.SinceSent = "Yesterday";
+                {
+                    DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(message.SentDate), DateTimeKind.Utc);
+                    TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+                    DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
+
+                    message.SinceSent = cstTime.ToString("ddd h:mm tt");
+                }
             }
         }
         catch (Exception ex) { }
+    }
+
+    public static void UpdateCheckedMessages(string eventId, string userId)
+    {
+        List<Messages> messages = GetByProc("getmessages", string.Format("eventid={0}", eventId));
+        foreach (Messages message in messages)
+        {
+            if(string.IsNullOrEmpty(message.ViewedBy))
+            {
+                message.ViewedBy = userId;
+                message.Save();
+            }
+            else if(!message.ViewedBy.Contains(userId))
+            {
+                message.ViewedBy += "|" + userId;
+                message.Save();
+            }
+        }
+    }
+
+
+    public static bool CheckNewMessages(string eventId, string userId)
+    {
+        List<Messages> messages = GetByProc("getmessages", string.Format("eventid={0}", eventId));
+        if (messages.Count == 0)
+            return false;
+
+        if (string.IsNullOrEmpty(messages[0].ViewedBy))
+            return true;
+
+        return !messages[0].ViewedBy.Contains(userId);
     }
 
     public static void SendPushMessageToEvent(Messages message)

@@ -236,6 +236,18 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static void UpdateCheckedMessages(string eventId, string userId)
+    {
+        Messages.UpdateCheckedMessages(eventId, userId);
+    }
+
+    [WebMethod]
+    public static bool CheckNewMessages(string eventId, string userId)
+    {
+        return Messages.CheckNewMessages(eventId, userId);
+    }
+
+    [WebMethod]
     public static void DeleteEvent(Event evt)
     {
         evt.Delete();

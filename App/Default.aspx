@@ -665,15 +665,13 @@
             else
                 $("#detailsDiv .detailMenuBtn").hide();
 
-            var messageSuccess = function (messages) {
-                $(messages).each(function () {
-                    if (this.Seconds < 60 * 30)
-                        $(".messageBtn").attr("src", "/Img/newmessage.png");
-                });
+            var messageSuccess = function (messageCk) {
+                if(messageCk)
+                    $(".messageBtn").attr("src", "/Img/newmessage.png");
             }
             $("#inviteDiv div").removeClass("invited");
             $(".messageBtn").attr("src", "/Img/message.png");
-            Post("GetMessages", { eventId: currentEvent.Id }, messageSuccess);
+            Post("CheckNewMessages", { eventId: currentEvent.Id, userId: currentUser.Id }, messageSuccess);
         }
 
         function UpdateDetailsGoing(event) {
@@ -1121,7 +1119,7 @@
             }
 
             if (phoneList) {
-                var message = "Your invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
+                var message = "You're invited to " + event.Name + ". Download the Pow Wow app to reply: {Branch}";
                 GetBranchLink(event, phoneList, message);
             }
         }
@@ -1161,7 +1159,7 @@
             }
 
             if (phoneList) {
-                var message = "Your invited to " + currentGroup.Name + ". Download the Pow Wow app to join: {Branch}";
+                var message = "You're invited to " + currentGroup.Name + ". Download the Pow Wow app to join: {Branch}";
                 var evt = { ReferenceId: 0 };
                 GetBranchLink(evt, phoneList, message);
             }
@@ -1902,6 +1900,12 @@
             $("#messageDiv .backArrow").click(function () {
                 CloseMessages();
             });
+
+            $("#messageDiv").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    CloseMessages();
+                }
+            });
         });
 
         function RemoveTextLine(boxWidth)
@@ -1954,6 +1958,9 @@
             }
             $("#MessageResults").html(html);
             $("#MessageResults").scrollTop(1000000);
+
+            //Mark Messages as read
+            Post("UpdateCheckedMessages", { eventId: currentEvent.Id, userId: currentUser.Id });
         }
 
         function SendMessage() {
@@ -2379,7 +2386,7 @@
                 <div id="detailsMap"></div>
             </div>
         </div>
-        <div id="messageDiv" class="screen swipe">
+        <div id="messageDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle"></div>
