@@ -74,7 +74,8 @@
                 }
 
                 var eventId = $(this).attr("eventid");
-                Post("GetEvent", { id: eventId }, OpenEventDetails);
+                var name = $(this).find(".name").html();
+                OpenEvent(eventId, name);
             });
 
             $(".content").on("click", ".group", function () {
@@ -188,7 +189,7 @@
             }
             var eventId = getParameterByName("eventId");
             if(eventId)
-                Post("GetEvent", { id: eventId }, OpenEventDetails);
+                OpenEvent(eventId);
         }
 
         function InitSuccess(results) {
@@ -598,6 +599,20 @@
             });
         });
 
+        function OpenEvent(eventId, eventName) {
+            if ((!currentUser || !currentUser.Id || !fbAccessToken) && !getParameterByName("eventId")) {
+                OpenLogin();
+                return;
+            }
+
+            eventName = eventName || "";
+            Post("GetEvent", { id: eventId }, OpenEventDetails);
+            $("#detailsDiv .screenTitle").html(eventName);
+            $("#detailsDiv .screenSubheader").hide();
+            $("#detailsDiv .screenContent").hide();
+            $("#detailsDiv").show();
+        }
+
         function OpenEventDetails(event) {
             if ((!currentUser || !currentUser.Id || !fbAccessToken) && !getParameterByName("eventId")) {
                 OpenLogin();
@@ -626,6 +641,8 @@
             }
 
             $("#detailsDiv").show();
+            $("#detailsDiv .screenSubheader").show();
+            $("#detailsDiv .screenContent").show();
             $("#detailsDiv .screenTitle").html(event.Name);
             var subheaderHtml = ToLocalDay(event.StartTime) + " " + ToLocalTime(event.StartTime);
             if(currentGroup && currentGroup.Name)
@@ -2368,7 +2385,7 @@
         <div id="detailsDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
-                <div class="screenTitle" style="margin-right: 54px;"></div>
+                <div class="screenTitle" style="margin-right: 54px;height:21px;"></div>
                 <img class="detailMenuBtn" src="/Img/smallmenu.png" />
                 <img class="messageBtn" src="/Img/message.png" />
                 <div id="detailsEditBtn">Edit</div>

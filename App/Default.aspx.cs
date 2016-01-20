@@ -11,7 +11,9 @@ public partial class App_Default : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-
+        Users user = Users.Get("B0944F98-BF31-4855-8A76-58BFC2F32098");
+        user.IsIntern = false;
+        user.Save();
     }
 
     [WebMethod]
