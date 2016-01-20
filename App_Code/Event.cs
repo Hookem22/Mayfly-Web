@@ -141,7 +141,7 @@ public class Event : Base<Event>
             Users user = Users.Get(this.UserId);
             if(user != null)
             {
-                EventInvited invited = new EventInvited(this.Id, user.FacebookId, user.FirstName);
+                EventInvited invited = new EventInvited(this.Id, user.FacebookId, user.FirstName, "");
                 invited.UserId = null;
                 invited.Save();
             }
@@ -169,7 +169,7 @@ public class Event : Base<Event>
         string[] ids = this.GroupId.Split('|');
         foreach (string id in ids)
         {
-            if (string.IsNullOrEmpty(evt.GroupId) || !evt.GroupId.Contains(id))
+            if (!string.IsNullOrEmpty(evt.GroupId) && evt.GroupId.Contains(id))
             {
                 SendToGroup(id);
             }
@@ -201,7 +201,7 @@ public class Event : Base<Event>
         {
             if (string.IsNullOrEmpty(invite.Id))
             {
-                EventInvited invited = new EventInvited(this.Id, invite.FacebookId, invite.Name);
+                EventInvited invited = new EventInvited(this.Id, invite.FacebookId, invite.Name, invite.InvitedBy);
                 invited.UserId = null;
                 invited.Save();
 
@@ -348,7 +348,7 @@ public class Event : Base<Event>
         foreach (Event evt in events)
         {
             string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='time'>{StartTime}</div></div>";
-            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", evt.LocalDayTime).Replace("{StartTime}", "" /*"{{" + evt.StartTime.ToString() + "}}"*/);
+            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", string.Format("{0}<br/>{1}", evt.DayLabel, evt.LocalTime)).Replace("{StartTime}", "" /*"{{" + evt.StartTime.ToString() + "}}"*/);
             string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
             if (evt.IsGoing == true)
             {

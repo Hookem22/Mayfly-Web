@@ -14,16 +14,19 @@ public class EventInvited : UsersPartial<EventInvited>
         : base(_tableName)
     {
     }
-    public EventInvited(string eventId, string facebookId, string name)
+    public EventInvited(string eventId, string facebookId, string name, string invitedBy)
         : base(eventId, "", _tableName)
     {
         FacebookId = facebookId;
         Name = name;
+        InvitedBy = invitedBy;
     }
 
     public new string FacebookId { get; set; }
 
     public string Name { get; set; }
+
+    public string InvitedBy { get; set; }
 
     public static List<EventInvited> GetByEvent(string eventId)
     {
@@ -44,6 +47,12 @@ public class EventInvited : UsersPartial<EventInvited>
     {
         string procName = includeDeleted ? "getinviteddeleted" : "";
         return Get(eventId, userId, procName);
+    }
+
+    public static List<EventInvited> GetByInvitedBy(string invitedById)
+    {
+        List<EventInvited> invited = GetByWhere(string.Format("(invitedby%20eq%20'{0}')", invitedById));
+        return invited;
     }
 
     public void Undelete()

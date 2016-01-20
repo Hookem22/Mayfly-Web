@@ -43,6 +43,8 @@ public class Users : Base<Users>
     [NonSave]
     public bool? NewUser { get; set; }
 
+    public bool? IsIntern { get; set; }
+
     #endregion
 
     public static Users InitialLogin(string pushDeviceToken)
@@ -230,11 +232,18 @@ public class Users : Base<Users>
         return null;
     }
 
-    public static string GetInternHtml(string schoolId)
+    public static List<Users> GetInterns()
     {
-        string html = "<table><tr class='header'><td>Name</td><td>Events Created</td><td>Attending</td><td>Groups Created</td><td>Member</td><td>Events Created</td><td>Events Attending</td><td>Groups Created</td><td>Group Member</td></tr>";
-        List<Users> users = GetByWhere(string.Format("(schoolid%20eq%20'{0}')", schoolId));
+        List<Users> users = GetByWhere("(isintern%20eq%201)");
+        return users;
+    }
+
+    public static string GetInternHtml()
+    {
+        List<Users> users = GetInterns();
         users = users.OrderBy(u => u.Name).ToList();
+
+        string html = "<table><tr class='header'><td>Name</td><td class='inviteToggle'><div class='invite'>Non Pow Wow Invited</div></td><td class='inviteToggle'><div class='invite'>Pow Wow Invited</div></td><td class='eventsToggle'><div class='events'>Events Created</div></td><td class='eventsToggle'><div class='events'>Attending</div></td><td class='groupsToggle'><div class='groups'>Groups Created</div></td><td class='groupsToggle'><div class='groups'>Member</div></td><td class='inviteToggle'><div class='invite'>Non Pow Wow Invited</div></td><td class='inviteToggle'><div class='invite'>Pow Wow Invited</div></td><td class='eventsToggle'><div class='events'>Events Created</div></td><td class='eventsToggle'><div class='events'>Events Attending</div></td><td class='groupsToggle'><div class='groups'>Groups Created</div></td><td class='groupsToggle'><div class='groups'>Group Member</div></td></tr>";
         bool even = false;
         foreach(Users user in users)
         {
@@ -243,10 +252,62 @@ public class Users : Base<Users>
 
             List<Event> events = Event.GetByUser(user.Id);
             List<Group> groups = Group.GetByUserId(user.Id);
-            bool hide = events.Count > 4 || groups.Count > 4;
+            List<EventInvited> invited = EventInvited.GetByInvitedBy(user.Id);
+            bool hide = invited.Count > 6 || events.Count > 4 || groups.Count > 6;
 
             html += even ? "<tr class='even'>" : "<tr>";
             html += hide ? string.Format("<td><a>{0}</a></td>", user.Name) : string.Format("<td>{0}</td>", user.Name);
+
+            int nonPowwowInvitedCt = 0;
+            string powwowInvited = "";
+            string nonPowwowInvited = "";
+            foreach (EventInvited ivt in invited)
+            {
+                if (string.IsNullOrEmpty(ivt.FacebookId))
+                {
+                    nonPowwowInvitedCt++;
+                    if(nonPowwowInvited.Contains(ivt.EventId))
+                    {
+                        string inviteString = string.Format("{0}<br/>", ivt.Name);
+                        nonPowwowInvited = nonPowwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
+                    }
+                    else
+                    {
+                        Event evt = Event.Get(ivt.EventId);
+
+                        DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
+                        TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+                        DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
+
+                        nonPowwowInvited += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/><span style='display:none;'>[{0}]</span>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
+                        string inviteString = string.Format("{0}<br/>", ivt.Name);
+                        nonPowwowInvited = nonPowwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
+                    }
+                }
+                else
+                {
+                    if (powwowInvited.Contains(ivt.EventId))
+                    {
+                        string inviteString = string.Format("<a href='http://facebook.com/{0}' target='_blank'>{1}</a><br/>", ivt.FacebookId, ivt.Name);
+                        powwowInvited = powwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
+                    }
+                    else
+                    {
+                        Event evt = Event.Get(ivt.EventId);
+
+                        DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
+                        TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+                        DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
+
+                        powwowInvited += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/><span style='display:none;'>[{0}]</span>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
+                        string inviteString = string.Format("<a href='http://facebook.com/{0}' target='_blank'>{1}</a><br/>", ivt.FacebookId, ivt.Name);
+                        powwowInvited = powwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
+                    }
+                }
+            }
+            html += string.Format("<td><div class='invite'>{0}</div></td><td><div class='invite'>{1}</div></td>", nonPowwowInvitedCt.ToString(), (invited.Count - nonPowwowInvitedCt).ToString());
+
+
             int eventAdminCt = 0;
             string createdInfo = "";
             string attendingInfo = "";
@@ -266,7 +327,7 @@ public class Users : Base<Users>
                     attendingInfo += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
                 }
             }
-            html += string.Format("<td>{0}</td><td>{1}</td>", eventAdminCt.ToString(), (events.Count - eventAdminCt).ToString());
+            html += string.Format("<td><div class='events'>{0}</div></td><td><div class='events'>{1}</div></td>", eventAdminCt.ToString(), (events.Count - eventAdminCt).ToString());
             
             
             int groupAdminCt = 0;
@@ -287,17 +348,19 @@ public class Users : Base<Users>
                 }
             }
 
-            html += string.Format("<td>{0}</td><td>{1}</td>", groupAdminCt.ToString(), (groups.Count - groupAdminCt).ToString());
+            html += string.Format("<td><div class='groups'>{0}</div></td><td><div class='groups'>{1}</div></td>", groupAdminCt.ToString(), (groups.Count - groupAdminCt).ToString());
 
             if (hide) 
             {
-                html += string.Format("<td><div class='details hide'>{0}</div></td><td><div class='details hide'>{1}</div></td>", createdInfo, attendingInfo);
-                html += string.Format("<td><div class='details hide'>{0}</div></td><td><div class='details hide'>{1}</div></td>", createdGroupInfo, attendingGroupInfo);
+                html += string.Format("<td><div class='details invite hide hiderow'>{0}</div></td><td><div class='details invite hide hiderow'>{1}</div></td>", nonPowwowInvited, powwowInvited);
+                html += string.Format("<td><div class='details events hide hiderow'>{0}</div></td><td><div class='details events hide hiderow'>{1}</div></td>", createdInfo, attendingInfo);
+                html += string.Format("<td><div class='details groups hide hiderow'>{0}</div></td><td><div class='details groups hide hiderow'>{1}</div></td>", createdGroupInfo, attendingGroupInfo);
             }   
             else
             {
-                html += string.Format("<td class='details'>{0}</td><td class='details'>{1}</td>", createdInfo, attendingInfo);
-                html += string.Format("<td class='details'>{0}</td><td class='details'>{1}</td>", createdGroupInfo, attendingGroupInfo);
+                html += string.Format("<td><div class='details invite'>{0}</div></td><td><div class='details invite'>{1}</div></td>", nonPowwowInvited, powwowInvited);
+                html += string.Format("<td><div class='details events'>{0}</div></td><td><div class='details events'>{1}</div></td>", createdInfo, attendingInfo);
+                html += string.Format("<td><div class='details groups'>{0}</div></td><td><div class='details groups'>{1}</div></td>", createdGroupInfo, attendingGroupInfo);
             }
 
             html += "</tr>";

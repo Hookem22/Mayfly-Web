@@ -287,6 +287,7 @@ input.error, textarea.error
     max-width: 50px;
     position: absolute;
     margin-left: 20px;
+    border-radius: 25px;
 }
 .homeList img.fbPic
 {

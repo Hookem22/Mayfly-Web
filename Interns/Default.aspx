@@ -23,6 +23,10 @@
         #content {
             margin: 20px 5px;
         }
+        table
+        {
+            width: 100%;
+        }
         tr.header {
             color: white;
             background-color: #1a0dab;
@@ -36,6 +40,9 @@
             font-size: 16px;
         }
         .hide {
+            display: none;
+        }
+        .hiderow {
             display: none;
         }
     </style>
@@ -55,7 +62,19 @@
                     return;
 
                 var tr = $(e.target).closest("tr");
-                $(tr).find(".details").toggleClass("hide");
+                $(tr).find(".details").toggleClass("hiderow").removeClass("hide");
+            });
+
+            $("#content").on("click", ".inviteToggle", function (e) {
+                $(".invite").toggleClass("hide");
+            });
+
+            $("#content").on("click", ".eventsToggle", function (e) {
+                $(".events").toggleClass("hide");
+            });
+
+            $("#content").on("click", ".groupsToggle", function (e) {
+                $(".groups").toggleClass("hide");
             });
         });
 

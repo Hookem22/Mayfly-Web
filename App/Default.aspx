@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=5" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -1079,14 +1079,14 @@
                             inList = true;
                     });
                     if (!inList)
-                        event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name });
+                        event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name, InvitedBy: currentUser.Id });
                 });
                 $("#contactResults div.invited").each(function () {
                     var phone = $(this).attr("phone");
                     var name = $(this).find("span").html();
                     if (Contains(name, " "))
                         name = name.substring(0, name.indexOf(" "));
-                    event.Invited.push({ EventId: event.Id, FacebookId: "", Name: name });
+                    event.Invited.push({ EventId: event.Id, FacebookId: "", Name: name, InvitedBy: currentUser.Id });
                     phoneList += phone + ",";
                 });
 
@@ -1103,7 +1103,7 @@
                     if (!fbId && !phone)
                         return true;
 
-                    event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name });
+                    event.Invited.push({ EventId: event.Id, FacebookId: fbId, Name: name, InvitedBy: currentUser.Id });
                     if(phone)
                         phoneList += phone + ",";
                 });
@@ -1132,7 +1132,7 @@
                     name = name.substring(0, name.indexOf(" "));
 
                 nameList += name + ", ";
-                invites.push({ FacebookId: fbId, Name: name });
+                invites.push({ FacebookId: fbId, Name: name, InvitedBy: currentUser.Id });
             });
             $("#contactResults div.invited").each(function () {
                 var phone = $(this).attr("phone");
@@ -1152,7 +1152,7 @@
 
             if (invites && invites.length) {
                 var message = currentUser.FirstName + " invited you to " + currentGroup.Name;
-                Post("SaveGroupInvites", { invites: invites, message });
+                Post("SaveGroupInvites", { invites: invites, message: message });
             }
 
             if (phoneList) {
@@ -1524,10 +1524,16 @@
                 return;
             }
 
-            Post("SaveGroup", { group: currentGroup }, OpenGroups);
+            var success = function () {
+                OpenGroups();
+                LoadMyGroups();
+            };
+
+            Post("SaveGroup", { group: currentGroup }, success);
             $("#groupAddDiv").hide();
             if(!currentGroup.Id)
                 MessageBox("Your group " + currentGroup.Name + " has been created.");
+
         }
 
         function GetCityName() {
