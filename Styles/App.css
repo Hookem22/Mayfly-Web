@@ -1179,8 +1179,10 @@ input.error, textarea.error
 #groupsListDiv > div img 
 {
     float: left;
-    height: 50px;
-    width: 50px;
+    height: 40px;
+    width: 40px;
+    border-radius: 20px;
+    margin: 3px 5px;
 }
 #groupsListDiv > div img.logo 
 {
@@ -1317,7 +1319,8 @@ input.error, textarea.error
     position: absolute;
     left: 16px;
     height: 64px;
-    max-width: 80px;
+    width: 64px;
+    border-radius: 32px;
     margin: 4px 0 0 4px;
 }
 #groupDetailsInfo, #detailsInfo

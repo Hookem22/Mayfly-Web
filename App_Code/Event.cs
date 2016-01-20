@@ -187,7 +187,7 @@ public class Event : Base<Event>
                 continue;
 
             string msg = "New event in your group " + group.Name;
-            //AzureMessagingService.Send(msg, "", user.UserId);
+            AzureMessagingService.Send(msg, "", user.UserId);
 
             msg = "New: " + this.Name;
             Notification notification = new Notification(this.Id, user.UserId, msg);

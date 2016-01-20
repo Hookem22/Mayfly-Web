@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=5" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -97,11 +97,12 @@
             });
 
             $("#addDiv .backArrow").click(function () {
-                LoadEvents();
+                //LoadEvents();
             });
 
             $("#detailsDiv .backArrow").click(function () {
-                LoadEvents();
+                if (currentEvent.IsDirty)
+                    LoadEvents();
             });
 
             $(".screen.swipe").swipe({
@@ -115,7 +116,7 @@
 
             $("#addDiv").swipe({
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
-                    LoadEvents();
+                    //LoadEvents();
                     CloseRight($("#addDiv"));
                 }
             });
@@ -136,8 +137,10 @@
                 },
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
                     CloseRight($(this).closest(".screen"));
+                    if (currentEvent.IsDirty)
+                        LoadEvents();
+
                     currentEvent = {};
-                    LoadEvents();
                 }
             });
         });
@@ -746,6 +749,7 @@
                 return;
             }
 
+            currentEvent.IsDirty = true;
             $("#joinBtn").html("GOING");
             $("#joinBtn").addClass("selected");
 
@@ -767,6 +771,7 @@
 
         function UnjoinEvent()
         {
+            currentEvent.IsDirty = true;
             $("#joinBtn").html("+ JOIN EVENT");
             $("#joinBtn").removeClass("selected");
 
@@ -1631,8 +1636,10 @@
                 $("#groupDetailsLogo").hide();
                 $("#groupDetailsDiv #groupDetailsInfo").html("");
                 $("#groupDetailsDiv #groupDetailsDescription").html("");
+                $("#groupInviteBtn").hide();
                 $("#groupJoinBtn").hide();
                 $("#groupDetailsDiv").show();
+                $("#groupDetailsDiv #groupEvents").html("");
             }
         }
 
@@ -1663,6 +1670,7 @@
             $("#groupDetailsDiv #groupDetailsDescription").html(descHtml);
             $("#groupDetailsDiv #groupEvents").html(SetLocalTimes(currentGroup.EventsHtml));
 
+            $("#groupInviteBtn").show();
             $("#groupJoinBtn").show();
             if (IsGoing(currentGroup.Members, currentUser.Id)) {
                 $("#groupJoinBtn").html("MEMBER");
@@ -2302,7 +2310,7 @@
                     <div style="margin: -26px 18% 0 0;float:right;">Private</div>
                 </div>
                 <input id="AddGroupPassword" type="text" placeholder="Private Password" style="margin-bottom:4px;" readonly="readonly" />
-                <input id="AddGroupPictureUrl" type="text" placeholder="Logo Image Url" style="display:none;"  />
+                <div style="display:none;"><input id="AddGroupPictureUrl" type="text" placeholder="Logo Image Url"  /></div>
                 <img id="AddGroupPicture" style="height: 80px;margin: 10px 0;" onerror="this.style.display='none';" />
                 <img class="deleteBtn" src="../Img/delete.png" />
             </div>
