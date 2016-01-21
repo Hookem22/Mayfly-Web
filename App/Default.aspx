@@ -14,7 +14,7 @@
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<%--    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>--%>
     <script type="text/javascript">
         var isMobile;
         var isiOS;
@@ -73,6 +73,12 @@
                     return;
                 }
 
+                if ($(this).find(".group").hasClass("private"))
+                {
+                    MessageBox("This event is private. Please join the group to attend this event.");
+                    return;
+                }
+                
                 var eventId = $(this).attr("eventid");
                 var name = $(this).find(".name").html();
                 OpenEvent(eventId, name);
@@ -179,7 +185,7 @@
             fbAccessToken = getParameterByName("fbAccessToken");
             var deviceId = getParameterByName("deviceId");
             var pushDeviceToken = getParameterByName("pushDeviceToken");
-            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email:"", password:"" }, LoginSuccess);
+            Post("LoginUser", { facebookAccessToken: fbAccessToken, deviceId: deviceId, pushDeviceToken: pushDeviceToken, email:"", isiOS:isiOS }, LoginSuccess);
 
             if (!isMobile) {
                 $("body").addClass("NonMobile");
@@ -610,6 +616,7 @@
             $("#detailsDiv .screenTitle").html(eventName);
             $("#detailsDiv .screenSubheader").hide();
             $("#detailsDiv .screenContent").hide();
+            $("#detailsDiv .detailMenuBtn").hide();
             $("#detailsDiv").show();
         }
 
@@ -629,7 +636,7 @@
                         if (currentGroup.IsPublic || IsGoing(currentGroup.Members, currentUser.Id))
                             OpenEventDetails(currentEvent);
                         else if (!currentGroup.IsPublic)
-                            MessageBox("This event is private. Please join the group to attend this event.")
+                            MessageBox("This event is private. Please join the group to attend this event.");
                     };
                     Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
                     return;
@@ -2385,7 +2392,7 @@
         <div id="detailsDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
-                <div class="screenTitle" style="margin-right: 54px;height:21px;"></div>
+                <div class="screenTitle" style="margin-right: 54px;min-height:21px;"></div>
                 <img class="detailMenuBtn" src="/Img/smallmenu.png" />
                 <img class="messageBtn" src="/Img/message.png" />
                 <div id="detailsEditBtn">Edit</div>

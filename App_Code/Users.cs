@@ -45,6 +45,8 @@ public class Users : Base<Users>
 
     public bool? IsIntern { get; set; }
 
+    public bool? IsiOS { get; set; }
+
     #endregion
 
     public static Users InitialLogin(string pushDeviceToken)
@@ -55,7 +57,7 @@ public class Users : Base<Users>
         return GetByPushTokenId(pushDeviceToken, true);
     }
 
-    public static Users Login(dynamic me, string deviceId, string pushDeviceToken, string email, string password)
+    public static Users Login(dynamic me, string deviceId, string pushDeviceToken, string email, bool isiOS)
     {
         Users user = new Users();
         //if(!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
@@ -80,8 +82,23 @@ public class Users : Base<Users>
         //}
 
         if (string.IsNullOrEmpty(pushDeviceToken))
-            return null;
+        {
+            if(string.IsNullOrEmpty(deviceId))
+                return null;
 
+            user = GetByDeviceId(deviceId);
+            if (user == null)
+            {
+                return null;
+            }
+            else
+            {
+                user.PushDeviceToken = deviceId;
+                user.IsiOS = isiOS;
+                user.Save();
+                return user;
+            }
+        }
         user = GetByPushTokenId(pushDeviceToken);
         if (user == null && me == null)
         {
@@ -92,7 +109,7 @@ public class Users : Base<Users>
             user = GetByFacebookId(me.id);
             if (user == null)
             {
-                user = SignUpFromFacebook(me, deviceId, pushDeviceToken);
+                user = SignUpFromFacebook(me, deviceId, pushDeviceToken, isiOS);
                 user.NewUser = true;
             }
         }
@@ -104,25 +121,28 @@ public class Users : Base<Users>
             user.Save();
         }
 
+        user.IsiOS = isiOS;
+        user.Save();
         return user;
     }
 
-    public static Users SignUpFromFacebook(dynamic me, string deviceId, string pushDeviceToken)
-    {
+    public static Users SignUpFromFacebook(dynamic me, string deviceId, string pushDeviceToken, bool isiOS)
+    {       
         Users user = new Users();
         user.FacebookId = me.id;
         user.Name = me.name;
         user.FirstName = me.first_name;
         user.Email = me.email;
         user.DeviceId = deviceId;
-        user.PushDeviceToken = pushDeviceToken;
+        user.PushDeviceToken = string.IsNullOrEmpty(pushDeviceToken) ? deviceId : pushDeviceToken;
+        user.IsiOS = isiOS;
         user.Save();
 
-        EmailService.SendWelcomeEmail(user.Email);
+        //EmailService.SendWelcomeEmail(user.Email);
 
         string body = string.Format("{0}<br/><br/>{1}", user.Name, user.Email);
-        EmailService email1 = new EmailService("PowWow@joinpowwow.com", "bob@joinpowwow.com", "New Pow Wow Sign Up", body);
-        email1.Send();
+        //EmailService email1 = new EmailService("PowWow@joinpowwow.com", "bob@joinpowwow.com", "New Pow Wow Sign Up", body);
+        //email1.Send();
         EmailService email2 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "New Pow Wow Sign Up", body);
         email2.Send();
 
@@ -217,6 +237,15 @@ public class Users : Base<Users>
         }
 
         List<Users> users = GetByProc("getuserbypushdevicetoken", string.Format("pushdevicetoken={0}", pushTokenId));
+        if (users.Count > 0)
+            return users[0];
+
+        return null;
+    }
+
+    public static Users GetByDeviceId(string deviceId)
+    {
+        List<Users> users = GetByProcFast("getuserbydeviceid", string.Format("deviceid={0}", deviceId));
         if (users.Count > 0)
             return users[0];
 

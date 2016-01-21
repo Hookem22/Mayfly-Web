@@ -154,7 +154,7 @@ public abstract class Base<T>
                         if(int.TryParse(val, out i))
                             prop.SetValue(obj, i);
                     }
-                    else if (prop.PropertyType.Name == "Boolean")
+                    else if (prop.PropertyType.FullName.Contains("Boolean"))
                     {
                         bool b;
                         if (bool.TryParse(val, out b))

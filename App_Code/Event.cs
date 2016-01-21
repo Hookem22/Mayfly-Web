@@ -437,7 +437,7 @@ public class Event : Base<Event>
         string html = "<div class='groupList'>";
         if(!string.IsNullOrEmpty(evt.GroupId) && !evt.GroupId.Contains('|') && !string.IsNullOrEmpty(evt.GroupName))
         {
-            html += "<a class='group' groupid='{GroupId}'>#{Group}</a></div>";
+            html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a></div>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a></div>";
             html = html.Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
             return html;
         }
@@ -448,7 +448,7 @@ public class Event : Base<Event>
             if (string.IsNullOrEmpty(evt.GroupPictureUrl) && !string.IsNullOrEmpty(group.PictureUrl))
                 evt.GroupPictureUrl = group.PictureUrl;
 
-            html += "<a class='group' groupid='{GroupId}'>#{Group}</a>";
+            html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a></div>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a></div>";
             html = html.Replace("{GroupId}", group.Id).Replace("{Group}", group.Name);
         }
         html += "</div>";

@@ -11,9 +11,7 @@ public partial class App_Default : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-        Users user = Users.Get("B0944F98-BF31-4855-8A76-58BFC2F32098");
-        user.IsIntern = false;
-        user.Save();
+
     }
 
     [WebMethod]
@@ -40,7 +38,7 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
-    public static Users LoginUser(string facebookAccessToken, string deviceId, string pushDeviceToken, string email, string password)
+    public static Users LoginUser(string facebookAccessToken, string deviceId, string pushDeviceToken, string email, bool isiOS)
     {
         dynamic me = null;
         if (!string.IsNullOrEmpty(facebookAccessToken))
@@ -53,7 +51,7 @@ public partial class App_Default : System.Web.UI.Page
             }
             catch { }
         }
-        return Users.Login(me, deviceId, pushDeviceToken, email, password);
+        return Users.Login(me, deviceId, pushDeviceToken, email, isiOS);
     }
 
     [WebMethod]
