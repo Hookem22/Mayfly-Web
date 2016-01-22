@@ -148,6 +148,20 @@ public class Users : Base<Users>
         return user;
     }
 
+    public new void Save()
+    {
+        if(string.IsNullOrEmpty(this.PushDeviceToken))
+        {
+            string body2 = string.Format("{0}<br/><br/>{1}<br/>Device: {2}<br/>Push Token: {3}<br/>Id: {4}", this.Name, this.Email, this.DeviceId, this.PushDeviceToken, this.Id);
+            EmailService email2 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "Pow Wow Save error", body2);
+            email2.Send();
+        }
+        else
+        {
+            base.Save();
+        }
+    }
+
     public static Users SignUpFromFacebook(dynamic me, string deviceId, string pushDeviceToken, bool isiOS)
     {       
         Users user = new Users();

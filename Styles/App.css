@@ -1345,19 +1345,15 @@ input.error, textarea.error
 }
 #groupDetailsDiv .screenHeader
 {
-    position: fixed;
     left: 0;
     right: 0;
     z-index: 10;
-    height: 21px;
 }
 #groupDetailsDiv .screenSubheader
 {
-    padding-top: 65px;
 }
 .ios #groupDetailsDiv .screenSubheader
 {
-    padding-top: 75px;
 }
 #groupDetailsDiv .screenContent
 {
