@@ -448,7 +448,7 @@ public class Event : Base<Event>
             if (string.IsNullOrEmpty(evt.GroupPictureUrl) && !string.IsNullOrEmpty(group.PictureUrl))
                 evt.GroupPictureUrl = group.PictureUrl;
 
-            html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a></div>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a></div>";
+            html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a>";
             html = html.Replace("{GroupId}", group.Id).Replace("{Group}", group.Name);
         }
         html += "</div>";

@@ -81,6 +81,19 @@ public class Users : Base<Users>
         //    return null;
         //}
 
+        if (ConfigurationManager.AppSettings["IsProduction"] == "true")
+        {
+            string name = "";
+            string fbId = "";
+            if (me != null)
+            {
+                name = me.name;
+                fbId = me.id;
+            }
+            string body = string.Format("Name: {0}<br/>Device: {1}<br/>Push Token: {2}<br />Facebook: {3}", name, deviceId, pushDeviceToken, fbId);
+            EmailService email1 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "Pow Wow Log in", body);
+            email1.Send();
+        }
         if (string.IsNullOrEmpty(pushDeviceToken))
         {
             if(string.IsNullOrEmpty(deviceId))
@@ -112,12 +125,21 @@ public class Users : Base<Users>
                 user = SignUpFromFacebook(me, deviceId, pushDeviceToken, isiOS);
                 user.NewUser = true;
             }
+            else if (isiOS)
+            {
+                string dev = deviceId ?? pushDeviceToken;
+                user.DeviceId = dev;
+                user.PushDeviceToken = dev;
+                user.IsiOS = isiOS;
+                user.Save();
+            }
         }
         if ((user.PushDeviceToken != pushDeviceToken && !string.IsNullOrEmpty(pushDeviceToken)) ||
             (user.DeviceId != deviceId && !string.IsNullOrEmpty(deviceId)))
         {
             user.DeviceId = deviceId;
             user.PushDeviceToken = pushDeviceToken;
+            user.IsiOS = isiOS;
             user.Save();
         }
 
@@ -140,10 +162,12 @@ public class Users : Base<Users>
 
         //EmailService.SendWelcomeEmail(user.Email);
 
-        string body = string.Format("{0}<br/><br/>{1}", user.Name, user.Email);
-        //EmailService email1 = new EmailService("PowWow@joinpowwow.com", "bob@joinpowwow.com", "New Pow Wow Sign Up", body);
-        //email1.Send();
-        EmailService email2 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "New Pow Wow Sign Up", body);
+        string body1 = string.Format("{0}<br/><br/>{1}", user.Name, user.Email);
+        EmailService email1 = new EmailService("PowWow@joinpowwow.com", "bob@joinpowwow.com", "New Pow Wow Sign Up", body1);
+        email1.Send();
+
+        string body2 = string.Format("{0}<br/><br/>{1}<br/>Device: {2}<br/>Push Token: {3}", user.Name, user.Email, user.DeviceId, user.PushDeviceToken);
+        EmailService email2 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "New Pow Wow Sign Up", body2);
         email2.Send();
 
         return user;

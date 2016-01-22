@@ -314,6 +314,7 @@ input.error, textarea.error
 {
     right: 116px;
     min-height: 36px;
+    margin-right: 120px;
 }
 .homeList .details
 {
