@@ -439,22 +439,24 @@ public class Event : Base<Event>
         {
             html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a></div>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a></div>";
             html = html.Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
+            if (evt.GroupIsPublic == false)
+                html = html.Replace("class='groupList'", "class='groupList private'");
             return html;
         }
 
-        bool allPrivate = true;
+        //bool allPrivate = true;
         foreach(string groupId in evt.GroupId.Split('|'))
         {
             Group group = Group.GetFast(groupId);
-            allPrivate = allPrivate && group.IsPublic == false;
+            //allPrivate = allPrivate && group.IsPublic == false;
             if (string.IsNullOrEmpty(evt.GroupPictureUrl) && !string.IsNullOrEmpty(group.PictureUrl))
                 evt.GroupPictureUrl = group.PictureUrl;
 
             html += group.IsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a>";
             html = html.Replace("{GroupId}", group.Id).Replace("{Group}", group.Name);
         }
-        if (!allPrivate)
-            html = html.Replace("class='group private'", "class='group'");
+        //if (!allPrivate)
+        //    html = html.Replace("class='groupList private'", "class='groupList'");
         html += "</div>";
         return html;
     }

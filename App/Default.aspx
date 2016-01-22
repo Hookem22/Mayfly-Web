@@ -73,7 +73,7 @@
                     return;
                 }
 
-                if ($(this).find(".group").hasClass("private"))
+                if ($(this).find(".groupList").hasClass("private"))
                 {
                     var isPrivate = true;
                     var groupId = $(this).find(".group").attr("groupid");
@@ -100,7 +100,9 @@
                 }
 
                 var groupId = $(this).attr("groupid");
-                GetGroup(groupId);
+                var name = $(this).html().substring(1);
+                var isPrivate = $(this).hasClass("private");
+                GetGroup(groupId, name, isPrivate);
             });
 
             $(".screenHeader .backArrow").click(function () {
@@ -790,14 +792,7 @@
             currentEvent.Going.push(going);
             UpdateDetailsGoing(currentEvent);
 
-            var success = function (results) {
-                //if (currentEvent.GroupId) {
-                //    GetGroup(currentEvent.GroupId);
-                //}
-                LoadEvents();
-            };
-
-            Post("JoinEvent", { evt: currentEvent }, success);
+            Post("JoinEvent", { evt: currentEvent }, LoadEvents);
         }
 
         function UnjoinEvent()
@@ -811,14 +806,7 @@
             RemoveByUserId(currentEvent.Going, currentUser.Id);
             UpdateDetailsGoing(currentEvent);
 
-            var success = function (results) {
-                //if (currentEvent.GroupId) {
-                //    GetGroup(currentEvent.GroupId);
-                //}
-                LoadEvents();
-            };
-
-            Post("UnjoinEvent", { evt: currentEvent }, success);
+            Post("UnjoinEvent", { evt: currentEvent }, LoadEvents);
         }
 
     </script>
@@ -1256,13 +1244,9 @@
                 if(!groupId)
                     return;
                 var name = $(this).find("span").html();
-                var success = function (group) {
-                    OpenGroupDetails(group);
-                    setTimeout(CloseMenu, 500);
-                };
-                Post("GetGroup", { groupId: groupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
-                var group = { Id: groupId, Name: name, IsPublic: true };
-                OpenGroupInitial(group);
+                var isPrivate = false;
+                GetGroup(groupId, name, isPrivate);
+                setTimeout(CloseMenu, 500);
             });
 
             $("#myNotificationsDiv").on("click", "div", function () {
@@ -1302,9 +1286,7 @@
 
     <!-- Groups -->
     <script type="text/javascript">
-        var groupResults = [];
         var currentGroup = {};
-        var hasGroupAccess = false;
 
         $(document).ready(function () {
 
@@ -1325,17 +1307,6 @@
                 $('.modal-backdrop').hide();
                 $("#groupAddDiv").hide();
                 GroupsClick();
-            });
-
-            $("#groupDetailsDiv .screenSubheader, #groupDetailsDiv .screenContent").swipe({
-                swipeDown: function (event, direction, distance, duration, fingerCount) {
-                    ShowLoading();
-                    GetGroup(currentGroup.Id);
-                }
-            });
-
-            $("#groupDetailsDiv .backArrow").click(function () {
-                hasGroupAccess = false;
             });
 
             $("#groupsBtn").click(function () {
@@ -1395,13 +1366,11 @@
                 if (!groupId)
                     return;
 
-                $(groupResults).each(function () {
-                    if (this.Id == groupId)
-                    {
-                        OpenGroupInitial(this);
-                        GetGroup(groupId);
-                    }       
-                });
+                var name = $(this).find("div").html();
+                if (name.indexOf("<img ") >= 0)
+                    name = name.substring(0, name.indexOf("<img "));
+                var isPrivate = $(this).hasClass("private");
+                GetGroup(groupId, name, isPrivate);
             });
 
             $("#groupDetailsDiv #groupDetailsDescription").on("click", ".readMore", function () {
@@ -1448,18 +1417,21 @@
 
             $("#checkPasswordDiv .okBtn").click(function () {
                 var pwd = $("#checkPasswordDiv input").val();
-                if(pwd == currentGroup.Password)
-                {
-                    hasGroupAccess = true;
-                    $("#checkPasswordDiv").hide();
-                    $(".modal-backdrop").hide();
-                    OpenGroupDetails();
-                }
-                else
-                {
-                    $("#checkPasswordDiv").hide();
-                    MessageBox("Incorrect Password");
-                }
+                $("#checkPasswordDiv").hide();
+
+                var ckPasswordTimer = setInterval(function () {
+                    if(currentGroup && currentGroup.Id) {
+                        clearInterval(ckPasswordTimer);
+                        if (pwd == currentGroup.Password) {
+                            $(".modal-backdrop").hide();
+                            OpenGroupDetails();
+                        }
+                        else {
+                            $("#checkPasswordDiv").hide();
+                            MessageBox("Incorrect Password");
+                        }
+                    }
+                }, 200);
             });
 
             $("#AddGroupPictureUrl").blur(function () {
@@ -1595,8 +1567,27 @@
             });
         }
 
-        function GetGroup(groupId)
+        function GetGroup(groupId, groupName, isPrivate)
         {
+            if (isPrivate) {
+                var priv = true;
+                $("#myGroupsDiv > div").each(function () {
+                    if ($(this).attr("groupid") == groupId)
+                        priv = false;
+                });
+                if (priv) {
+                    $("#checkPasswordDiv input").val("");
+                    $("#checkPasswordDiv").show();
+                    $(".modal-backdrop").show();
+                    var success = function (results) {
+                        currentGroup = results;
+                    }
+                    Post("GetGroup", { groupId: groupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
+                    return;
+                }
+            }
+
+            OpenGroupInitial(groupName);
             Post("GetGroup", { groupId: groupId, latitude: currentLat, longitude: currentLng, user: currentUser }, OpenGroupDetails);
         }
 
@@ -1636,11 +1627,10 @@
         }
 
         function PopulateGroups(results) {
-            groupResults = results;
             var html = "";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" >{Img}<div>{Name}<img class="privateImg" src="../Img/whitelock.png"/></div></div>';
+                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" class="private" >{Img}<div>{Name}<img class="privateImg" src="../Img/whitelock.png"/></div></div>';
                 var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" onerror="this.src=\'../Img/group.png\';" />' : '<img src="../Img/group.png" class="logo" />';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
@@ -1661,30 +1651,22 @@
             $("#newUserResultsDiv").html(html);
         }
 
-        function OpenGroupInitial(group) {
-            if (group.IsPublic || hasGroupAccess) {
-                $("#groupDetailsDiv .screenTitle").html(group.Name);
-                $("#groupDetailsLogo").hide();
-                $("#groupDetailsDiv #groupDetailsInfo").html("");
-                $("#groupDetailsDiv #groupDetailsDescription").html("");
-                $("#groupInviteBtn").hide();
-                $("#groupJoinBtn").hide();
-                $("#groupDetailsDiv").show();
-                $("#groupDetailsDiv #groupEvents").html("");
-            }
+        function OpenGroupInitial(groupName) {
+            $("#groupDetailsDiv .screenTitle").html(groupName);
+            $("#groupDetailsLogo").hide();
+            $("#groupDetailsDiv #groupDetailsInfo").html("");
+            $("#groupDetailsDiv #groupDetailsDescription").html("");
+            $("#groupInviteBtn").hide();
+            $("#groupJoinBtn").hide();
+            $("#groupDetailsDiv").show();
+            $("#groupDetailsDiv #groupEvents").html("");
+            $("#groupDetailsDiv .detailMenuBtn").hide();
         }
 
         function OpenGroupDetails(group) {
             HideLoading();
             if (group)
                 currentGroup = group;
-
-            if (!currentGroup.IsPublic && !IsGoing(currentGroup.Members, currentUser.Id) && !hasGroupAccess) {
-                $("#checkPasswordDiv input").val("");
-                $("#checkPasswordDiv").show();
-                $(".modal-backdrop").show();
-                return;
-            }
 
             $("#groupDetailsDiv").show();
             $("#groupDetailsDiv .screenTitle").html(currentGroup.Name);
