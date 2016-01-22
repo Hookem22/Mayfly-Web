@@ -94,30 +94,21 @@ public class Users : Base<Users>
             EmailService email1 = new EmailService("PowWow@joinpowwow.com", "williamallenparks@gmail.com", "Pow Wow Log in", body);
             email1.Send();
         }
-        if (string.IsNullOrEmpty(pushDeviceToken))
-        {
-            if(string.IsNullOrEmpty(deviceId))
-                return null;
 
+        if(string.IsNullOrEmpty(pushDeviceToken) && string.IsNullOrEmpty(deviceId))
+            return null;
+
+        if(!string.IsNullOrEmpty(deviceId))
             user = GetByDeviceId(deviceId);
-            if (user == null)
+        if (user == null)
+        {
+            user = GetByPushTokenId(pushDeviceToken);
+            if (user == null && me == null)
             {
                 return null;
             }
-            else
-            {
-                user.PushDeviceToken = deviceId;
-                user.IsiOS = isiOS;
-                user.Save();
-                return user;
-            }
         }
-        user = GetByPushTokenId(pushDeviceToken);
-        if (user == null && me == null)
-        {
-            return null;
-        }
-        else if (user == null)
+        if (user == null)
         {
             user = GetByFacebookId(me.id);
             if (user == null)
@@ -141,6 +132,7 @@ public class Users : Base<Users>
             user.PushDeviceToken = pushDeviceToken;
             user.IsiOS = isiOS;
             user.Save();
+            return user;
         }
 
         user.IsiOS = isiOS;

@@ -75,8 +75,17 @@
 
                 if ($(this).find(".group").hasClass("private"))
                 {
-                    MessageBox("This event is private. Please join the group to attend this event.");
-                    return;
+                    var isPrivate = true;
+                    var groupId = $(this).find(".group").attr("groupid");
+                    $("#myGroupsDiv > div").each(function () {
+                        if ($(this).attr("groupid") == groupId)
+                            isPrivate = false;
+                    });
+
+                    if (isPrivate) {
+                        MessageBox("This event is private. Please join the group to attend this event.");
+                        return;
+                    }
                 }
                 
                 var eventId = $(this).attr("eventid");
