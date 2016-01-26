@@ -59,7 +59,7 @@ public class Users : Base<Users>
 
     public static Users Login(dynamic me, string deviceId, string pushDeviceToken, string email, bool isiOS)
     {
-        Users user = new Users();
+        Users user = null;
         //if(!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
         //{
         //    user = GetByEmail(email);
@@ -132,11 +132,8 @@ public class Users : Base<Users>
             user.PushDeviceToken = pushDeviceToken;
             user.IsiOS = isiOS;
             user.Save();
-            return user;
         }
 
-        user.IsiOS = isiOS;
-        user.Save();
         return user;
     }
 

@@ -1972,6 +1972,7 @@
                 }
             }
             $("#MessageResults").html(html);
+            $("#MessageResults").css("padding-top", (44 + $("#messageDiv .screenTitle").height()) + "px"); //Hack for multi line titles
             $("#MessageResults").scrollTop(1000000);
 
             //Mark Messages as read

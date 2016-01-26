@@ -42,8 +42,11 @@ public class EmailService
             message.Body = Body;
             message.IsBodyHtml = true;
 
-            SmtpClient smtp = new SmtpClient("smtp.mandrillapp.com");
-            smtp.Credentials = new System.Net.NetworkCredential("williamallenparks@gmail.com", "fL0vDO6dlO6JLNGJI_9-IA");
+            SmtpClient smtp = new SmtpClient("mail.nightshade.arvixe.com");
+            smtp.Credentials = new System.Net.NetworkCredential("bob@asmbled.com", "emmitt22");
+
+            //SmtpClient smtp = new SmtpClient("smtp.mandrillapp.com");
+            //smtp.Credentials = new System.Net.NetworkCredential("will@joinpowwow.com", "FN4VIrdIVHCYZ2Tk21SyVw");
             smtp.Port = 25;
             smtp.EnableSsl = false;
             smtp.Send(message);
