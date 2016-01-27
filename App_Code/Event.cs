@@ -22,6 +22,12 @@ public class Event : Base<Event>
 
     public string GroupId { get; set; }
 
+    public string GroupName { get; set; }
+
+    public string GroupPictureUrl { get; set; }
+
+    public bool? GroupIsPublic { get; set; }
+
     public string LocationName { get; set; }
 
     public string LocationAddress { get; set; }
@@ -70,15 +76,6 @@ public class Event : Base<Event>
     public string UserId { get; set; }
 
     [NonSave]
-    public string GroupName { get; set; }
-
-    [NonSave]
-    public bool? GroupIsPublic { get; set; }
-
-    [NonSave]
-    public string GroupPictureUrl { get; set; }
-
-    [NonSave]
     public string LocalDayTime { get; set; }
     
     [NonSave]
@@ -98,7 +95,7 @@ public class Event : Base<Event>
 
     public static string GetHome(Users user)
     {
-        List<Event> events = GetByProcFast("geteventswithgroupsbyschoolid", string.Format("schoolid={0}", user.SchoolId));
+        List<Event> events = GetByProcFast("geteventsbyschoolid", string.Format("schoolid={0}", user.SchoolId));
         if (events.Count == 0)
             return defaultHomeHtml;
         AddHelperProperties(events);
@@ -434,29 +431,26 @@ public class Event : Base<Event>
         if (string.IsNullOrEmpty(evt.GroupId))
             return "";
 
-        string html = "<div class='groupList'>";
+        string html = evt.GroupIsPublic == false ? "<div class='groupList private'>" : "<div class='groupList'>";
         if(!string.IsNullOrEmpty(evt.GroupId) && !evt.GroupId.Contains('|') && !string.IsNullOrEmpty(evt.GroupName))
         {
             html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a></div>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a></div>";
             html = html.Replace("{GroupId}", evt.GroupId).Replace("{Group}", evt.GroupName);
-            if (evt.GroupIsPublic == false)
-                html = html.Replace("class='groupList'", "class='groupList private'");
             return html;
         }
 
-        //bool allPrivate = true;
-        foreach(string groupId in evt.GroupId.Split('|'))
+        try
         {
-            Group group = Group.GetFast(groupId);
-            //allPrivate = allPrivate && group.IsPublic == false;
-            if (string.IsNullOrEmpty(evt.GroupPictureUrl) && !string.IsNullOrEmpty(group.PictureUrl))
-                evt.GroupPictureUrl = group.PictureUrl;
-
-            html += group.IsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a>";
-            html = html.Replace("{GroupId}", group.Id).Replace("{Group}", group.Name);
+            string[] groupIds = evt.GroupId.Split('|');
+            string[] groupNames = evt.GroupName.Split('|');
+            for (int i = 0; i < groupIds.Length; i++)
+            {
+                html += evt.GroupIsPublic == true ? "<a class='group' groupid='{GroupId}' >#{Group}</a>" : "<a class='group private' groupid='{GroupId}' >#{Group}</a>";
+                html = html.Replace("{GroupId}", groupIds[i]).Replace("{Group}", groupNames[i]);
+            }
         }
-        //if (!allPrivate)
-        //    html = html.Replace("class='groupList private'", "class='groupList'");
+        catch { }
+
         html += "</div>";
         return html;
     }

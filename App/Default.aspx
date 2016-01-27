@@ -65,8 +65,8 @@
             });
 
             $(".content, #groupEvents").on("click", ".event", function (e) {
-                if ($(e.target).hasClass("group"))
-                    return;
+                //if ($(e.target).hasClass("group"))
+                //    return;
 
                 if (!currentUser || !currentUser.Id) {
                     OpenLogin();
@@ -93,17 +93,18 @@
                 OpenEvent(eventId, name);
             });
 
-            $(".content").on("click", ".group", function () {
-                if (!currentUser || !currentUser.Id) {
-                    OpenLogin();
-                    return;
-                }
+            //Remove for now
+            //$(".content").on("click", ".group", function () {
+            //    if (!currentUser || !currentUser.Id) {
+            //        OpenLogin();
+            //        return;
+            //    }
 
-                var groupId = $(this).attr("groupid");
-                var name = $(this).html().substring(1);
-                var isPrivate = $(this).hasClass("private");
-                GetGroup(groupId, name, isPrivate);
-            });
+            //    var groupId = $(this).attr("groupid");
+            //    var name = $(this).html().substring(1);
+            //    var isPrivate = $(this).hasClass("private");
+            //    GetGroup(groupId, name, isPrivate);
+            //});
 
             $(".screenHeader .backArrow").click(function () {
                 if ($(this).closest(".screen").attr('id') == "groupDetailsDiv")
@@ -414,6 +415,7 @@
 
             $("#addDiv").show();
             $("#addDiv input").removeClass("error");
+            $("#inviteGroups div").removeClass("invited");
             if (!isEdit) {
                 $("#addDiv .screenTitle").html("Create Event");
                 $("#addDiv .bottomBtn").html("Create");
@@ -550,17 +552,36 @@
             var min = +$("#AddMin").val() || 0;
 
             var groupId = currentEvent && currentEvent.GroupId ? currentEvent.GroupId : "";
-            $("#addDiv .invitedFriendsScroll div").each(function () {
-                var g = $(this).attr("groupid");
-                if(g)
-                    groupId += groupId ? "|" + g : g;
+            var groupName = currentEvent && currentEvent.GroupName ? currentEvent.GroupName : "";
+            var groupPictureUrl = currentEvent && currentEvent.GroupPictureUrl ? currentEvent.GroupPictureUrl : "";
+            var allPrivate = true;
+            $("#inviteGroups div.invited").each(function () {
+                var gId = $(this).attr("groupid");
+                if (gId) {
+                    groupId += groupId ? "|" + gId : gId;
+                    var gName = $(this).find("div").html();
+                    groupName += groupName ? "|" + gName : gName;
+                    if (!groupPictureUrl) {
+                        var gPic = $(this).find("img.logo").attr("src");
+                        if (gPic.indexOf("group.png") < 0)
+                            groupPictureUrl = gPic;
+                    }
+                    var isPrivate = false;
+                    $("#myGroupsDiv > div.private").each(function () {
+                        if ($(this).attr("groupid") == gId)
+                            isPrivate = true;
+                    });
+                    allPrivate = allPrivate && isPrivate;
+                }
             });
 
+            var groupIsPublic = !allPrivate || !groupId || (currentEvent && currentEvent.GroupIsPublic == true);
+
             var event = {
-                Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, LocationName: currentLocation.Name,
-                LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude, LocationLongitude: currentLocation.Longitude,
-                SchoolId: currentSchool.Id, MinParticipants: min, MaxParticipants: max, StartTime: startTime, DayOfWeek: dayOfWeek, LocalTime: localTime,
-                NotificationMessage: "Created " + $("#AddName").val(), UserId: currentUser.Id
+                Name: $("#AddName").val(), Description: $("#AddDetails").val(), GroupId: groupId, GroupName: groupName, GroupPictureUrl: groupPictureUrl,
+                GroupIsPublic: groupIsPublic, LocationName: currentLocation.Name, LocationAddress: currentLocation.Address, LocationLatitude: currentLocation.Latitude,
+                LocationLongitude: currentLocation.Longitude, SchoolId: currentSchool.Id, MinParticipants: min, MaxParticipants: max, StartTime: startTime,
+                DayOfWeek: dayOfWeek, LocalTime: localTime, NotificationMessage: "Created " + $("#AddName").val(), UserId: currentUser.Id
             };
 
             if (currentEvent.Id) {
@@ -628,6 +649,7 @@
             $("#detailsDiv .screenSubheader").hide();
             $("#detailsDiv .screenContent").hide();
             $("#detailsDiv .detailMenuBtn").hide();
+            $("#inviteGroups div").removeClass("invited");
             $("#detailsDiv").show();
         }
 
@@ -747,7 +769,7 @@
                     var src = "https://graph.facebook.com/" + user.FacebookId + "/picture";
                     goingHtml += "<div><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
                 }
-                else {
+                else if(user && user.Name && user.Name != "null") {
                     var src = "/Img/face" + Math.floor(Math.random() * 8) + ".png";
                     goingHtml += "<div class='nonFb'><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
                 }
@@ -946,6 +968,7 @@
             //        });
             //    }
             //});
+
             if (currentEvent && currentEvent.GroupId)
             {
                 $(currentEvent.GroupId.split("|")).each(function () {
@@ -1192,17 +1215,31 @@
                 var groupId = $(this).attr("groupid");
                 if (groupId)
                 {
-                    if(currentEvent.GroupId && currentEvent.GroupId.length)
-                    {
-                        if (currentEvent.GroupId.indexOf(groupId) < 0)
-                            currentEvent.GroupId += "|" + groupId;
+                    if (currentEvent.GroupId.indexOf(groupId) < 0) {
+                        currentEvent.GroupId += currentEvent.GroupId ? "|" + groupId : groupId;
+                        var groupName = $(this).find("div").html();
+                        currentEvent.GroupName = currentEvent.GroupName ? currentEvent.GroupName + "|" + groupName : groupName;
+                        var groupPictureUrl = $(this).find("img.logo").attr("src");
+                        if (!currentEvent.GroupPictureUrl && groupPictureUrl.indexOf("group.png") < 0)
+                            currentEvent.GroupPictureUrl = groupPictureUrl;
+                        if (currentEvent.GroupIsPublic == false) {
+                            var isPrivate = false;
+                            $("#myGroupsDiv > div.private").each(function () {
+                                if ($(this).attr("groupid") == groupId)
+                                    isPrivate = true;
+                            });
+                            currentEvent.GroupIsPublic = !isPrivate;
+                        }
+
                     }
-                    else
-                        currentEvent.GroupId = groupId;
                 }
             });
             currentEvent.UserId = currentUser.Id;
-            Post("AddGroupsToEvent", { evt: currentEvent }, OpenEventDetails);
+            var success = function (result) {
+                OpenEventDetails(result);
+                LoadEvents();
+            };
+            Post("AddGroupsToEvent", { evt: currentEvent }, success);
         }
 
         function SendText(phoneList, message) {
@@ -1601,6 +1638,8 @@
                 var group = results[i];
                 var groupHtml = '<div groupid="{groupId}" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;"><span>{Name}</span></div>';
                 groupHtml = groupHtml.replace("{groupId}", group.Id).replace("{Name}", group.Name);
+                if (group.IsPublic == false)
+                    groupHtml = groupHtml.replace("style=", "class='private' style=");
                 html += groupHtml;
             }
             if (!html)
