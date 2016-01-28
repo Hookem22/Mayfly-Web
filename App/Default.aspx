@@ -2023,7 +2023,7 @@
             if(!text)
                 return;
             
-            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id };
+            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id, FacebookId: currentUser.FacebookId };
             Post("SendMessage", { message: message }, LoadMessages);
             $("#sendText").val("");
             $("#sendText").attr("rows", 1);

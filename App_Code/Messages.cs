@@ -26,6 +26,8 @@ public class Messages : Base<Messages>
 
     public string UserId { get; set; }
 
+    public string FacebookId { get; set; }
+
     [NonSave]
     public int? Seconds { get; set; }
 
