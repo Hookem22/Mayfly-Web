@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=2" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=1" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -149,11 +149,11 @@
             //    }
             //});
 
-            $("#detailsDiv").swipe({
-                
-                swipeLeft: function (event, direction, distance, duration, fingerCount) {
-                    OpenMessages();
-                },
+            $("#detailsDiv .screenSubheader, #detailsDescription, #detailsInviteBtn, #detailsAddMessage, #MessageResults, #detailsDiv .separator")
+                .swipe({
+                //swipeLeft: function (event, direction, distance, duration, fingerCount) {
+                //    OpenMessages();
+                //},
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
                     CloseRight($(this).closest(".screen"));
                     if (currentEvent.IsDirty)
@@ -181,8 +181,8 @@
 
                 currentUser = {};
                 var pushDeviceToken = getParameterByName("pushDeviceToken");
-                currentLat = +getParameterByName("lat");// || 30.25;
-                currentLng = +getParameterByName("lng");// || -97.75;
+                currentLat = +getParameterByName("lat") || 30.25;
+                currentLng = +getParameterByName("lng") || -97.75;
 
                 Post("InitEvents", { pushDeviceToken: pushDeviceToken, latitude: currentLat, longitude: currentLng }, InitSuccess);
 
@@ -245,7 +245,7 @@
                 if(currentUser && currentSchool)
                     currentUser.SchoolId = currentSchool.Id;
                 if(currentSchool){
-                    $("#groupsDiv .menuHeader").html(currentSchool.Name.toUpperCase() + " GROUPS");
+                    $("#groupsDiv .menuHeader").html(currentSchool.Name.toUpperCase() + " INTERESTS");
                     $("#loginHeader").html("Log in to find and join events at " + currentSchool.Name + ".");
                 }
                 LoadEvents();
@@ -441,9 +441,9 @@
                 $("#AddDetails").val(currentEvent.Description);
                 $("#AddLocation").val(currentEvent.LocationName);
                 currentLocation = { Name: currentEvent.LocationName, Address: currentEvent.LocationAddress, Latitude: currentEvent.LocationLatitude, Longitude: currentEvent.LocationLongitude };
-                $("#addDiv #AddDay").val(GetDayLabel(currentEvent.DayOfWeek));
+                $("#addDiv #AddDay").val(GetDayLabel(currentEvent.StartTime));
                 $("#AddStartTime").val(currentEvent.LocalTime);
-                InitDay(currentEvent.DayOfWeek);
+                InitDay();
                 var min = currentEvent.MinParticipants > 1 ? currentEvent.MinParticipants : "";
                 $("#AddMin").val(min);
                 var max = currentEvent.MaxParticipants ? currentEvent.MaxParticipants : "";
@@ -662,18 +662,21 @@
             currentEvent = event;
             if (event.GroupId) {
                 $("#detailsDiv").removeClass("nonGroup");
-                if (!currentGroup || !currentGroup.Id || event.GroupId.indexOf(currentGroup.Id) < 0) {
-                    var success = function (results) {
-                        currentGroup = results;
-                        $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
-                        if (currentGroup.IsPublic || IsGoing(currentGroup.Members, currentUser.Id))
-                            OpenEventDetails(currentEvent);
-                        else if (!currentGroup.IsPublic)
-                            MessageBox("This event is private. Please join the group to attend this event.");
-                    };
-                    Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
-                    return;
-                }
+                $("#detailsLogo").show().attr("src", event.GroupPictureUrl);
+
+                //$("#detailsDiv").removeClass("nonGroup");
+                //if (!currentGroup || !currentGroup.Id || event.GroupId.indexOf(currentGroup.Id) < 0) {
+                //    var success = function (results) {
+                //        currentGroup = results;
+                //        $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
+                //        if (currentGroup.IsPublic || IsGoing(currentGroup.Members, currentUser.Id))
+                //            OpenEventDetails(currentEvent);
+                //        else if (!currentGroup.IsPublic)
+                //            MessageBox("This event is private. Please join the group to attend this event.");
+                //    };
+                //    Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
+                //    return;
+                //}
             }
             else {
                 $("#detailsDiv").addClass("nonGroup");
@@ -684,9 +687,9 @@
             $("#detailsDiv .screenSubheader").show();
             $("#detailsDiv .screenContent").show();
             $("#detailsDiv .screenTitle").html(event.Name);
-            var subheaderHtml = ToLocalDay(event.StartTime) + " " + ToLocalTime(event.StartTime);
-            if(currentGroup && currentGroup.Name)
-                subheaderHtml += " - " + currentGroup.Name;
+            var subheaderHtml = ToLocalDay(event.StartTime) + " - " + ToLocalTime(event.StartTime);
+            //if(currentGroup && currentGroup.Name)
+            //    subheaderHtml += " - " + currentGroup.Name;
             $("#detailsDiv #detailsInfo").html(subheaderHtml);
 
             var descHtml = event.Description;
@@ -727,15 +730,16 @@
                     $(".messageBtn").attr("src", "/Img/newmessage.png");
             }
             $("#inviteDiv div").removeClass("invited");
-            $(".messageBtn").attr("src", "/Img/message.png");
-            Post("CheckNewMessages", { eventId: currentEvent.Id, userId: currentUser.Id }, messageSuccess);
+            //$(".messageBtn").attr("src", "/Img/message.png");
+            //Post("CheckNewMessages", { eventId: currentEvent.Id, userId: currentUser.Id }, messageSuccess);
+            LoadMessages();
         }
 
         function UpdateDetailsGoing(event) {
 
-            var howMany = "Going " + event.Going.length;
-            if (HowManyGoing(event))
-                howMany += " (" + HowManyGoing(event) + ")";
+            var howMany = "Going: " + event.Going.length + " | Invited: " + event.Invited.length;
+            //if (HowManyGoing(event))
+            //    howMany += " (" + HowManyGoing(event) + ")";
             $("#detailsHowMany").html(howMany);
 
             var goingHtml = "";
@@ -769,18 +773,18 @@
                     var src = "https://graph.facebook.com/" + user.FacebookId + "/picture";
                     goingHtml += "<div><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
                 }
-                else if(user && user.Name && user.Name != "null") {
-                    var src = "/Img/face" + Math.floor(Math.random() * 8) + ".png";
-                    goingHtml += "<div class='nonFb'><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
-                }
+                //else if(user && user.Name && user.Name != "null") {
+                //    var src = "/Img/face" + Math.floor(Math.random() * 8) + ".png";
+                //    goingHtml += "<div class='nonFb'><img src='" + src + "' /><div class='invitedIcon icon'><img src='/Img/invited.png' /></div><div>" + user.Name + "</div></div>";
+                //}
                 people++;
             }
-            for (var i = people; i < event.MaxParticipants; i++) {
-                goingHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
-            }
+            //for (var i = people; i < event.MaxParticipants; i++) {
+            //    goingHtml += "<div class='nonFb'><img src='/Img/grayface" + Math.floor(Math.random() * 8) + ".png' /><div>Open</div></div>";
+            //}
             //var notGoing = event.MaxParticipants ? (event.MaxParticipants - people) * 64 : 0;
-            //var width = notGoing + (people * 70) + 10;
-            //$("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
+            var width = (people * 70) + 10;
+            $("#detailsInvitedFriends .invitedFriendsScroll").css("width", width + "px");
 
             $("#detailsInvitedFriends .invitedFriendsScroll").html(goingHtml);
         }
@@ -1505,7 +1509,7 @@
             if (!group)
             {
                 currentGroup = {};
-                $("#groupAddDiv .screenTitle").html("Create Group");
+                $("#groupAddDiv .screenTitle").html("Add Interest");
                 $("#groupAddDiv .bottomBtn").html("Create");
                 $("#groupAddDiv input").removeClass("error");
                 $("#AddGroupDivName").val("");
@@ -1519,7 +1523,7 @@
             }
             else
             {
-                $("#groupAddDiv .screenTitle").html("Edit Group");
+                $("#groupAddDiv .screenTitle").html("Edit Interest");
                 $("#groupAddDiv .bottomBtn").html("Save");
                 $("#groupAddDiv input").removeClass("error");
                 $("#AddGroupDivName").val(group.Name);
@@ -1564,7 +1568,7 @@
             currentGroup.UserId = currentGroup.Id ? "" : currentUser.Id;
             if(!currentGroup.IsPublic && !currentGroup.Password)
             {
-                MessageBox("Private groups must have passwords to access them.");
+                MessageBox("Private interests must have passwords to access them.");
                 $("#AddGroupPassword").addClass("error");
                 return;
             }
@@ -1577,7 +1581,7 @@
             Post("SaveGroup", { group: currentGroup }, success);
             $("#groupAddDiv").hide();
             if(!currentGroup.Id)
-                MessageBox("Your group " + currentGroup.Name + " has been created.");
+                MessageBox("Your interest " + currentGroup.Name + " has been created.");
 
         }
 
@@ -1643,11 +1647,11 @@
                 html += groupHtml;
             }
             if (!html)
-                html = '<div class="joinGroupBtn" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;font-weight: bold;">+ JOIN GROUPS</div>';
+                html = '<div class="joinGroupBtn" style="padding: 12px 4px 12px 16px;border-bottom:1px solid #3F4552;font-weight: bold;">+ ADD INTERESTS</div>';
 
             $("#myGroupsDiv").html(html);
 
-            html = "<div style='color:white;background:#AAAAAA;padding: 4px 20px;border-bottom: 1px solid #D8D8D8;'>My Groups</div>";
+            html = "<div style='color:white;background:#AAAAAA;padding: 4px 20px;border-bottom: 1px solid #D8D8D8;'>My Interests</div>";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
                 var groupHtml = '<div groupid="{GroupId}" ><img class="logo" src="{PictureUrl}" onerror="this.src=\'../Img/group.png\';" /><div>{Name}</div><img class="check" src="/Img/check.png"></div>';
@@ -1655,7 +1659,7 @@
                 html += groupHtml;
             }
             if (!html)
-                html = "<div style='text-align: center;'>You are not a member of any groups.</div><div class='blueBtn joinGroupBtn' style='margin: 24px 16%;'>Join Groups</div>";
+                html = "<div style='text-align: center;'>You are not a member of any interests.</div><div class='blueBtn joinGroupBtn' style='margin: 24px 16%;'>Add Interests</div>";
 
             html += "</div>";
             $("#inviteGroups").html(html);
@@ -1729,7 +1733,7 @@
                 $("#groupJoinBtn").addClass("selected");
             }
             else {
-                $("#groupJoinBtn").html("+ JOIN GROUP");
+                $("#groupJoinBtn").html("+ ADD INTEREST");
                 $("#groupJoinBtn").removeClass("selected");
             }
 
@@ -1756,14 +1760,14 @@
 
             if ($("#myGroupsDiv div").not(".joinGroupBtn").length <= 0)
             {
-                MessageBox("You've joined " + currentGroup.Name + "! <br/><br/>You will now be notified when new events are added to this group, or you can create your own events in this group.");
+                MessageBox("You've joined " + currentGroup.Name + "! <br/><br/>You will now be notified when new events are added to this interest, or you can create your own events in this interest.");
             }
 
             Post("JoinGroup", { group: currentGroup }, LoadMyGroups);
         }
 
         function UnjoinGroup() {
-            $("#groupJoinBtn").html("+ JOIN GROUP");
+            $("#groupJoinBtn").html("+ ADD INTEREST");
             $("#groupJoinBtn").removeClass("selected");
 
             currentGroup.UserId = currentUser.Id;
@@ -1920,6 +1924,22 @@
     <!-- Messages -->
     <script type="text/javascript">
         $(document).ready(function () {
+            $("#detailsAddMessage").click(function () {
+                $("#addMessageDiv .screenTitle").html(currentEvent.Name);
+                $("#AddMessageTextbox").val("");
+                $("#AddMessageTextbox").focus();
+                OpenFromBottom("addMessageDiv");
+            });
+
+            $("#addMessageDiv .bottomBtn").click(function () {
+                var text = $("#AddMessageTextbox").val();
+                if (text) {
+                    var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id, FacebookId: currentUser.FacebookId };
+                    Post("SendMessage", { message: message }, LoadMessages);
+                }
+                $("#addMessageDiv").hide();
+            });
+
             $(".messageBtn").click(function () {
                 OpenMessages();
             });
@@ -2001,21 +2021,36 @@
             var html = "";
             for (var i = 0; i < messages.length; i++) {
                 var message = messages[i];
-                if (message.UserId == currentUser.Id) {
-                    var messageHtml = "<div style='float:right;clear:both;margin-top: 8px;'>{SinceSent}</div><div class='meMessage'>{Message}</div>";
-                    html += messageHtml.replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
-                }
-                else {
-                    var messageHtml = "<div style='float:left;clear:both;margin-top: 8px;'>{From} - {SinceSent}</div><div class='youMessage'>{Message}</div>";
-                    html += messageHtml.replace("{From}", message.Name).replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
-                }
+                var messageHtml = "<div class='message'><img src='{FacebookPic}' /><div class='name'>{Name}</div><div class='sinceSent'>{SinceSent}</div><div class='messageText'>{Message}</div><div class='separator'></div>";
+                html += messageHtml.replace("{FacebookPic}", "https://graph.facebook.com/" + message.FacebookId + "/picture")
+                                    .replace("{Name}", message.Name).replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
             }
-            $("#MessageResults").html(html);
-            $("#MessageResults").css("padding-top", (44 + $("#messageDiv .screenTitle").height()) + "px"); //Hack for multi line titles
-            $("#MessageResults").scrollTop(1000000);
 
-            //Mark Messages as read
-            Post("UpdateCheckedMessages", { eventId: currentEvent.Id, userId: currentUser.Id });
+            $("#MessageResults").html(html);
+            $("#MessageResults .separator:last-child").css({ height: "40px", "margin-bottom": "0" });
+
+            $("#detailsAddMessage img").attr("src", "https://graph.facebook.com/" + currentUser.FacebookId + "/picture");
+            $("#addMessageDiv img").attr("src", "https://graph.facebook.com/" + currentUser.FacebookId + "/picture");
+            $("#addMessageDiv .name").html(currentUser.FirstName);
+
+            //var html = "";
+            //for (var i = 0; i < messages.length; i++) {
+            //    var message = messages[i];
+            //    if (message.UserId == currentUser.Id) {
+            //        var messageHtml = "<div style='float:right;clear:both;margin-top: 8px;'>{SinceSent}</div><div class='meMessage'>{Message}</div>";
+            //        html += messageHtml.replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
+            //    }
+            //    else {
+            //        var messageHtml = "<div style='float:left;clear:both;margin-top: 8px;'>{From} - {SinceSent}</div><div class='youMessage'>{Message}</div>";
+            //        html += messageHtml.replace("{From}", message.Name).replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
+            //    }
+            //}
+            //$("#MessageResults").html(html);
+            //$("#MessageResults").css("padding-top", (44 + $("#messageDiv .screenTitle").height()) + "px"); //Hack for multi line titles
+            //$("#MessageResults").scrollTop(1000000);
+
+            ////Mark Messages as read
+            //Post("UpdateCheckedMessages", { eventId: currentEvent.Id, userId: currentUser.Id });
         }
 
         function SendMessage() {
@@ -2048,6 +2083,13 @@
                 $("#AddDay").click(function () {
                     $(".modal-backdrop").show();
                     $("#dateDiv").show();
+                    var results = $("#dateDivResults div");
+                    for (var i = 0; i < results.length; i++) {
+                        if ($(results[i]).hasClass("selected")) {
+                            $("#dateDivResults").scrollTop(i * 42);
+                            break;
+                        }
+                    }
                 });
 
                 $("#clockCircle").on("click", "div", function () {
@@ -2237,35 +2279,51 @@
 
             }
 
-            function InitDay(dayOfWeek) {
+            function InitDay() {
                 var html = "";
-                var dayNumber = dayOfWeek || new Date().getDay();
-                for(var i = 0; i < 7; i++)
+                var today = new Date().getDay();
+                var scroll = 0;
+                for(var i = 0; i < 90; i++)
                 {
                     var day = "Today";
                     if (i == 1)
                         day = "Tomorrow";
                     else if(i > 1)
                     {
-                        day = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][(i + dayNumber) % 7];
+                        day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][(i + today) % 7];
+                        var date = addDays(new Date(), i);
+                        var month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][date.getMonth()];
+                        day += ", " + month + " " + date.getDate();
                     }
-                    if ($("#AddDay").val() == day)
+                    if ($("#AddDay").val() == day) {
                         html += "<div class='selected'>" + day + "</div>";
-                    else
+                        scroll = i;
+                    }
+                    else {
                         html += "<div>" + day + "</div>";
+                    }
                 }
                 $("#dateDivResults").html(html);
             }
 
-            function GetDayLabel(dayNumber)
+            function addDays(date, days) {
+                var result = new Date(date);
+                result.setDate(result.getDate() + days);
+                return result;
+            }
+
+            function GetDayLabel(dateTime)
             {
-                var today = new Date().getDay();
-                if (dayNumber == today)
+                var today = new Date();
+                var startDate = new Date(dateTime);
+                if (today.getDate() == startDate.getDate() && today.getMonth() == startDate.getMonth())
                     return "Today";
-                else if (dayNumber - today == 1)
+                else if (addDays(today, 1).getDate() == startDate.getDate() && addDays(today, 1).getMonth() == startDate.getMonth())
                     return "Tomorrow";
 
-                return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dayNumber];
+                var day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][startDate.getDay()];
+                var month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][startDate.getMonth()];
+                return day + ", " + month + " " + startDate.getDate();
             }
     </script>
 
@@ -2334,7 +2392,7 @@
                 <img id="menuBtn" src="/Img/whitemenu.png" />
                 <img class="title" src="/Img/title.png" />
                 <img id="groupsBtn" src="/Img/whitegroup.png" />
-                <input id="groupFilterTextBox" type="text" placeholder="Search Groups" />
+                <input id="groupFilterTextBox" type="text" placeholder="Search Interests" />
             </div>
         </div>
         <div class="content">
@@ -2344,26 +2402,26 @@
         </div>
         <div id="addBtn"><img src="../Img/plus.png" /></div>
         <div id="menuDiv">
-            <div class="menuHeader" style="border-top: none;padding-top:10px;">MY GROUPS</div>
+            <div class="menuHeader" style="border-top: none;padding-top:10px;">MY INTERESTS</div>
             <div id="myGroupsDiv"></div>
             <div class="menuHeader" >NOTIFICATIONS</div>
             <div id="myNotificationsDiv"></div>
         </div>
         <div id="groupsDiv">
             <div id="groupAddBtnDiv">
-                Create Group
+                Add Interest
                 <img id="groupAddBtn" src="../Img/grayAdd.png" />
             </div>
-            <div class="menuHeader">GROUPS NEAR YOU</div>
+            <div class="menuHeader">INTERESTS NEAR YOU</div>
             <div id="groupsListDiv"></div>
         </div>
         <div id="groupAddDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
-                <div class="screenTitle">Create Group</div>
+                <div class="screenTitle">Add Interest</div>
             </div>
             <div class="screenContent">
-                <input id="AddGroupDivName" type="text" placeholder="Your Group Name" style="margin:12px 0 4px;" />
+                <input id="AddGroupDivName" type="text" placeholder="Your Interest Name" style="margin:12px 0 4px;" />
                 <input id="AddGroupSchool" type="text" placeholder="School" style="margin-bottom:4px;" readonly="readonly" />
                 <textarea id="AddGroupDescription" rows="4" placeholder="Description"></textarea>
                 <div id="isPublicBtn" class="pillBtn" style="margin:10px 0 12px;clear:both;">
@@ -2388,11 +2446,11 @@
             <div class="screenSubheader">
                 <img id="groupDetailsLogo" onerror="this.style.display='none';" />
                 <div id="groupDetailsInfo"></div>
-                <div id="groupJoinBtn" class="joinBtn">+ JOIN GROUP</div>
+                <div id="groupJoinBtn" class="joinBtn">+ ADD INTEREST</div>
             </div>
             <div class="screenContent">
                 <div id="groupDetailsDescription"></div>
-                <div id="groupInviteBtn">Invite Friends to Group</div>
+                <div id="groupInviteBtn">Invite Friends to Interest</div>
             </div>
             <div id="groupEvents"></div>
             <div id="addFromGroupBtn"><img src="../Img/plus.png" /></div>
@@ -2412,7 +2470,7 @@
                     <%--<div style="float:left;margin:16px 0;">Total People?</div>
                     <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
                     <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />--%>
-                    <div id="inviteBtn" >Invite Friends or Groups</div>
+                    <div id="inviteBtn" >Invite Friends or Interests</div>
                 </div>
                 <div class="invitedFriends"><div class="invitedFriendsScroll"></div></div>
                 <div id="AddMap" style="clear:both;"></div>
@@ -2425,23 +2483,40 @@
                 <div class="backArrow" ></div>
                 <div class="screenTitle" style="margin-right: 54px;min-height:21px;"></div>
                 <img class="detailMenuBtn" src="/Img/smallmenu.png" />
-                <img class="messageBtn" src="/Img/message.png" />
+                <%--<img class="messageBtn" src="/Img/message.png" />--%>
                 <div id="detailsEditBtn">Edit</div>
             </div>
-            <div class="screenSubheader">
+            <div class="screenSubheader" style="background: white;">
                 <img id="detailsLogo" onerror="this.style.display='none';" />
                 <div id="detailsInfo"></div>
                 <div id="joinBtn" class="joinBtn">+ JOIN EVENT</div>
             </div>
-            <div class="screenContent">
+            <div class="screenContent" style="background: white;">
                 <div id="detailsDescription"></div>
-                <div id="detailsInviteBtn" >Invite Friends or Groups</div>
+                <div id="detailsInviteBtn" >Invite Friends or Interests</div>
+                <div class="separator"></div>
                 <div id="detailsHowMany" style="text-align:center;margin-bottom: 12px;"></div>
-                <div id="detailsInvitedFriends" class="invitedFriends" ><div class="invitedFriendsScroll"></div></div>
-                <div id="detailsMap"></div>
+                <div id="detailsInvitedFriends" class="invitedFriends" style="overflow-x: scroll;overflow-y: hidden;height: 90px;" ><div class="invitedFriendsScroll"></div></div>
+                <div class="separator"></div>
+                <div id="detailsAddMessage">
+                    <img class="addMessagePic" style="height: 50px;width: 50px;border-radius: 25px;float: left; margin: -8px 16px 0 9px;" />
+                    <div style="padding: 9px 0 20px;color: #aaa;">Say Something...</div>
+                </div>
+                <div class="separator" style="border-bottom:none;"></div>
+                <div id="MessageResults"></div>
             </div>
         </div>
-        <div id="messageDiv" class="screen">
+        <div id="addMessageDiv" class="screen swipe">
+            <div class="screenHeader">
+                <div class="backArrow" ></div>
+                <div class="screenTitle"></div>
+            </div>
+            <img class="addMessagePic" style="height: 50px;width: 50px;border-radius: 25px;margin: 20px 12px 12px 30px;" />
+            <div class="name" style="position: absolute;top: 87px;left: 100px;font-weight: bold;"></div>
+            <textarea id="AddMessageTextbox" rows="4" placeholder="Post to Event" style="margin: 0 26px;width: 80%;"></textarea>
+            <div class="bottomBtn">Post</div>
+        </div>
+<%--        <div id="messageDiv" class="screen">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
                 <div class="screenTitle"></div>
@@ -2452,7 +2527,7 @@
                 <div onclick="SendMessage();">Send</div>
                 <div class="hiddenText"></div>
             </div>
-        </div>
+        </div>--%>
         <div id="locationDiv" class="screen swipe">
             <div class="screenHeader">
                 <div class="backArrow" ></div>
@@ -2509,19 +2584,19 @@
             <div class="smallBottomBtn" >Cancel</div>
         </div>
         <div id="newUserDiv">
-            <div style="text-align: center;margin: 1em;font-size: 24px;font-weight: 500;">Join Groups</div>
-            <div style="margin: 0 32px 24px;">Join groups to hear about new events from that group.<br /><br />Here are some groups we think you'd like.</div>
+            <div style="text-align: center;margin: 1em;font-size: 24px;font-weight: 500;">Add Interests</div>
+            <div style="margin: 0 32px 24px;">Add interests to hear about new events from that interest.<br /><br />Here are some interests we think you'd like.</div>
             <div id="newUserResultsDiv"></div>
             <div class="okBtn smallBottomBtn" style="left:0;right:50%;">Join</div><div onclick="HideNewUserScreen();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Not Now</div>
         </div>
         <div id="showGroupsBtnDiv">
             <div class="arrowup"></div>
             <img src="/Img/whitegroup.png" class="fakeGroupsBtn" />
-            <div style="margin: 12px 32px 60px;">Click here to find more groups or create your own.</div>
+            <div style="margin: 12px 32px 60px;">Click here to find more interests or create your own.</div>
             <div class="okBtn smallBottomBtn" onclick="$('#showGroupsBtnDiv').hide();$('.modal-backdrop').hide();" >OK</div>
         </div>
         <div id="checkPasswordDiv">
-            <div class="messageContent" style="margin-bottom: 12px;line-height: 1.4em;">This group is private. Enter group password.</div>
+            <div class="messageContent" style="margin-bottom: 12px;line-height: 1.4em;">This interest is private. Enter interest password.</div>
             <input type="text" placeholder="Group Password" style="margin-bottom:50px;width: 85%;" />
             <div class="okBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="$('#checkPasswordDiv').hide();$('.modal-backdrop').hide();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>

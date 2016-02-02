@@ -137,7 +137,8 @@ function Contains(fullString, sub) {
 }
 function ToLocalDay(dateTime, includeToday)
 {
-    var localDay = new Date(dateTime).getDay();
+    var localDate = new Date(dateTime);
+    var localDay = localDate.getDay();
     if (includeToday) {
         var today = new Date().getDay();
         if (today == localDay)
@@ -145,7 +146,9 @@ function ToLocalDay(dateTime, includeToday)
         else if (localDay - today == 1)
             return "Tomorrow";
     }
-    return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][localDay];
+    var weekDay = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][localDay];
+    var month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][localDate.getMonth()];
+    return weekDay + ", " + month + " " + localDate.getDate();
 }
 function ToLocalTime(dateTime) {
     var localTime = new Date(dateTime).toLocaleTimeString().replace(":00", "");

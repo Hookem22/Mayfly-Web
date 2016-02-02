@@ -81,6 +81,9 @@ public class Event : Base<Event>
     [NonSave]
     public string DayLabel { get; set; }
 
+    [NonSave]
+    public string LocalDate { get; set; }
+
     #endregion
 
     public static new Event Get(string id)
@@ -135,13 +138,13 @@ public class Event : Base<Event>
             EventGoing going = new EventGoing(this.Id, this.UserId, true);
             going.Save();
 
-            Users user = Users.Get(this.UserId);
-            if(user != null)
-            {
-                EventInvited invited = new EventInvited(this.Id, user.FacebookId, user.FirstName, "");
-                invited.UserId = null;
-                invited.Save();
-            }
+            //Users user = Users.Get(this.UserId);
+            //if(user != null)
+            //{
+            //    EventInvited invited = new EventInvited(this.Id, user.FacebookId, user.FirstName, "");
+            //    invited.UserId = null;
+            //    invited.Save();
+            //}
         }
 
         if (!string.IsNullOrEmpty(this.NotificationMessage))
@@ -199,14 +202,19 @@ public class Event : Base<Event>
             if (string.IsNullOrEmpty(invite.Id))
             {
                 EventInvited invited = new EventInvited(this.Id, invite.FacebookId, invite.Name, invite.InvitedBy);
-                invited.UserId = null;
-                invited.Save();
-
-                if(!string.IsNullOrEmpty(invite.FacebookId))
+                if (string.IsNullOrEmpty(invite.FacebookId))
+                {
+                    invited.UserId = "";
+                    invited.Save();
+                }
+                else
                 {
                     Users user = Users.GetByFacebookId(invite.FacebookId);
                     if(user != null)
                     {
+                        invited.UserId = user.Id;
+                        invited.Save();
+                        
                         Notification notification = new Notification(this.Id, user.Id, this.NotificationMessage);
                         notification.Save();
 
@@ -263,17 +271,28 @@ public class Event : Base<Event>
 
     private static void AddHelperProperties(List<Event> events)
     {
+        TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+        DateTime today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cstZone);
+
         foreach (Event evt in events)
         {
             //evt.Going = EventGoing.GetByEvent(evt.Id);
-
             if (evt.DayOfWeek != null)
             {
-                string[] daysShort = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-                evt.LocalDayTime = daysShort[(int)evt.DayOfWeek] + " " + evt.LocalTime;
+                //string[] daysShort = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                //evt.LocalDayTime = daysShort[(int)evt.DayOfWeek] + " " + evt.LocalTime;
 
                 string[] days = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
-                evt.DayLabel = days[(int)evt.DayOfWeek];
+                //evt.DayLabel = days[(int)evt.DayOfWeek];
+
+                DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
+                DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
+                evt.DayLabel = string.Format("{0}, {1}", days[(int)evt.DayOfWeek], cstTime.ToString("MMM d"));
+
+                if (today.ToString("MM/d") == cstTime.ToString("MM/d"))
+                    evt.DayLabel = "Today";
+                else if (today.AddDays(1).ToString("MM/d") == cstTime.ToString("MM/d"))
+                    evt.DayLabel = "Tomorrow";
             }
             if (evt.GroupIsPublic == null)
                 evt.GroupIsPublic = true;
@@ -295,17 +314,17 @@ public class Event : Base<Event>
     private static string GetHomeHtml(List<Event> events, Users user)
     {
 
-        if (user != null)
-            events = ReorderEvents(events, user);
+        //if (user != null)
+        //    events = ReorderEvents(events, user);
 
-        string html = string.Format("<div class='dayHeader' dayofweek='{0}'><div></div><div>{1}</div></div>", events[0].DayOfWeek, events[0].DayLabel);
+        string html = string.Format("<div class='dayHeader'><div></div><div>{0}</div></div>", events[0].DayLabel);
 
         Random rnd = new Random();
         int i = 0;
         foreach (Event evt in events)
         {
-            if(i > 0 && events[i - 1].DayOfWeek != events[i].DayOfWeek)
-                html += string.Format("<div class='dayHeader' dayofweek='{0}'><div></div><div>{1}</div></div>", events[i].DayOfWeek, events[i].DayLabel);
+            if (i > 0 && events[i - 1].DayLabel != events[i].DayLabel)
+                html += string.Format("<div class='dayHeader'><div></div><div>{0}</div></div>", events[i].DayLabel);
             string addClass = "";
             if(i == 0 || events[i - 1].DayOfWeek != events[i].DayOfWeek)
                 addClass = "first";
