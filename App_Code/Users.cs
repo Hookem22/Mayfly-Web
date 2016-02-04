@@ -322,22 +322,26 @@ public class Users : Base<Users>
                 if (string.IsNullOrEmpty(ivt.FacebookId))
                 {
                     nonPowwowInvitedCt++;
-                    if(nonPowwowInvited.Contains(ivt.EventId))
+                    if (nonPowwowInvited.Contains(ivt.EventId))
                     {
                         string inviteString = string.Format("{0}<br/>", ivt.Name);
                         nonPowwowInvited = nonPowwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
                     }
                     else
                     {
-                        Event evt = Event.Get(ivt.EventId);
+                        try
+                        {
+                            Event evt = Event.Get(ivt.EventId);
 
-                        DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
-                        TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-                        DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
+                            DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
+                            TimeZoneInfo cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+                            DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
 
-                        nonPowwowInvited += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/><span style='display:none;'>[{0}]</span>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
-                        string inviteString = string.Format("{0}<br/>", ivt.Name);
-                        nonPowwowInvited = nonPowwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
+                            nonPowwowInvited += string.Format("<a href='../App/?eventId={0}' target='_blank'>{1} - {2}</a><br/><span style='display:none;'>[{0}]</span>", evt.Id, evt.Name, cstTime.ToString("ddd M/d h:mm tt"));
+                            string inviteString = string.Format("{0}<br/>", ivt.Name);
+                            nonPowwowInvited = nonPowwowInvited.Replace(string.Format("[{0}]</span>", ivt.EventId), string.Format("[{0}]</span>{1}", ivt.EventId, inviteString));
+                        }
+                        catch { }
                     }
                 }
                 else
