@@ -5,7 +5,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
    <title>Pow Wow</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <link rel="icon" type="image/png" href="/img/favicon.png" />
     <link href="/Styles/App.css?i=1" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -125,6 +124,7 @@
     </script>
     <script type="text/javascript">
         $(document).ready(function () {
+
             $("#picker").spectrum({
                 color: "#4285F4",
                 showInput: true,
@@ -163,10 +163,25 @@
                     "rgb(118, 165, 175)", "rgb(109, 158, 235)", "rgb(111, 168, 220)", "rgb(142, 124, 195)", "rgb(194, 123, 160)",
                     "rgb(166, 28, 0)", "rgb(204, 0, 0)", "rgb(230, 145, 56)", "rgb(241, 194, 50)", "rgb(106, 168, 79)",
                     "rgb(69, 129, 142)", "rgb(60, 120, 216)", "rgb(61, 133, 198)", "rgb(103, 78, 167)", "rgb(166, 77, 121)",
-                    "rgb(91, 15, 0)", "rgb(102, 0, 0)", "rgb(120, 63, 4)", "rgb(127, 96, 0)", "rgb(39, 78, 19)",
-                    "rgb(12, 52, 61)", "rgb(28, 69, 135)", "rgb(7, 55, 99)", "rgb(32, 18, 77)", "rgb(76, 17, 48)", "rgb(0, 128, 128)"]
+                    "rgb(91, 15, 0)", "rgb(102, 0, 0)", "rgb(120, 63, 4)", "rgb(127, 96, 0)", "rgb(39, 78, 19)", "rgb(12, 52, 61)",
+                    "rgb(28, 69, 135)", "rgb(7, 55, 99)", "rgb(32, 18, 77)", "rgb(76, 17, 48)", "rgb(0,51,102)", "rgb(242, 122, 33)",
+                    "rgb(255, 102, 0)", "rgb(128, 0, 0)", "rgb(0, 128, 128)"]
                 ]
             });
+
+            var iconList = $(".icon");
+            for (var i = 0; i < 15; i++) {
+                var imageDiv = $(iconList[i]).find(".iconImages");
+                var html = "";
+                for (var j = 4; j < 10; j++) {
+                    var index = i + 1;
+                    if (index > 10)
+                        index++;
+                    var src = "../Img/Icons/" + "icon" + index + j + ".png";
+                    html += "<img src='" + src + "'/>";
+                }
+                imageDiv.html(html);
+            }
         });
 
         function changeColor(colorHex) {
@@ -178,11 +193,17 @@
         function changeIcons(index) {
             var events = $(".event");
             for (var i = 0; i < events.length; i++) {
-                $(events[i]).find("img").attr("src", icons[index][i]);
+                var iconIdx = i + 1;
+                var src = "../Img/Icons/" + "icon" + index + iconIdx + ".png";
+                $(events[i]).find("img").attr("src", src);
             }
         }
     </script>
     <style>
+        .form {
+            min-width: 1000px;
+            position: relative;
+        }
         #iPhone {
             position: absolute;
             z-index: 0;
@@ -273,17 +294,26 @@
         .iconHeader {
             width: 210px;
             text-align: center;
-            margin:6px 0 -2px;
+            margin:6px 0 0;
             padding: 0;
         }
         .icon img {
             width: 210px;
+        }
+        .iconImages {
+            width: 210px;
+            height: 176px;
+        }
+        .iconImages img {
+            width: 60px;
+            margin: 0 5px 10px;
         }
 
     </style>
 </head>
 <body>
     <form id="form1" runat="server">
+        <div class="form">
         <img id="iPhone" src="../Img/iPhone.png" />
         <div id="phoneContent">
             <div class="header">
@@ -379,42 +409,63 @@
             Pick the Icons
         </div>
         <div id="iconList">
-            <div class="icon" onclick="changeIcons(6);">
-                <div class="iconHeader">Icons #1</div>
-                <img src="https://cdn3.iconfinder.com/data/iconsets/previews/medium/vector-icons-19.png" />
-            </div>
             <div class="icon" onclick="changeIcons(1);">
-                <div class="iconHeader">Icons #2</div>
-                <img src="https://cdn2.iconfinder.com/data/iconsets/previews/medium/indoor-games-and-sports-vol-4-1.png" />
+                <div class="iconHeader">Icons #1</div>
+                <div class="iconImages"></div>
             </div>
             <div class="icon" onclick="changeIcons(2);">
-                <div class="iconHeader">Icons #3</div>
-                <img src="https://cdn1.iconfinder.com/data/iconsets/previews/medium/sports-and-activities-1.png" />
-            </div>
-            <div class="icon" onclick="changeIcons(7);">
-                <div class="iconHeader">Icons #4</div>
-                <img src="https://cdn1.iconfinder.com/data/iconsets/previews/medium/sports-colored-icons-1.png" />
-            </div>
-            <div class="icon" onclick="changeIcons(8);">
-                <div class="iconHeader">Icons #5</div>
-                <img src="https://cdn1.iconfinder.com/data/iconsets/previews/medium/music-volume-2-2.png" />
-            </div>
-            <div class="icon" onclick="changeIcons(4);">
-                <div class="iconHeader">Icons #6</div>
-                <img src="https://cdn3.iconfinder.com/data/iconsets/previews/medium/sports-volume-3-2.png" />
+                <div class="iconHeader">Icons #2</div>
+                <div class="iconImages"></div>
             </div>
             <div class="icon" onclick="changeIcons(3);">
-                <div class="iconHeader">Icons #7</div>
-                <img src="https://cdn1.iconfinder.com/data/iconsets/previews/medium/food-and-beverages.png" />
+                <div class="iconHeader">Icons #3</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(4);">
+                <div class="iconHeader">Icons #4</div>
+                <div class="iconImages"></div>
             </div>
             <div class="icon" onclick="changeIcons(5);">
-                <div class="iconHeader">Icons #8</div>
-                <img src="https://cdn2.iconfinder.com/data/iconsets/previews/medium/multimedia-flat-icons-vol-2.png" />
-            </div>  
-            <div class="icon" onclick="changeIcons(0);">
-                <div class="iconHeader">Icons #9</div>
-                <img src="https://cdn1.iconfinder.com/data/iconsets/previews/medium/party-icons-rounded.png" />
+                <div class="iconHeader">Icons #5</div>
+                <div class="iconImages"></div>
             </div>
+            <div class="icon" onclick="changeIcons(6);">
+                <div class="iconHeader">Icons #6</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(7);">
+                <div class="iconHeader">Icons #7</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(8);">
+                <div class="iconHeader">Icons #8</div>
+                <div class="iconImages"></div>
+            </div>  
+            <div class="icon" onclick="changeIcons(9);">
+                <div class="iconHeader">Icons #9</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(10);">
+                <div class="iconHeader">Icons #10</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(12);">
+                <div class="iconHeader">Icons #11</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(13);">
+                <div class="iconHeader">Icons #12</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(14);">
+                <div class="iconHeader">Icons #13</div>
+                <div class="iconImages"></div>
+            </div>
+            <div class="icon" onclick="changeIcons(15);">
+                <div class="iconHeader">Icons #14</div>
+                <div class="iconImages"></div>
+            </div>
+        </div>
         </div>
     </form>
 </body>
