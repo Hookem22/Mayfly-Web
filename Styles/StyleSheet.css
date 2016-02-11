@@ -1,14 +1,14 @@
 ﻿html {
-    background: #4285F4;
+    background: #21c5c5;
 }
 body {
     font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
     margin: 0;
-    background: #4285F4;
+    background: #21c5c5;
 }
 .header
 {
-    background: #4285F4;
+    background: #21c5c5;
     text-align: center;
 }
 .content

@@ -82,6 +82,9 @@ public class Event : Base<Event>
     public string DayLabel { get; set; }
 
     [NonSave]
+    public string ShortDayLabel { get; set; }
+
+    [NonSave]
     public string LocalDate { get; set; }
 
     #endregion
@@ -279,7 +282,7 @@ public class Event : Base<Event>
             //evt.Going = EventGoing.GetByEvent(evt.Id);
             if (evt.DayOfWeek != null)
             {
-                //string[] daysShort = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                string[] daysShort = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
                 //evt.LocalDayTime = daysShort[(int)evt.DayOfWeek] + " " + evt.LocalTime;
 
                 string[] days = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
@@ -288,6 +291,7 @@ public class Event : Base<Event>
                 DateTime timeUtc = DateTime.SpecifyKind(Convert.ToDateTime(evt.StartTime), DateTimeKind.Utc);
                 DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, cstZone);
                 evt.DayLabel = string.Format("{0}, {1}", days[(int)evt.DayOfWeek], cstTime.ToString("MMM d"));
+                evt.ShortDayLabel = string.Format("{0}, {1}", daysShort[(int)evt.DayOfWeek], cstTime.ToString("MMM d"));
 
                 if (today.ToString("MM/d") == cstTime.ToString("MM/d"))
                     evt.DayLabel = "Today";
@@ -314,8 +318,8 @@ public class Event : Base<Event>
     private static string GetHomeHtml(List<Event> events, Users user)
     {
 
-        //if (user != null)
-        //    events = ReorderEvents(events, user);
+        if (user != null)
+            events = ReorderEvents(events, user);
 
         string html = string.Format("<div class='dayHeader'><div></div><div>{0}</div></div>", events[0].DayLabel);
 
@@ -336,15 +340,30 @@ public class Event : Base<Event>
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
             groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", details).Replace("{StartDay}", evt.LocalTime).Replace("{Group}", AddGroups(evt));
-            string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
-            if (!string.IsNullOrEmpty(evt.GroupId))
-                img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
-            if (evt.IsGoing != null && (bool)evt.IsGoing && !string.IsNullOrEmpty(user.FacebookId))
-                img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-            else if (evt.IsGoing != null && (bool)evt.IsGoing)
-                img = "<img src='../Img/face" + rnd.Next(8) + ".png' /><div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            string img = "<img src='../Img/group.png' />";
+            if (!string.IsNullOrEmpty(evt.GroupPictureUrl))
+            {
+                if(evt.GroupPictureUrl.Contains(".com"))
+                    img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
+                else
+                    img = string.Format("<img src='../Img/Event Icons/{0}.png' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
+            }
+
+            if (evt.IsGoing != null && (bool)evt.IsGoing)
+                img += "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
             else if (evt.IsInvited != null && (bool)evt.IsInvited)
-                img = "<img src='../Img/invited.png' />";
+                img += "<div class='invitedIcon icon'><img src='/Img/invited.png'></div>";
+            
+            
+            //string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
+            //if (!string.IsNullOrEmpty(evt.GroupId))
+            //    img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
+            //if (evt.IsGoing != null && (bool)evt.IsGoing && !string.IsNullOrEmpty(user.FacebookId))
+            //    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            //else if (evt.IsGoing != null && (bool)evt.IsGoing)
+            //    img = "<img src='../Img/face" + rnd.Next(8) + ".png' /><div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            //else if (evt.IsInvited != null && (bool)evt.IsInvited)
+            //    img = "<img src='../Img/invited.png' />";
             groupHtml = groupHtml.Replace("{img}", img);
             html += groupHtml;
 
@@ -364,16 +383,22 @@ public class Event : Base<Event>
         foreach (Event evt in events)
         {
             string eventHtml = "<div eventid='{EventId}' class='homeList event'>{img}<div class='name'>{Name}</div><div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='time'>{StartTime}</div></div>";
-            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", string.Format("{0}<br/>{1}", evt.DayLabel, evt.LocalTime)).Replace("{StartTime}", "" /*"{{" + evt.StartTime.ToString() + "}}"*/);
-            string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
-            if (evt.IsGoing == true)
+            eventHtml = eventHtml.Replace("{EventId}", evt.Id).Replace("{Name}", evt.Name).Replace("{Details}", evt.Distance).Replace("{StartDay}", string.Format("{0}<br/>{1}", evt.ShortDayLabel, evt.LocalTime)).Replace("{StartTime}", "" /*"{{" + evt.StartTime.ToString() + "}}"*/);
+            
+            string img = "<img src='../Img/group.png' />";
+            if (!string.IsNullOrEmpty(evt.GroupPictureUrl))
             {
-                string checkMark = "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-                if (!string.IsNullOrEmpty(user.FacebookId))
-                    img = "<img class='fbPic' src='https://graph.facebook.com/" + user.FacebookId + "/picture' />" + checkMark;
+                if (evt.GroupPictureUrl.Contains(".com"))
+                    img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
                 else
-                    img = "<img src='../Img/face" + rnd.Next(8) + ".png' />" + checkMark;
+                    img = string.Format("<img src='../Img/Event Icons/{0}.png' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
             }
+
+            if (evt.IsGoing != null && (bool)evt.IsGoing)
+                img += "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
+            else if (evt.IsInvited != null && (bool)evt.IsInvited)
+                img += "<div class='invitedIcon icon'><img src='/Img/invited.png'></div>";
+
             eventHtml = eventHtml.Replace("{img}", img);
             html += eventHtml;
         }

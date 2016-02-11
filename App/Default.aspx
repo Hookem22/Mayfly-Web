@@ -48,14 +48,14 @@
 
             $(".content").swipe({
                 swipeLeft: function (event, direction, distance, duration, fingerCount) {
-                    if ($("#menuDiv").is(':visible'))
-                        CloseMenu();
-                    else
+                    //if ($("#menuDiv").is(':visible'))
+                    //    CloseMenu();
+                    //else
                         OpenGroups();
-                },
-                swipeRight: function (event, direction, distance, duration, fingerCount) {
-                    OpenMenu();
                 }
+                //swipeRight: function (event, direction, distance, duration, fingerCount) {
+                //    OpenMenu();
+                //}
             });
 
             $("#groupsDiv").swipe({
@@ -133,7 +133,7 @@
                 }
             });
 
-            $("#addDiv").swipe({
+            $("#addDiv .screenHeader").swipe({
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
                     //LoadEvents();
                     CloseRight($("#addDiv"));
@@ -343,7 +343,11 @@
 
     <!-- Add / Edit Event -->
     <script type="text/javascript">
+        var eventIcons = ["Sunny", "Lightning", "Sunglasses", "Castle", "Firework", "Spaceship", "Hammock", "Tent", "Flipflops", "Pool", "Jetski", "Canoe", "Cloudy", "Snow", "Storm", "WindmillPaper", "OldCar", "Motorbike", "Segway", "Hat", "Boots", "Books", "Science", "MovieEvent", "MovieSlate", "Television", "Ticket", "Money", "VideoCamera", "Microphone", "Guitar", "Cassette", "Dj", "RecordPlayer", "Speaker", "Trumpet", "Astronaut", "CaptainShield", "Darth-Vader", "Minion", "Pacman", "PacmanGhost", "WallE", "PirateFlag", "Xbox", "Joystick", "Cards", "Chessboard", "PingPong", "Bowling", "Snooker", "Telescope", "MagicBunny", "Crown", "Flag", "Podium", "PrizeCup", "Football", "Helmet", "Backboard", "Baseball", "Soccer", "SoccerField", "Tennis", "Karate", "Dumbbell", "Rollerblade", "Bottle", "Beer", "Beermug", "Champagne", "Cocktail", "Whiskey", "Wine", "Coffee", "Watermelon", "TableSet", "Sushi", "Pizza", "Noodles", "FrenchFries", "ChickenWing", "Grill", "BirthdayCake", "Candycane", "Cupcake", "Icecream"];
+
         $(document).ready(function () {
+            PopulateEventIcons();
+
             $("#addDiv input, #groupAddDiv input").focus(function () {
                 if(isAndroid)
                     $(".screen .screenBottom").css({ position: "relative" });
@@ -405,7 +409,56 @@
                     }
                 });
             });
+
+            $("#AddEventIcons").on("click", "img", function () {
+                $("#AddEventIcons img").removeClass("selected");
+                $(this).addClass("selected");
+            });
         });
+
+        function PopulateEventIcons() {
+            var html1 = "";
+            var html2 = "";
+            var html3 = "";
+            for (var i = 0; i < eventIcons.length; i++) {
+                var icon = eventIcons[i];
+                if(i % 3 == 0)
+                    html1 += "<img src='/Img/Event Icons/" + icon + ".png' />";
+                else if (i % 3 == 1)
+                    html2 += "<img src='/Img/Event Icons/" + icon + ".png' />";
+                else if (i % 3 == 2)
+                    html3 += "<img src='/Img/Event Icons/" + icon + ".png' />";
+            }
+
+            var html = "<div><div>" + html1 + "</div><div>" + html2 + "</div><div>" + html3 + "</div></div>";
+            $("#AddEventIcons").html(html);
+
+            var ht = $(window).height() - 251 - 201;
+            var imgHt = (ht - 40) / 3;
+            $("#AddEventIcons img").css("height", imgHt);
+            $("#AddEventIcons > div").css("width", (eventIcons.length / 3) * (imgHt + 10) + 20 + "px");
+
+        }
+
+        function SelectIcon(iconName) {
+            $("#AddEventIcons img").removeClass("selected");
+
+            $("#AddEventIcons img").each(function () {
+                if ($(this).attr("src").indexOf(iconName) >= 0) {
+                    $(this).addClass("selected");
+
+                    $(eventIcons).each(function (i) {
+                        if (this == iconName) {
+                            var ht = $(window).height() - 251 - 201;
+                            var imgHt = (ht - 40) / 3;
+                            var col = Math.floor(i / 3);
+                            $("#AddEventIcons").scrollLeft(col * (imgHt + 10));
+                        }
+                    });
+
+                }
+            });
+        }
 
         function OpenAdd(isEdit) {
             if (!currentUser || !currentUser.Id || !fbAccessToken) {
@@ -423,6 +476,7 @@
                 $("#addDiv input, #addDiv textarea").val("");
                 $("#addDiv #AddDay").val("Today");
                 InitDay();
+                SelectIcon("Sunny");
                 $("#addDiv #inviteBtn").show();
                 $("#addDiv .invitedFriendsScroll").html("");
                 $("#AddMap").css("height", "165px").hide();
@@ -453,6 +507,7 @@
                     if($(this).attr("groupid") == currentEvent.GroupId)
                         $("#AddGroupName").val($(this).find("div").html());
                 });
+                SelectIcon(currentEvent.GroupPictureUrl);
                 
                 $("#addDiv #inviteBtn").hide();
                 $("#addDiv .invitedFriendsScroll").html("");
@@ -553,7 +608,10 @@
 
             var groupId = currentEvent && currentEvent.GroupId ? currentEvent.GroupId : "";
             var groupName = currentEvent && currentEvent.GroupName ? currentEvent.GroupName : "";
-            var groupPictureUrl = currentEvent && currentEvent.GroupPictureUrl ? currentEvent.GroupPictureUrl : "";
+            var img = $("#AddEventIcons img.selected").attr("src");
+            img = img.substring(img.lastIndexOf("/") + 1);
+            img = img.substring(0, img.indexOf("."));
+            var groupPictureUrl = img;
             var allPrivate = true;
             $("#inviteGroups div.invited").each(function () {
                 var gId = $(this).attr("groupid");
@@ -561,11 +619,11 @@
                     groupId += groupId ? "|" + gId : gId;
                     var gName = $(this).find("div").html();
                     groupName += groupName ? "|" + gName : gName;
-                    if (!groupPictureUrl) {
-                        var gPic = $(this).find("img.logo").attr("src");
-                        if (gPic.indexOf("group.png") < 0)
-                            groupPictureUrl = gPic;
-                    }
+                    //if (!groupPictureUrl) {
+                    //    var gPic = $(this).find("img.logo").attr("src");
+                    //    if (gPic.indexOf("group.png") < 0)
+                    //        groupPictureUrl = gPic;
+                    //}
                     var isPrivate = false;
                     $("#myGroupsDiv > div.private").each(function () {
                         if ($(this).attr("groupid") == gId)
@@ -1078,7 +1136,7 @@
                     else
                         html += "<div phone='" + friend.phone + "' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + friend.name + "</div></div>";
                 }
-                //$("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
+                $("#addDiv .invitedFriendsScroll").css("width", ((friendList.length * 70) + 25) + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
             }
             else {
@@ -1107,8 +1165,8 @@
                         name = name.substring(0, name.indexOf(" "));
                     html += "<div phone='" + phone + "' class='nonFb' ><img src='/Img/face" + Math.floor(Math.random() * 8) + ".png' /><div>" + name + "</div></div>";
                 });
-                //var width = $("#inviteGroups div.invited").length / 2 * 70 + $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
-                //$("#addDiv .invitedFriendsScroll").css("width", width + "px");
+                var width = $("#inviteGroups div.invited").length / 2 * 70 + $("#inviteResults div.invited").length * 70 + $("#contactResults div.invited").length * 60 + 25;
+                $("#addDiv .invitedFriendsScroll").css("width", width + "px");
                 $("#addDiv .invitedFriendsScroll").html(html);
                 CloseToBottom("inviteDiv");
             }
@@ -1263,7 +1321,7 @@
     </script>
 
     <!-- Menu -->
-    <script type="text/javascript">
+    <%--<script type="text/javascript">
         $(document).ready(function () {
             $("#menuBtn").click(function () {
                 MenuClick();
@@ -1323,7 +1381,7 @@
             };
             Post("GetEvent", { id: eventId }, success);
         }
-    </script>
+    </script>--%>
 
     <!-- Groups -->
     <script type="text/javascript">
@@ -2389,8 +2447,8 @@
         <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
             <div>
-                <img id="menuBtn" src="/Img/whitemenu.png" />
-                <img class="title" src="/Img/title.png" />
+<%--                <img id="menuBtn" src="/Img/whitemenu.png" />--%>
+                <img class="title" src="/Img/powwowtitle.png" />
                 <img id="groupsBtn" src="/Img/whitegroup.png" />
                 <input id="groupFilterTextBox" type="text" placeholder="Search Interests" />
             </div>
@@ -2467,14 +2525,16 @@
                     <input id="AddDay" type="text" placeholder="Day" readonly="readonly" style="width:48%;float:left;margin-bottom:4px;" />
                     <input id="AddStartTime" type="text" placeholder="Start Time" readonly="readonly" style="width:32%;float:right;" />
                     <textarea id="AddDetails" rows="4" placeholder="Location & Details"></textarea>
+                    <div id="AddEventIcons"></div>
                     <%--<div style="float:left;margin:16px 0;">Total People?</div>
                     <input id="AddMax" type="number" placeholder="Max" style="width:15%;float:right;margin-left:4px;" />
                     <input id="AddMin" type="number" placeholder="Min" style="width:15%;float:right;" />--%>
-                    <div id="inviteBtn" >Invite Friends or Interests</div>
                 </div>
-                <div class="invitedFriends"><div class="invitedFriendsScroll"></div></div>
+                <div class="separator" style="position: fixed;left: 0;right: 0;bottom: 178px;"></div>
+                <div id="inviteBtn" style="position: fixed;left: 0;right: 0;bottom: 135px;">Invite Friends or Interests</div>
+                <div class="invitedFriends" style="position: fixed;left: 0;right: 0;bottom: 68px;"><div class="invitedFriendsScroll"></div></div>
                 <div id="AddMap" style="clear:both;"></div>
-                <div id="deleteEventBtn" style="text-align:center;color:#4285F4;margin: 16px 0 90px;display:none;">Close Event</div>
+                <div id="deleteEventBtn" style="text-align:center;color:#4285F4;display:none;position:fixed;left: 0;right: 0;bottom: 148px;">Close Event</div>
             </div>
             <div class="screenBottom"><div class="bottomBtn">Create</div></div>
         </div>
