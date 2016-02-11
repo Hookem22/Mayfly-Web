@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=1" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=4" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css?i=2" rel="stylesheet" type="text/css" />
     <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
@@ -660,28 +660,28 @@
             }
 
             currentEvent = event;
-            if (event.GroupId) {
-                $("#detailsDiv").removeClass("nonGroup");
-                $("#detailsLogo").show().attr("src", event.GroupPictureUrl);
+            //if (event.GroupId) {
+            //    $("#detailsDiv").removeClass("nonGroup");
+            //    $("#detailsLogo").show().attr("src", event.GroupPictureUrl);
 
-                //$("#detailsDiv").removeClass("nonGroup");
-                //if (!currentGroup || !currentGroup.Id || event.GroupId.indexOf(currentGroup.Id) < 0) {
-                //    var success = function (results) {
-                //        currentGroup = results;
-                //        $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
-                //        if (currentGroup.IsPublic || IsGoing(currentGroup.Members, currentUser.Id))
-                //            OpenEventDetails(currentEvent);
-                //        else if (!currentGroup.IsPublic)
-                //            MessageBox("This event is private. Please join the group to attend this event.");
-                //    };
-                //    Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
-                //    return;
-                //}
-            }
-            else {
-                $("#detailsDiv").addClass("nonGroup");
-                $("#detailsLogo").hide();
-            }
+            //    //$("#detailsDiv").removeClass("nonGroup");
+            //    //if (!currentGroup || !currentGroup.Id || event.GroupId.indexOf(currentGroup.Id) < 0) {
+            //    //    var success = function (results) {
+            //    //        currentGroup = results;
+            //    //        $("#detailsLogo").show().attr("src", currentGroup.PictureUrl);
+            //    //        if (currentGroup.IsPublic || IsGoing(currentGroup.Members, currentUser.Id))
+            //    //            OpenEventDetails(currentEvent);
+            //    //        else if (!currentGroup.IsPublic)
+            //    //            MessageBox("This event is private. Please join the group to attend this event.");
+            //    //    };
+            //    //    Post("GetGroup", { groupId: event.GroupId, latitude: currentLat, longitude: currentLng, user: currentUser }, success);
+            //    //    return;
+            //    //}
+            //}
+            //else {
+            $("#detailsDiv").addClass("nonGroup");
+            $("#detailsLogo").hide();
+            //}
 
             $("#detailsDiv").show();
             $("#detailsDiv .screenSubheader").show();

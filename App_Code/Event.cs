@@ -447,6 +447,9 @@ public class Event : Base<Event>
 
     private static string AddGroups(Event evt)
     {
+        //Remove hashtags
+        return "";
+        
         if (string.IsNullOrEmpty(evt.GroupId))
             return "";
 
