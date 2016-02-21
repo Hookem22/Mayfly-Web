@@ -137,6 +137,28 @@ public class Users : Base<Users>
         return user;
     }
 
+    public string GetLitPoints()
+    {
+        int total = 0;
+        List<EventGoing> goings = EventGoing.GetEventGoingByUser(this.Id);
+        foreach (EventGoing going in goings)
+        {
+            try
+            {
+                if (going.IsAdmin == true)
+                {
+                    List<EventGoing> eg = EventGoing.GetByEvent(going.EventId);
+                    total += eg.Count * 105;
+                }
+            }
+            catch { }
+        }
+        if (total > 0)
+            total += 50;
+
+        return total.ToString("#,##0");
+    }
+
     public new void Save()
     {
         if(string.IsNullOrEmpty(this.PushDeviceToken))

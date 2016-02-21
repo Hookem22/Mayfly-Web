@@ -72,6 +72,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static string GetLitPoints(Users user)
+    {
+        return user.GetLitPoints();
+    }
+
+    [WebMethod]
     public static string ForgotPassword(string email)
     {
         return Users.ForgotPassword(email);

@@ -279,7 +279,7 @@ public class Event : Base<Event>
 
         foreach (Event evt in events)
         {
-            //evt.Going = EventGoing.GetByEvent(evt.Id);
+            evt.Going = EventGoing.GetByEvent(evt.Id);
             if (evt.DayOfWeek != null)
             {
                 string[] daysShort = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
@@ -335,7 +335,7 @@ public class Event : Base<Event>
             if (i == events.Count - 1 || events[i].DayOfWeek != events[i + 1].DayOfWeek)
                 addClass += " last";
 
-            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div>{Group}<div class='details'>{Details}</div><div class='day'>{StartDay}</div></div>";
+            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div>{Group}<div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='lit'>{Lit}</div></div>";
             string details = ""; //AddGoing(evt);
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
@@ -353,8 +353,22 @@ public class Event : Base<Event>
                 img += "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
             else if (evt.IsInvited != null && evt.IsInvited == true)
                 img += "<div class='invitedIcon icon'><img src='/Img/invited.png'></div>";
-            
-            
+
+            groupHtml = groupHtml.Replace("{img}", img);
+
+            string lit = "";
+            if (evt.Going.Count > 4)
+                lit += "<img src='../Img/match.png' style='position: absolute;right: 20px;top: 35px;height: 35px;' />";
+            if (evt.Going.Count > 9)
+                lit += "<img src='../Img/match.png' style='position: absolute;right: 40px;top: 35px;height: 35px;' />";
+            if (evt.Going.Count > 19)
+                lit += "<img src='../Img/match.png' style='position: absolute;right: 60px;top: 35px;height: 35px;' />";
+            if (evt.Going.Count > 39)
+                lit += "<img src='../Img/match.png' style='position: absolute;right: 80px;top: 35px;height: 35px;' />";
+
+            groupHtml = groupHtml.Replace("{Lit}", lit);
+           
+            html += groupHtml;
             //string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
             //if (!string.IsNullOrEmpty(evt.GroupId))
             //    img = string.Format("<img src='{0}' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
@@ -364,8 +378,7 @@ public class Event : Base<Event>
             //    img = "<img src='../Img/face" + rnd.Next(8) + ".png' /><div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
             //else if (evt.IsInvited != null && (bool)evt.IsInvited)
             //    img = "<img src='../Img/invited.png' />";
-            groupHtml = groupHtml.Replace("{img}", img);
-            html += groupHtml;
+
 
             i++;
         }

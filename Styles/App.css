@@ -167,11 +167,11 @@ input.error, textarea.error
 }
 #menuBtn
 {    
-    height: 20px;
-    margin: 14px 0;
+    height: 32px;
+    margin: 8px 0;
     position: absolute;
     left: 5%;
-    width: 24px;
+    width: 32px;
 }
 .ios #menuBtn
 {
@@ -188,7 +188,7 @@ input.error, textarea.error
 {
     margin: 18px 0;
 }
-#addBtn, #addFromGroupBtn
+#addBtn, #addFromGroupBtn, #groupsAddBtn
 {
     position: fixed;
     width: 60px;
@@ -203,7 +203,7 @@ input.error, textarea.error
     -webkit-box-shadow: 1px 6px 6px rgba(0,0,0,.25);
     box-shadow: 1px 6px 6px rgba(0,0,0,.25);
 }
-#addBtn img, #addFromGroupBtn img
+#addBtn img, #addFromGroupBtn img, #groupsAddBtn img
 {
     height: 28px;
     margin: 16px 0 0 16px;
@@ -1036,17 +1036,31 @@ input.error, textarea.error
 
 #menuDiv
 {
-    position: fixed;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    background: #32394A;
-    color: white;
-    width: 75%;
+    position: absolute;
     top: 47px;
     left: 0;
+    right: 0;
     bottom: 0;
-    z-index: 15;
+    z-index: 50;
     display: none;
+}
+#menuContent
+{
+    position: absolute;
+    background: white;
+    width: 75%;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+#menuBackground {
+    position: absolute;
+    background-color: #000;
+    opacity: .5;
+    top: 0;
+    left: 75%;
+    right: 0;
+    bottom: 0;
 }
 .ios #menuDiv
 {
@@ -1054,12 +1068,12 @@ input.error, textarea.error
 }
 .menuHeader
 {
-    background-color: #434A5E;
+    background-color: #CCCCCC;
     padding: 8px 18px 6px;
-    color: #9CA4B3;
     font-size: 18px;
     font-weight: bold;
     margin-bottom: 8px;
+    text-align: center;
 }
 .menuHeader img
 {
@@ -1072,13 +1086,13 @@ input.error, textarea.error
     position: fixed;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
-    background: #32394A;
-    color: white;
+    background: white;
     top: 47px;
     left: 100%;
     right: -100%;
     bottom: 0;
     z-index: 15;
+    padding-bottom: 90px;
     display: none;
 }
 #groupFilterTextBox
@@ -1183,9 +1197,10 @@ input.error, textarea.error
 }
 #groupsListDiv > div
 {
-    border-bottom:1px solid #3F4552;
-    width: 100%;
+    border-bottom:1px solid #CCCCCC;
     float: left;
+    width: 90%;
+    margin: 0 5%;
 }
 #groupsListDiv > div img 
 {
@@ -1199,11 +1214,11 @@ input.error, textarea.error
 {
     height: 40px;
     width: 40px;
-    margin: 5px;
+    margin: 5px 0;
 }
 #groupsListDiv > div > div 
 {
-    margin: 15px 8px 13px 64px;
+    margin: 15px 8px 13px 58px;
     font-size: 18px;
 }
 #groupsListDiv > div.private
@@ -1701,4 +1716,14 @@ input.error, textarea.error
 #AddEventIcons img.selected {
     border: 4px solid #4285F4;
     background: #eeeeee;
+}
+
+#eventsButton, #interestsButton, #notificationsButton {
+    font-size: 18px;
+    text-align: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #ccc;
+}
+#eventsButton.selected, #interestsButton.selected, #notificationsButton.selected {
+    font-weight: bold;
 }

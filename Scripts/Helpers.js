@@ -201,16 +201,16 @@ function RemoveByUserId(list, userId)
 function MenuClick() {
     if ($("#groupsDiv").is(":visible")) {
         $("#groupsDiv").addClass("groupClose");
-        $(".content").removeClass("contentGroupOpen");
-        $("#groupFilterTextBox").addClass("searchGroupClose");
+        //$(".content").removeClass("contentGroupOpen");
+        //$("#groupFilterTextBox").addClass("searchGroupClose");
 
         setTimeout(function () {
             $("#groupsDiv").removeClass("groupOpen");
-            $("#groupsDiv").removeClass("groupClose");
-            $("#groupFilterTextBox").removeClass("searchGroupOpen");
-            $("#groupFilterTextBox").removeClass("searchGroupClose");
+            //$("#groupsDiv").removeClass("groupClose");
+            //$("#groupFilterTextBox").removeClass("searchGroupOpen");
+            //$("#groupFilterTextBox").removeClass("searchGroupClose");
 
-            $("#groupsDiv").hide();
+            //$("#groupsDiv").hide();
         }, 500);
     }
 
@@ -221,13 +221,16 @@ function MenuClick() {
 }
 
 function OpenMenu() {
-    LoadNotifications();
-
     $("#menuDiv").show().addClass("menuOpen");
     $(".content").addClass("contentMenuOpen");
 }
 
 function CloseMenu() {
+    if ($("#groupsDiv").is(":visible")) {
+        $("#groupsDiv").removeClass("groupClose");
+        $("#groupsDiv").show().addClass("groupOpen");
+    }
+
     $("#menuDiv").addClass("menuClose");
     $(".content").addClass("contentMenuClose");
 
@@ -242,17 +245,7 @@ function CloseMenu() {
 }
 
 function GroupsClick() {
-    if ($("#menuDiv").is(":visible")) {
-        $("#menuDiv").addClass("menuClose");
-        $(".content").removeClass("contentMenuOpen");
-
-        setTimeout(function () {
-            $("#menuDiv").removeClass("menuOpen");
-            $("#menuDiv").removeClass("menuClose");
-
-            $("#menuDiv").hide();
-        }, 500);
-    }
+    CloseMenu();
 
     if ($("#groupsDiv").is(':visible'))
         CloseGroups();
@@ -261,31 +254,30 @@ function GroupsClick() {
 }
 
 function OpenGroups() {
-    LoadGroups();
+    CloseMenu();
+
     $("#groupsListDiv > div img").hide();
     setTimeout(function () {
         $("#groupsListDiv > div img").show();
     }, 350);
 
-    $("#groupFilterTextBox").addClass("searchGroupOpen").val("");
+    $("#groupsDiv").removeClass("groupClose");
     $("#groupsDiv").show().addClass("groupOpen");
     $(".content").addClass("contentGroupOpen");
 }
 
 function CloseGroups() {
-    $("#groupFilterTextBox").addClass("searchGroupClose");
-    $("#groupsDiv").addClass("groupClose");
+    CloseMenu();
+
+    $("#groupsDiv").hide();
     $(".content").addClass("contentGroupClose");
 
     setTimeout(function () {
-        $("#groupFilterTextBox").removeClass("searchGroupOpen");
-        $("#groupFilterTextBox").removeClass("searchGroupClose");
         $("#groupsDiv").removeClass("groupOpen");
         $(".content").removeClass("contentGroupOpen");
         $("#groupsDiv").removeClass("groupClose");
         $(".content").removeClass("contentGroupClose");
 
-        $("#groupsDiv").hide();
     }, 500);
 }
 

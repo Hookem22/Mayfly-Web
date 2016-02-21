@@ -48,19 +48,19 @@
 
             $(".content").swipe({
                 swipeLeft: function (event, direction, distance, duration, fingerCount) {
-                    //if ($("#menuDiv").is(':visible'))
-                    //    CloseMenu();
+                    if ($("#menuDiv").is(':visible'))
+                        CloseMenu();
                     //else
-                        OpenGroups();
+                    //    OpenGroups();
+                },
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    OpenMenu();
                 }
-                //swipeRight: function (event, direction, distance, duration, fingerCount) {
-                //    OpenMenu();
-                //}
             });
 
             $("#groupsDiv").swipe({
                 swipeRight: function (event, direction, distance, duration, fingerCount) {
-                    CloseGroups();
+                    MenuClick();
                 }
             });
 
@@ -218,8 +218,7 @@
         function LoginSuccess(results) {
             currentUser = results;
 
-            if (!currentLat && !currentLng && currentUser && currentUser.Latitude && currentUser.Longitude)
-            {
+            if (!currentLat && !currentLng && currentUser && currentUser.Latitude && currentUser.Longitude) {
                 currentLat = currentUser.Latitude;
                 currentLng = currentUser.Longitude;
             }
@@ -237,6 +236,10 @@
             if (currentUser) {
                 LoadMyGroups();
             }
+            
+            $(".facebookPic").attr("src", "https://graph.facebook.com/" + currentUser.FacebookId + "/picture");
+            $(".facebookName").html(currentUser.FirstName);
+            GetLitPoints();
         }
 
         function GetSchool() {
@@ -318,6 +321,16 @@
 
             if($(".loading").is(':visible'))
                 HideLoading();
+
+            LoadGroups();
+        }
+
+        function GetLitPoints() {
+            var success = function (points) {
+                $(".litPoints").html(points);
+            }
+
+            Post("GetLitPoints", { user: currentUser }, success);
         }
 
         function SetLocalTimes(html)
@@ -1321,10 +1334,18 @@
     </script>
 
     <!-- Menu -->
-    <%--<script type="text/javascript">
+    <script type="text/javascript">
         $(document).ready(function () {
             $("#menuBtn").click(function () {
                 MenuClick();
+            });
+
+            $("#menuBackground").click(function () {
+                CloseMenu();
+            });
+
+            $("#litQuestion").click(function () {
+                MessageBox("Create events to get points. The more people that join your event, the more points you get!");
             });
 
             $("body").on("click", ".content", function () {
@@ -1336,6 +1357,27 @@
                 swipeLeft: function (event, direction, distance, duration, fingerCount) {
                     CloseMenu();
                 }
+            });
+
+            $("#eventsButton").click(function () {
+                $("#eventsButton, #interestsButton, #notificationsButton").removeClass("selected");
+                $(this).addClass("selected");
+
+                CloseGroups();
+            });
+
+            $("#interestsButton").click(function () {
+                $("#eventsButton, #interestsButton, #notificationsButton").removeClass("selected");
+                $(this).addClass("selected");
+
+                OpenGroups();
+            });
+
+            $("#notificationsButton").click(function () {
+                $("#eventsButton, #interestsButton, #notificationsButton").removeClass("selected");
+                $(this).addClass("selected");
+
+                CloseMenu();
             });
 
             $("#myGroupsDiv").on("click", "div", function () {
@@ -1353,8 +1395,8 @@
                 if(eventId)
                     OpenEventFromNotification(eventId);
             });
-
         });
+
 
         function LoadNotifications() {
             if(currentUser && currentUser.Id)
@@ -1381,7 +1423,7 @@
             };
             Post("GetEvent", { id: eventId }, success);
         }
-    </script>--%>
+    </script>
 
     <!-- Groups -->
     <script type="text/javascript">
@@ -1412,7 +1454,7 @@
                 GroupsClick();
             });
 
-            $("#groupAddBtn, #groupAddBtnDiv").click(function () {
+            $("#groupsAddBtn, #groupAddBtn, #groupAddBtnDiv").click(function () {
                 if (!currentUser || !currentUser.Id) {
                     OpenLogin();
                     return;
@@ -2447,10 +2489,10 @@
         <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
             <div>
-<%--                <img id="menuBtn" src="/Img/whitemenu.png" />--%>
+                <img id="menuBtn" src="/Img/smallmenu.png" />
                 <img class="title" src="/Img/powwowtitle.png" />
-                <img id="groupsBtn" src="/Img/whitegroup.png" />
-                <input id="groupFilterTextBox" type="text" placeholder="Search Interests" />
+ <%--               <img id="groupsBtn" src="/Img/whitegroup.png" />
+                <input id="groupFilterTextBox" type="text" placeholder="Search Interests" />--%>
             </div>
         </div>
         <div class="content">
@@ -2460,18 +2502,28 @@
         </div>
         <div id="addBtn"><img src="../Img/plus.png" /></div>
         <div id="menuDiv">
-            <div class="menuHeader" style="border-top: none;padding-top:10px;">MY INTERESTS</div>
-            <div id="myGroupsDiv"></div>
-            <div class="menuHeader" >NOTIFICATIONS</div>
-            <div id="myNotificationsDiv"></div>
+            <div id="menuContent">
+                <div style="border-bottom: 1px solid #ccc;">
+                    <img class="facebookPic" style="margin: 15px 20px; width: 50px; border-radius: 25px;" />
+                    <div class="facebookName" style="width: 90px;text-align: center;margin-bottom: 8px;"></div>
+                    <div class="litPoints" style="text-align: right;position: absolute;top: 35px;right: 62px;font-size: 24px;">0</div>
+                    <img src="../Img/match.png" style="width: 60px;position: absolute;top: 14px;right: 10px;" />
+                    <img id="litQuestion" src="../Img/questionmark.png" style="width: 18px;position: absolute;top: 5px;right: 5px;" />
+                </div>
+                <div id="eventsButton" class="selected">Events</div>
+                <div id="interestsButton">Interests</div>
+                <div id="notificationsButton">Notifications</div>
+            </div>
+            <div id="menuBackground"></div>
         </div>
         <div id="groupsDiv">
-            <div id="groupAddBtnDiv">
+<%--            <div id="groupAddBtnDiv">
                 Add Interest
                 <img id="groupAddBtn" src="../Img/grayAdd.png" />
-            </div>
-            <div class="menuHeader">INTERESTS NEAR YOU</div>
+            </div>--%>
+            <div class="menuHeader">ST. EDWARD'S INTERESTS</div>
             <div id="groupsListDiv"></div>
+            <div id="groupsAddBtn"><img src="../Img/plus.png" /></div>
         </div>
         <div id="groupAddDiv" class="screen swipe">
             <div class="screenHeader">
@@ -2662,17 +2714,17 @@
         </div>
         <div id="MessageBox">
             <div class="messageContent"></div>
-            <div onclick="CloseMessageBox();" class="smallBottomBtn">Ok</div>
+            <div onclick="CloseMessageBox();" class="smallBottomBtn">OK</div>
         </div>
         <div id="ActionMessageBox">
             <div class="messageContent"></div>
-            <div class="yesBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="CloseMessageBox();" class="noBtn smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
+            <div class="yesBtn smallBottomBtn" style="left:0;right:50%;">OK</div><div onclick="CloseMessageBox();" class="noBtn smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
         <div id="changeLatLngDiv">
             <div class="messageContent">Change Location</div>
             <input id="ChangeLatitude" type="text" placeholder="Latitude" style="margin-top: -32px;" />
             <input id="ChangeLongitude" type="text" placeholder="Longitude" style="margin-bottom: 48px;" />
-            <div class="okBtn smallBottomBtn" style="left:0;right:50%;">Ok</div><div onclick="$('#changeLatLngDiv').hide();$('.modal-backdrop').hide();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
+            <div class="okBtn smallBottomBtn" style="left:0;right:50%;">OK</div><div onclick="$('#changeLatLngDiv').hide();$('.modal-backdrop').hide();" class="smallBottomBtn" style="left:50%;right:0;border-left:1px solid #ccc;">Cancel</div>
         </div>
     </form>
 </body>

@@ -1,32 +1,32 @@
 ﻿.menuOpen
 {
     -webkit-animation-name: menuOpen; /* Chrome, Safari, Opera */
-    -webkit-animation-duration: .25s; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
     -webkit-animation-fill-mode: forwards;
     animation-name: menuOpen;
-    animation-duration: .25s;
+    animation-duration: .35s;
     animation-fill-mode: forwards;
 }
 
 /* Chrome, Safari, Opera */
 @-webkit-keyframes menuOpen {
-    0%   {left: -75%; right: 100%; }
-    100%  {left: 0; right: 25%;}
+    0%   {left: -100%; right: 100%; }
+    100%  {left: 0; right: 0;}
 }
 
 /* Standard syntax */
 @keyframes menuOpen {
-    0%   {left: -75%; right: 100%; }
-    100%  {left: 0; right: 25%;}
+    0%   {left: -100%; right: 100%; }
+    100%  {left: 0; right: 0;}
 }
 
 .contentMenuOpen
 {
     -webkit-animation-name: contentMenuOpen; /* Chrome, Safari, Opera */
-    -webkit-animation-duration: .25s; /* Chrome, Safari, Opera */
+    -webkit-animation-duration: .35s; /* Chrome, Safari, Opera */
     -webkit-animation-fill-mode: forwards;
     animation-name: contentMenuOpen;
-    animation-duration: .25s;
+    animation-duration: .35s;
     animation-fill-mode: forwards;
 }
 /* Chrome, Safari, Opera */
@@ -52,16 +52,16 @@
 
 /* Chrome, Safari, Opera */
 @-webkit-keyframes menuClose {
-    0%  {left: 0; right: 25%;}
-    50%   {left: -75%; right: 100%; }
-    100%   {left: -75%; right: 100%; }
+    0%  {left: 0; right: 0;}
+    50%   {left: -100%; right: 100%; }
+    100%   {left: -100%; right: 100%; }
 }
 
 /* Standard syntax */
 @keyframes menuClose {
-    0%  {left: 0; right: 25%;}
-    50%   {left: -75%; right: 100%; }
-    100%   {left: -75%; right: 100%; }
+    0%  {left: 0; right: 0;}
+    50%   {left: -100%; right: 100%; }
+    100%   {left: -100%; right: 100%; }
 }
 
 .contentMenuClose
@@ -162,15 +162,15 @@
 /* Chrome, Safari, Opera */
 @-webkit-keyframes groupClose {
     0%  {left: 0; right: 0;}
-    50%   {left: 100%; right: -100%; }
-    100%   {left: 100%; right: -100%; }
+    50%   {left: 75%; right: -75%; }
+    100%   {left: 75%; right: -75%; }
 }
 
 /* Standard syntax */
 @keyframes groupClose {
     0%  {left: 0; right: 0;}
-    50%   {left: 100%; right: -100%; }
-    100%   {left: 100%; right: -100%; }
+    50%   {left: 75%; right: -75%; }
+    100%   {left: 75%; right: -75%; }
 }
 
 .contentGroupClose
@@ -184,13 +184,13 @@
 }
 /* Chrome, Safari, Opera */
 @-webkit-keyframes contentGroupClose {
-    0%  {left: -100%; right: 100%;}
+    0%  {left: 100%; right: -100%;}
     70%   {left: 0; right: 0; }
     100%   {left: 0; right: 0; }
 }
 /* Standard syntax */
 @keyframes contentGroupClose {
-    0%  {left: -100%; right: 100%;}
+    0%  {left: 100%; right: -100%;}
     70%   {left: 0; right: 0; }
     100%   {left: 0; right: 0; }
 }

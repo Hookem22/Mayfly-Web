@@ -39,6 +39,12 @@ public class EventGoing : UsersPartial<EventGoing>
         return ids;
     }
 
+    public static List<EventGoing> GetEventGoingByUser(string userId)
+    {
+        List<EventGoing> going = GetByProcFast("getgoingbyuser", string.Format("userid={0}", userId));
+        return going;
+    }
+
     public static EventGoing Get(string eventId, string userId, bool includeDeleted = false)
     {
         string procName = includeDeleted ? "getgoingdeleted" : "";
