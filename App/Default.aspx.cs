@@ -11,6 +11,18 @@ public partial class App_Default : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        //Group g1 = Group.Get("374D1035-CB60-4B44-9D1B-972834814ED6");
+        //g1.OrderBy = 1;
+        //g1.Save();
+
+        //Group g2 = Group.Get("548D8532-37E8-4BAB-AC8D-5531C2463281");
+        //g2.OrderBy = 2;
+        //g2.Save();
+
+        //Group g3 = Group.Get("2000060E-42FA-4C9A-A07D-DB3948AAA84E");
+        //g3.PictureUrl = "";
+        //g3.Save();
+
     }
 
     [WebMethod]

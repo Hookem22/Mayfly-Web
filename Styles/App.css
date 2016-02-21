@@ -1683,11 +1683,11 @@ input.error, textarea.error
 }
 
 #AddEventIcons {
-    position: fixed;
+    position: absolute;
     left: 12px;
     right: 0;
     top: 251px;
-    bottom: 201px;
+    /*bottom: 201px;*/
     overflow-y: hidden;
     overflow-x: scroll;
 }

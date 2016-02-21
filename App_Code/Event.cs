@@ -326,7 +326,7 @@ public class Event : Base<Event>
         Random rnd = new Random();
         int i = 0;
         foreach (Event evt in events)
-        {
+        {            
             if (i > 0 && events[i - 1].DayLabel != events[i].DayLabel)
                 html += string.Format("<div class='dayHeader'><div></div><div>{0}</div></div>", events[i].DayLabel);
             string addClass = "";
@@ -349,9 +349,9 @@ public class Event : Base<Event>
                     img = string.Format("<img src='../Img/Event Icons/{0}.png' onerror=\"this.src='../Img/group.png';\" />", evt.GroupPictureUrl);
             }
 
-            if (evt.IsGoing != null && (bool)evt.IsGoing)
+            if (evt.IsGoing != null && evt.IsGoing == true)
                 img += "<div class='goingIcon icon'><img src='/Img/greenCheck.png'></div>";
-            else if (evt.IsInvited != null && (bool)evt.IsInvited)
+            else if (evt.IsInvited != null && evt.IsInvited == true)
                 img += "<div class='invitedIcon icon'><img src='/Img/invited.png'></div>";
             
             
@@ -408,6 +408,19 @@ public class Event : Base<Event>
 
     private static List<Event> ReorderEvents(List<Event> events, Users user)
     {
+        List<Event> publicEvents = new List<Event>();
+        if (user == null || user.Id == null)
+        {
+            foreach (Event evt in events)
+            {
+                evt.IsGoing = false;
+                evt.IsInvited = false;
+                if (evt.GroupIsPublic == true)
+                    publicEvents.Add(evt);
+            }
+            return publicEvents;
+        }
+        
         List<string> goingIds = EventGoing.GetByUser(user.Id);
         List<string> invitedIds = EventInvited.GetByUser(user.FacebookId);
         foreach(Event evt in events)
@@ -416,8 +429,10 @@ public class Event : Base<Event>
                 evt.IsGoing = true;
             if (invitedIds.Contains(evt.Id))
                 evt.IsInvited = true;
+            if (evt.GroupIsPublic == true || evt.IsGoing == true || evt.IsInvited == true)
+                publicEvents.Add(evt);
         }
-        return events;
+        return publicEvents;
 
         //List<Event> eventGoing = new List<Event>();
         //List<Event> eventInvited = new List<Event>();
