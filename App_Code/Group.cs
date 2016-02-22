@@ -38,6 +38,8 @@ public class Group : Base<Group>
 
     public double? OrderBy { get; set; }
 
+    public bool? HasImage { get; set; }
+
     [NonSave]
     public List<GroupUsers> Members { get; set; }
 
@@ -53,6 +55,11 @@ public class Group : Base<Group>
     [NonSave]
     public string SchoolName { get; set; }
 
+    [NonSave]
+    public int EventCt { get; set; }
+
+    private const string AZURE_PATH = "https://mayflyapp.blob.core.windows.net/groups/";
+
     #endregion
 
     public static Group Get(string id, string latitude, string longitude, Users user)
@@ -63,6 +70,8 @@ public class Group : Base<Group>
         group.Members = GroupUsers.GetByGroup(id);
         group.EventsHtml = Event.GetByGroup(id, latitude, longitude, user);
         group.Description = group.Description.Replace("\n", "<br/>");
+        if (group.HasImage == true)
+            group.PictureUrl = string.Format("{0}{1}.jpeg", AZURE_PATH, group.Id);
         if(!string.IsNullOrEmpty(group.SchoolId))
         {
             School school = School.Get(group.SchoolId);
@@ -76,7 +85,11 @@ public class Group : Base<Group>
     {
         List<Group> groups = GetByProcFast("getgroup", string.Format("groupid={0}", id));
         if (groups.Count > 0)
+        {
+            if (groups[0].HasImage == true)
+                groups[0].PictureUrl = string.Format("{0}{1}.jpeg", AZURE_PATH, groups[0].Id);
             return groups[0];
+        }
 
         return null;
     }
@@ -89,6 +102,20 @@ public class Group : Base<Group>
     public static List<Group> GetBySchoolId(string schoolId)
     {
         List<Group> groups = GetByProc("getgroupsbyschool", string.Format("schoolid={0}", schoolId));
+        List<Event> events = Event.GetBySchoolId(schoolId);
+        foreach(Group group in groups) 
+        {
+            if (group.HasImage == true)
+                group.PictureUrl = string.Format("{0}{1}.jpeg", AZURE_PATH, group.Id);
+            group.EventCt = 0;
+            foreach (Event evt in events)
+            {
+                if (evt.PrimaryGroupId == group.Id)
+                {
+                    group.EventCt++;
+                }
+            }
+        }
         return groups;
         //return ReorderByDistance(groups, latitude, longitude);
     }

@@ -87,6 +87,8 @@ public class Event : Base<Event>
     [NonSave]
     public string LocalDate { get; set; }
 
+    public string PrimaryGroupId { get; set; }
+
     #endregion
 
     public static new Event Get(string id)
@@ -101,16 +103,21 @@ public class Event : Base<Event>
 
     public static string GetHome(Users user)
     {
-        List<Event> events = GetByProcFast("geteventsbyschoolid", string.Format("schoolid={0}", user.SchoolId));
+        List<Event> events = GetBySchoolId(user.SchoolId);
         if (events.Count == 0)
             return defaultHomeHtml;
         AddHelperProperties(events);
         return GetHomeHtml(events, user);
     }
 
+    public static List<Event> GetBySchoolId(string schoolId)
+    {
+        return GetByProcFast("geteventsbyschoolid", string.Format("schoolid={0}", schoolId));
+    }
+
     public static string GetByGroup(string groupId, string latitude, string longitude, Users user)
     {
-        List<Event> events = GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
+        List<Event> events = GetByWhere(string.Format("primarygroupid%20eq%20'{0}'", groupId)); //GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
         if(events.Count > 0)
         {
             AddHelperProperties(events);
@@ -125,18 +132,10 @@ public class Event : Base<Event>
     }
 
     public new void Save()
-    {
-        //TODO: hack to create events
-        bool saveParticipants = true;
-        if(this.MinParticipants < 0)
-        {
-            this.MinParticipants = 0;
-            saveParticipants = false;
-        }
-        
+    {       
         base.Save();
 
-        if(!string.IsNullOrEmpty(this.UserId) && saveParticipants)
+        if(!string.IsNullOrEmpty(this.UserId))
         {
             EventGoing going = new EventGoing(this.Id, this.UserId, true, false);
             going.Save();
@@ -156,13 +155,10 @@ public class Event : Base<Event>
             notification.Save();
         }
 
-        if(!string.IsNullOrEmpty(this.GroupId))
+        if(!string.IsNullOrEmpty(this.UserId) && !string.IsNullOrEmpty(this.GroupId))
         {
             string[] ids = this.GroupId.Split('|');
-            foreach (string id in ids)
-            {
-                SendToGroup(id);
-            }
+            SendToGroup(ids);
         }
     }
 
@@ -170,31 +166,38 @@ public class Event : Base<Event>
     {
         Event evt = Event.Get(this.Id);
         string[] ids = this.GroupId.Split('|');
-        foreach (string id in ids)
+        for(int i = 0; i < ids.Length; i++)
         {
-            if (!string.IsNullOrEmpty(evt.GroupId) && evt.GroupId.Contains(id))
-            {
-                SendToGroup(id);
-            }
+            if(evt.GroupId.Contains(ids[i]))
+                ids[i] = "";
         }
+        SendToGroup(ids);
 
         base.Save();
     }
 
-    public void SendToGroup(string groupId)
+    public void SendToGroup(string[] groupIds)
     {
-        Group group = Group.Get(groupId);
-        foreach (GroupUsers user in GroupUsers.GetByGroup(groupId))
+        List<string> userIds = new List<string>();
+        foreach (string groupId in groupIds)
         {
-            if (user.UserId == this.UserId)
-                continue;
+            if (!string.IsNullOrEmpty(groupId))
+            {
+                Group group = Group.Get(groupId);
+                foreach (GroupUsers user in GroupUsers.GetByGroup(groupId))
+                {
+                    if (user.UserId == this.UserId && !userIds.Contains(user.UserId))
+                        continue;
 
-            string msg = "New event in your group " + group.Name;
-            AzureMessagingService.Send(msg, "", user.UserId);
+                    userIds.Add(user.UserId);
+                    string msg = "New event in your group " + group.Name;
+                    AzureMessagingService.Send(msg, "", user.UserId);
 
-            msg = "New: " + this.Name;
-            Notification notification = new Notification(this.Id, user.UserId, msg);
-            notification.Save();
+                    msg = "New: " + this.Name;
+                    Notification notification = new Notification(this.Id, user.UserId, msg);
+                    notification.Save();
+                }
+            }
         }
     }
 
@@ -300,6 +303,22 @@ public class Event : Base<Event>
             }
             if (evt.GroupIsPublic == null)
                 evt.GroupIsPublic = true;
+
+            try
+            {
+                string[] groupIds = evt.GroupId.Split('|');
+                string[] groupNames = evt.GroupName.Split('|');
+                evt.GroupName = "";
+                for (int i = 0; i < groupIds.Length; i++)
+                {
+                    string groupId = groupIds[i];
+                    if (groupId == evt.PrimaryGroupId)
+                    {
+                        evt.GroupName = groupNames[i];
+                    }
+                }
+            }
+            catch { }
         }
         
     }
@@ -336,7 +355,7 @@ public class Event : Base<Event>
                 addClass += " last";
 
             string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div>{Group}<div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='lit'>{Lit}</div></div>";
-            string details = ""; //AddGoing(evt);
+            string details = evt.GroupName;
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
             groupHtml = groupHtml.Replace("{EventId}", evt.Id).Replace("{Class}", addClass).Replace("{Name}", evt.Name).Replace("{Details}", details).Replace("{StartDay}", evt.LocalTime).Replace("{Group}", AddGroups(evt));
