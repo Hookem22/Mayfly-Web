@@ -110,7 +110,7 @@ public class Messages : Base<Messages>
         Event evt = Event.Get(message.EventId);
         foreach (EventGoing person in evt.Going)
         {
-            if (person.UserId == message.UserId)
+            if (person.UserId == message.UserId || person.IsMuted == true)
                 continue;
 
             string alert = evt.Name + ": " + message.Message;

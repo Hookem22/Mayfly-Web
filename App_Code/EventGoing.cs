@@ -14,13 +14,16 @@ public class EventGoing : UsersPartial<EventGoing>
         : base(_tableName)
     {
     }
-    public EventGoing(string eventId, string userId, bool isAdmin)
+    public EventGoing(string eventId, string userId, bool isAdmin, bool isMuted)
         : base(eventId, userId, _tableName)    
     {
         IsAdmin = isAdmin;
+        isMuted = isMuted;
     }
 
     public bool IsAdmin { get; set; }
+
+    public bool IsMuted { get; set; }
 
     public DateTime? CheckedMessagesAt { get; set; }
 

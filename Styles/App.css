@@ -436,7 +436,7 @@ input.error, textarea.error
 {
     background:#dcdee3;
 }
-#detailsEditBtn, #groupEditBtn, #groupAddLocationsBtn
+/*#detailsEditBtn, #groupEditBtn, #groupAddLocationsBtn
 {
     position: absolute;
     background-color: white;
@@ -447,7 +447,7 @@ input.error, textarea.error
     border: 1px solid rgba(0,0,0,.54);
     margin-top: 4px;
     display: none;
-}
+}*/
 #detailsInviteBtn
 {
     clear: both;
@@ -457,6 +457,46 @@ input.error, textarea.error
     font-size: 18px;
 }
 
+#detailsEditDiv, #groupEditDiv
+{
+    background-color: black;
+    opacity: .5;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: none;
+}
+#detailsPopup, #groupPopup
+{
+    position: absolute;
+    width: 70%;
+    left: 15%;
+    top: 30%;
+    background: white;
+    border-radius: 5px;
+    z-index: 25;
+    display: none;
+}
+#detailsPopup > div, #groupPopup > div {
+    color: #333;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+#detailsPopup > div:last-child, #groupPopup > div:last-child
+{
+    border-bottom: none;
+}
+.muteBtn {
+    position: absolute;
+    top: 64px;
+    right: 27px;
+    height: 28px;
+    display: none;
+}
 #messageDiv
 {
     z-index: 150;
@@ -1037,14 +1077,15 @@ input.error, textarea.error
 #menuDiv
 {
     position: absolute;
+    background: white;
     top: 47px;
     left: 0;
-    right: 0;
+    right: 25%;
     bottom: 0;
     z-index: 50;
     display: none;
 }
-#menuContent
+/*#menuContent
 {
     position: absolute;
     background: white;
@@ -1052,15 +1093,17 @@ input.error, textarea.error
     top: 0;
     left: 0;
     bottom: 0;
-}
+}*/
 #menuBackground {
     position: absolute;
     background-color: #000;
     opacity: .5;
-    top: 0;
-    left: 75%;
+    top: 47px;
+    left: 0;
     right: 0;
     bottom: 0;
+    z-index: 40;
+    display: none;
 }
 .ios #menuDiv
 {
@@ -1083,7 +1126,7 @@ input.error, textarea.error
 
 #groupsDiv
 {
-    position: fixed;
+    position: absolute;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     background: white;
@@ -1230,8 +1273,35 @@ input.error, textarea.error
     float: right;
     height: 26px;
     width: 28px;
-    margin: -4px 15px 0 0;
+    margin: -4px 0px 0 0;
 }
+#notificationsDiv
+{
+    position: absolute;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    background: white;
+    top: 47px;
+    left: 100%;
+    right: -100%;
+    bottom: 0;
+    z-index: 20;
+    padding-bottom: 90px;
+    display: none;
+}
+#notificationsListDiv > div {
+    padding: 8px 12px;
+    margin: 0 18px;
+    border-bottom: 1px solid #cccccc;
+}
+#notificationsListDiv > div > span {
+    font-weight: bold;
+}
+#notificationsListDiv > div > div {
+    padding-top: 2px;
+    font-size: 14px;
+}
+
 .screen
 {
     color: rgba(0,0,0,.8);

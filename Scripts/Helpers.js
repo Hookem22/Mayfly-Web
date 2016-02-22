@@ -187,6 +187,14 @@ function IsAdmin(going, userId) {
     }
     return false;
 }
+function IsMuted(going, userId) {
+    for (var i = 0; i < going.length; i++) {
+        if (going[i].UserId == userId)
+            return going[i].IsMuted;
+    }
+    return false;
+}
+
 function RemoveByUserId(list, userId)
 {
     for (var i = list.length - 1; i >= 0; i--) {
@@ -199,21 +207,6 @@ function RemoveByUserId(list, userId)
 
 /*Animations*/
 function MenuClick() {
-    if ($("#groupsDiv").is(":visible")) {
-        $("#groupsDiv").addClass("groupClose");
-        //$(".content").removeClass("contentGroupOpen");
-        //$("#groupFilterTextBox").addClass("searchGroupClose");
-
-        setTimeout(function () {
-            $("#groupsDiv").removeClass("groupOpen");
-            //$("#groupsDiv").removeClass("groupClose");
-            //$("#groupFilterTextBox").removeClass("searchGroupOpen");
-            //$("#groupFilterTextBox").removeClass("searchGroupClose");
-
-            //$("#groupsDiv").hide();
-        }, 500);
-    }
-
     if ($("#menuDiv").is(':visible'))
         CloseMenu();
     else
@@ -221,64 +214,53 @@ function MenuClick() {
 }
 
 function OpenMenu() {
+    $("#menuDiv").removeClass("menuClose");
     $("#menuDiv").show().addClass("menuOpen");
+    $(".content").removeClass("contentMenuClose");
     $(".content").addClass("contentMenuOpen");
+    $("#groupsDiv").removeClass("groupOpen");
+    $("#groupsDiv").addClass("groupClose");
+    $("#notificationsDiv").removeClass("groupOpen");
+    $("#notificationsDiv").addClass("groupClose");
+    $("#menuBackground").show();
 }
 
 function CloseMenu() {
-    if ($("#groupsDiv").is(":visible")) {
-        $("#groupsDiv").removeClass("groupClose");
-        $("#groupsDiv").show().addClass("groupOpen");
-    }
+    $("#groupsDiv").removeClass("groupClose");
+    $("#groupsDiv").addClass("groupOpen");
 
+    $("#notificationsDiv").removeClass("groupClose");
+    $("#notificationsDiv").addClass("groupOpen");
+
+    $("#menuDiv").removeClass("menuOpen");
     $("#menuDiv").addClass("menuClose");
     $(".content").addClass("contentMenuClose");
+    $("#menuBackground").hide();
 
     setTimeout(function () {
-        $("#menuDiv").removeClass("menuOpen");
-        $(".content").removeClass("contentMenuOpen");
-        $("#menuDiv").removeClass("menuClose");
-        $(".content").removeClass("contentMenuClose");
-
         $("#menuDiv").hide();
     }, 500);
 }
 
-function GroupsClick() {
+function OpenEvents() {
     CloseMenu();
-
-    if ($("#groupsDiv").is(':visible'))
-        CloseGroups();
-    else
-        OpenGroups();
+    $(".content").show();
+    $("#groupsDiv").hide();
+    $("#notificationsDiv").hide();
 }
 
 function OpenGroups() {
     CloseMenu();
-
-    $("#groupsListDiv > div img").hide();
-    setTimeout(function () {
-        $("#groupsListDiv > div img").show();
-    }, 350);
-
-    $("#groupsDiv").removeClass("groupClose");
-    $("#groupsDiv").show().addClass("groupOpen");
-    $(".content").addClass("contentGroupOpen");
+    $(".content").hide();
+    $("#groupsDiv").show();
+    $("#notificationsDiv").hide();
 }
 
-function CloseGroups() {
+function OpenNotifications() {
     CloseMenu();
-
+    $(".content").hide();
     $("#groupsDiv").hide();
-    $(".content").addClass("contentGroupClose");
-
-    setTimeout(function () {
-        $("#groupsDiv").removeClass("groupOpen");
-        $(".content").removeClass("contentGroupOpen");
-        $("#groupsDiv").removeClass("groupClose");
-        $(".content").removeClass("contentGroupClose");
-
-    }, 500);
+    $("#notificationsDiv").show();
 }
 
 function CloseRight(screen)
@@ -309,3 +291,4 @@ function PublicClick() {
         }
     }, 350);
 }
+

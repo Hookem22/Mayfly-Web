@@ -14,7 +14,9 @@
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
+    <script src="http://benalman.com/code/projects/jquery-throttle-debounce/jquery.ba-throttle-debounce.js"></script>
 <%--    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>--%>
+    
     <script type="text/javascript">
         var isMobile;
         var isiOS;
@@ -28,24 +30,20 @@
         $(document).ready(function () {           
             Init();
 
-            var scrollTimer;
-            $(".content").scroll(function () {
-                if (scrollTimer) {
-                    clearTimeout(scrollTimer);
-                }
-                scrollTimer = setTimeout(function () {
-                    if ($(".content").scrollTop() <= 0) {
+            var scrollTime;
+            $(".content").scroll($.debounce(250, true, function () {
+                scrollTime = new Date();
+            }));
+            $(".content").scroll($.debounce(250, function () {
+                if ($(".content").scrollTop() < 90) {
+                    $(".content").animate({ scrollTop: "90" }, 350);
+                    if ($(".content").scrollTop() <= 0 && new Date() - scrollTime > 750) {
                         ShowLoading();
                         LoadEvents();
-                        if(currentEvent && currentEvent.Id)
-                            LoadMessages();
                     }
-                    else if ($(".content").scrollTop() < 90) {
-                        $(".content").animate({ scrollTop: "90" }, 350);
-                    }
-                }, 100);
-            });
-
+                }
+            }));
+            
             $(".content").swipe({
                 swipeLeft: function (event, direction, distance, duration, fingerCount) {
                     if ($("#menuDiv").is(':visible'))
@@ -685,19 +683,56 @@
     <script type="text/javascript">
         $(document).ready(function () {
             $("#detailsDiv .detailMenuBtn").click(function () {
-                setTimeout(function () { $("#detailsEditBtn").show() }, 50);
+                var html = "";
+                if (IsAdmin(currentEvent.Going, currentUser.Id)) {
+                    html += "<div id='detailsEditBtn'>Edit Event</div>";
+                }
+                if (IsMuted(currentEvent.Going, currentUser.Id)) {
+                    html += "<div id='muteButton'>Unmute Event</div>";
+                } else {
+                    html += "<div id='muteButton'>Mute Event</div>";
+                }
+                
+                html += "<div onclick='$(\"#detailsEditDiv\").hide();$(\"#detailsPopup\").hide();'>Cancel</div>";
+                $("#detailsPopup").html(html);
+
+                $("#detailsEditDiv").show();
+                $("#detailsPopup").show();
             });
 
-            $("#detailsDiv").click(function () {
-                $("#detailsEditBtn").hide();
+            $("#detailsEditDiv").click(function () {
+                $("#detailsEditDiv").hide();
+                $("#detailsPopup").hide();
             });
 
-            $("#detailsDiv .detailMenuBtn").click(function () {
-                $("#detailsEditBtn").show();
-            });
-
-            $("#detailsEditBtn").click(function () {
+            $("#detailsPopup").on("click", "#detailsEditBtn", function () {
                 OpenAdd(true);
+                $("#detailsEditDiv").hide();
+                $("#detailsPopup").hide();
+            });
+
+            $("#detailsPopup").on("click", "#muteButton", function () {
+                var going;
+                for (var i = 0; i < currentEvent.Going.length; i++) {
+                    if (currentEvent.Going[i].UserId == currentUser.Id)
+                        going = currentEvent.Going[i];
+                }
+  
+                if ($(this).html() == "Mute Event") {
+                    $(this).html("Unmute Event");
+                    going.IsMuted = true;
+                    $(".muteBtn").show();
+                }
+                else {
+                    $(this).html("Mute Event");
+                    going.IsMuted = false;
+                    $(".muteBtn").hide();
+                }
+
+                Post("SaveEventGoing", { going: going });
+
+                $("#detailsEditDiv").hide();
+                $("#detailsPopup").hide();
             });
 
             $("#joinBtn").click(function () {
@@ -785,21 +820,24 @@
             if (IsGoing(event.Going, currentUser.Id)) {
                 $("#joinBtn").html("GOING");
                 $("#joinBtn").addClass("selected");
+                $("#detailsDiv .detailMenuBtn").show();
             }
             else {
                 $("#joinBtn").html("+ JOIN EVENT");
                 $("#joinBtn").removeClass("selected");
+                $("#detailsDiv .detailMenuBtn").hide();
+            }
+            if (IsMuted(event.Going, currentUser.Id)) {
+                $(".muteBtn").show();
+            }
+            else {
+                $(".muteBtn").hide();
             }
             
-            if (IsAdmin(event.Going, currentUser.Id) || (currentGroup && currentGroup.Members && IsAdmin(currentGroup.Members, currentUser.Id)))
-                $("#detailsDiv .detailMenuBtn").show();
-            else
-                $("#detailsDiv .detailMenuBtn").hide();
-
-            var messageSuccess = function (messageCk) {
-                if(messageCk)
-                    $(".messageBtn").attr("src", "/Img/newmessage.png");
-            }
+            //var messageSuccess = function (messageCk) {
+            //    if(messageCk)
+            //        $(".messageBtn").attr("src", "/Img/newmessage.png");
+            //}
             $("#inviteDiv div").removeClass("invited");
             //$(".messageBtn").attr("src", "/Img/message.png");
             //Post("CheckNewMessages", { eventId: currentEvent.Id, userId: currentUser.Id }, messageSuccess);
@@ -1359,11 +1397,17 @@
                 }
             });
 
+            $("#notificationsDiv").swipe({
+                swipeRight: function (event, direction, distance, duration, fingerCount) {
+                    OpenMenu();
+                }
+            });
+
             $("#eventsButton").click(function () {
                 $("#eventsButton, #interestsButton, #notificationsButton").removeClass("selected");
                 $(this).addClass("selected");
 
-                CloseGroups();
+                OpenEvents();
             });
 
             $("#interestsButton").click(function () {
@@ -1377,7 +1421,8 @@
                 $("#eventsButton, #interestsButton, #notificationsButton").removeClass("selected");
                 $(this).addClass("selected");
 
-                CloseMenu();
+                LoadNotifications();
+                OpenNotifications();
             });
 
             $("#myGroupsDiv").on("click", "div", function () {
@@ -1390,7 +1435,7 @@
                 setTimeout(CloseMenu, 500);
             });
 
-            $("#myNotificationsDiv").on("click", "div", function () {
+            $("#notificationsListDiv").on("click", "div", function () {
                 var eventId = $(this).attr("eventid");
                 if(eventId)
                     OpenEventFromNotification(eventId);
@@ -1407,12 +1452,12 @@
             var html = "";
             for (var i = 0; i < results.length; i++) {
                 var notification = results[i];
-                var notificationHtml = '<div eventid="{eventId}" style="padding:8px 4px 8px 16px;border-bottom:1px solid #3F4552;"><span style="font-weight:bold;">{Message}</span><div style="padding-top:2px;">{SinceSent}</div></div>';
+                var notificationHtml = '<div eventid="{eventId}"><span>{Message}</span><div>{SinceSent}</div></div>';
                 notificationHtml = notificationHtml.replace("{eventId}", notification.EventId).replace("{Message}", notification.Message).replace("{SinceSent}", notification.SinceSent);
                 html += notificationHtml;
             }
 
-            $("#myNotificationsDiv").html(html);
+            $("#notificationsListDiv").html(html);
         }
 
 
@@ -1463,27 +1508,16 @@
             });
 
             $("#groupDetailsDiv .detailMenuBtn").click(function () {
-                setTimeout(function () { $("#groupEditBtn").show() }, 50);
-            });
+                var html = "";
+                if (IsAdmin(currentGroup.Members, currentUser.Id)) {
+                    html += "<div id='groupEditBtn'>Edit Interest</div>";
+                }
 
-            $("#groupDetailsDiv").click(function () {
-                $("#groupEditBtn").hide();
-            });
+                html += "<div onclick='$(\"#groupEditDiv\").hide();$(\"#groupPopup\").hide();'>Cancel</div>";
+                $("#groupPopup").html(html);
 
-            $("#groupDetailsDiv .detailMenuBtn").click(function () {
-                $("#groupEditBtn").show();
-            });
-
-            $("#groupAddDiv .detailMenuBtn").click(function () {
-                setTimeout(function () { $("#groupAddLocationsBtn").show() }, 50);
-            });
-
-            $("#groupAddDiv").click(function () {
-                $("#groupAddLocationsBtn").hide();
-            });
-
-            $("#groupAddDiv .detailMenuBtn").click(function () {
-                $("#groupAddLocationsBtn").show();
+                $("#groupEditDiv").show();
+                $("#groupPopup").show();
             });
 
             $("#groupFilterTextBox").keyup(function () {
@@ -1548,8 +1582,10 @@
                 SaveGroup();
             });
 
-            $("#groupEditBtn").click(function () {
+            $("#groupPopup").on("click", "#groupEditBtn", function () {
                 AddEditGroup(currentGroup);
+                $("#groupEditDiv").hide();
+                $("#groupPopup").hide();
             });
 
             $("#groupAddLocationsBtn").click(function () {
@@ -1773,7 +1809,7 @@
             var html = "";
             for (var i = 0; i < results.length; i++) {
                 var group = results[i];
-                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" class="private" >{Img}<div>{Name}<img class="privateImg" src="../Img/whitelock.png"/></div></div>';
+                var groupHtml = group.IsPublic ? '<div groupid="{GroupId}" >{Img}<div>{Name}</div></div>' : '<div groupid="{GroupId}" class="private" >{Img}<div>{Name}<img class="privateImg" src="../Img/graylock.png"/></div></div>';
                 var img = group.PictureUrl ? '<img src="' + group.PictureUrl + '" onerror="this.src=\'../Img/group.png\';" />' : '<img src="../Img/group.png" class="logo" />';
                 groupHtml = groupHtml.replace("{GroupId}", group.Id).replace("{Img}", img).replace("{Name}", group.Name);
                 html += groupHtml;
@@ -2486,6 +2522,7 @@
 <body>
     <form id="form1" runat="server">
         <div class="modal-backdrop"></div>
+        <div id="menuBackground"></div>
         <div class="loading"><img src="../Img/loading.gif" /></div>
         <div class="header">
             <div>
@@ -2514,7 +2551,6 @@
                 <div id="interestsButton">Interests</div>
                 <div id="notificationsButton">Notifications</div>
             </div>
-            <div id="menuBackground"></div>
         </div>
         <div id="groupsDiv">
 <%--            <div id="groupAddBtnDiv">
@@ -2524,6 +2560,10 @@
             <div class="menuHeader">ST. EDWARD'S INTERESTS</div>
             <div id="groupsListDiv"></div>
             <div id="groupsAddBtn"><img src="../Img/plus.png" /></div>
+        </div>
+        <div id="notificationsDiv">
+            <div class="menuHeader">NOTIFICATIONS</div>
+            <div id="notificationsListDiv"></div>
         </div>
         <div id="groupAddDiv" class="screen swipe">
             <div class="screenHeader">
@@ -2551,7 +2591,8 @@
                 <div class="backArrow" ></div>
                 <div class="screenTitle"></div>
                 <img class="detailMenuBtn" src="/Img/smallmenu.png" />
-                <div id="groupEditBtn">Edit</div>
+                <div id="groupEditDiv"></div>
+                <div id="groupPopup"></div>
             </div>
             <div class="screenSubheader">
                 <img id="groupDetailsLogo" onerror="this.style.display='none';" />
@@ -2596,11 +2637,13 @@
                 <div class="screenTitle" style="margin-right: 54px;min-height:21px;"></div>
                 <img class="detailMenuBtn" src="/Img/smallmenu.png" />
                 <%--<img class="messageBtn" src="/Img/message.png" />--%>
-                <div id="detailsEditBtn">Edit</div>
+                <div id="detailsEditDiv"></div>
+                <div id="detailsPopup"></div>
             </div>
             <div class="screenSubheader" style="background: white;">
                 <img id="detailsLogo" onerror="this.style.display='none';" />
                 <div id="detailsInfo"></div>
+                <img class="muteBtn" src="/Img/mute.png" />
                 <div id="joinBtn" class="joinBtn">+ JOIN EVENT</div>
             </div>
             <div class="screenContent" style="background: white;">

@@ -138,7 +138,7 @@ public class Event : Base<Event>
 
         if(!string.IsNullOrEmpty(this.UserId) && saveParticipants)
         {
-            EventGoing going = new EventGoing(this.Id, this.UserId, true);
+            EventGoing going = new EventGoing(this.Id, this.UserId, true, false);
             going.Save();
 
             //Users user = Users.Get(this.UserId);
@@ -238,7 +238,7 @@ public class Event : Base<Event>
         }
         else
         {
-            going = new EventGoing(this.Id, this.UserId, false);
+            going = new EventGoing(this.Id, this.UserId, false, false);
             going.Save();
         }
 

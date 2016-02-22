@@ -220,6 +220,12 @@ public partial class App_Default : System.Web.UI.Page
     }
 
     [WebMethod]
+    public static void SaveEventGoing(EventGoing going)
+    {
+        going.Save();
+    }
+
+    [WebMethod]
     public static Group SaveGroup(Group group)
     {
         group.Save();
