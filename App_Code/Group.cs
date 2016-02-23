@@ -96,7 +96,13 @@ public class Group : Base<Group>
 
     public static List<Group> GetByUserId(string userId)
     {
-        return GetByProc("getgroupsbyuser", string.Format("userid={0}", userId));
+        List<Group> groups = GetByProc("getgroupsbyuser", string.Format("userid={0}", userId));
+        foreach (Group group in groups)
+        {
+            if (group.HasImage == true)
+                group.PictureUrl = string.Format("{0}{1}.jpeg", AZURE_PATH, group.Id);
+        }
+        return groups;
     }
 
     public static List<Group> GetBySchoolId(string schoolId)

@@ -36,6 +36,8 @@ public class Messages : Base<Messages>
 
     public string ViewedBy { get; set; }
 
+    public bool? HasImage { get; set; }
+
     #endregion
 
     public static List<Messages> GetByEvent(string eventId)
@@ -93,16 +95,19 @@ public class Messages : Base<Messages>
     }
 
 
-    public static bool CheckNewMessages(string eventId, string userId)
+    public static int CheckNewMessages(string eventId, string userId)
     {
+        int messageCt = 0;
         List<Messages> messages = GetByProc("getmessages", string.Format("eventid={0}", eventId));
-        if (messages.Count == 0)
-            return false;
+        foreach (Messages message in messages)
+        {
+            if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(message.ViewedBy) && !message.ViewedBy.Contains(userId))
+            {
+                messageCt++;
+            }
+        }
 
-        if (string.IsNullOrEmpty(messages[0].ViewedBy))
-            return true;
-
-        return !messages[0].ViewedBy.Contains(userId);
+        return messageCt;
     }
 
     public static void SendPushMessageToEvent(Messages message)

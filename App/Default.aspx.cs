@@ -264,11 +264,11 @@ public partial class App_Default : System.Web.UI.Page
         Messages.UpdateCheckedMessages(eventId, userId);
     }
 
-    [WebMethod]
-    public static bool CheckNewMessages(string eventId, string userId)
-    {
-        return Messages.CheckNewMessages(eventId, userId);
-    }
+    //[WebMethod]
+    //public static bool CheckNewMessages(string eventId, string userId)
+    //{
+    //    return Messages.CheckNewMessages(eventId, userId);
+    //}
 
     [WebMethod]
     public static void DeleteEvent(Event evt)

@@ -297,6 +297,19 @@ input.error, textarea.error
     margin-top: 8px;
     border-radius: 20px;
 }
+.homeList .messageCt {
+    height: 20px;
+    width: 22px;
+    position: absolute;
+    border-radius: 20px;
+    margin-top: -4px;
+    margin-left: 56px;
+    text-align: center;
+    background: #4285F4;
+    color: white;
+    padding: 2px 0 0;
+    font-size: 15px;
+}
 .homeList .name
 {
     /*position: absolute;
@@ -1755,7 +1768,7 @@ input.error, textarea.error
 .message {
     position: relative;
 }
-.message img {
+.message > img {
     height: 50px;
     width: 50px;
     border-radius: 25px;
@@ -1776,6 +1789,10 @@ input.error, textarea.error
 .message .messageText {
     line-height: 1.5em;
     margin: 14px 20px 22px 10px;
+}
+.messageImg img {
+    max-width: 80%;
+    margin: 0 10% 12px;
 }
 
 #AddEventIcons {

@@ -8,9 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
     <meta name="description" content="Pow Wow allows people to spontaneously create and recruit for activities, interests, and sports around them today." />
     <link rel="icon" type="image/png" href="/img/favicon.png" />
-    <link href="/Styles/App.css?i=7" rel="stylesheet" type="text/css" />
+    <link href="/Styles/App.css?i=8" rel="stylesheet" type="text/css" />
     <link href="/Styles/NonMobileApp.css?i=2" rel="stylesheet" type="text/css" />
-    <link href="/Styles/Animation.css?i=3" rel="stylesheet" type="text/css" />
+    <link href="/Styles/Animation.css?i=4" rel="stylesheet" type="text/css" />
     <script src="/Scripts/jquery-2.0.3.min.js" type="text/javascript"></script>
     <script src="/Scripts/jquery.touchSwipe.min.js" type="text/javascript"></script>
     <script src="/Scripts/Helpers.js" type="text/javascript"></script>
@@ -76,7 +76,7 @@
                 {
                     var isPrivate = true;
                     var groupId = $(this).find(".group").attr("groupid");
-                    $("#myGroupsDiv > div").each(function () {
+                    $("#inviteGroups > div").each(function () {
                         if ($(this).attr("groupid") == groupId)
                             isPrivate = false;
                     });
@@ -414,8 +414,7 @@
 
                         var src = $(this).find(".logo").attr("src");
                         var name = $(this).find("div").html();
-                        if (name.length > 7)
-                            name = name.substring(0, 6) + "...";
+
                         var html = "<div groupId='" + groupId + "' ><img src='" + src + "' /><div>" + name + "</div></div>";
                         $("#addDiv .invitedFriendsScroll").html(html);
                     }
@@ -532,8 +531,7 @@
                         if (group.Id == groupId) {
                             var src = group.PictureUrl ? group.PictureUrl : "../Img/group.png";
                             var name = group.Name;
-                            if (name.length > 7)
-                                name = name.substring(0, 6) + "...";
+
                             if (group.Id == currentEvent.PrimaryGroupId) {
                                 groupHtml += "<div groupId='" + groupId + "' class='primaryGroup' ><img src='" + src + "' /><div>" + name + "</div></div>";
                             } else {
@@ -1267,8 +1265,7 @@
                     var name = $(this).find("div").html();
 
                     popupHtml += "<div groupId='" + groupId + "' ><img src='" + src + "' /><div style='text-align:left;padding: 12px 0 4px 50px;'>" + name + "</div></div>";
-                    if (name.length > 7)
-                        name = name.substring(0, 6) + "...";
+
                     html += "<div groupId='" + groupId + "' ><img src='" + src + "' /><div>" + name + "</div></div>";
                 });
                 if (popupHtml.length > 0) {
@@ -1828,7 +1825,7 @@
         {
             if (isPrivate) {
                 var priv = true;
-                $("#myGroupsDiv > div").each(function () {
+                $("#inviteGroups > div").each(function () {
                     if ($(this).attr("groupid") == groupId)
                         priv = false;
                 });
@@ -2241,9 +2238,10 @@
             var html = "";
             for (var i = 0; i < messages.length; i++) {
                 var message = messages[i];
-                var messageHtml = "<div class='message'><img src='{FacebookPic}' /><div class='name'>{Name}</div><div class='sinceSent'>{SinceSent}</div><div class='messageText'>{Message}</div><div class='separator'></div>";
+                var messageHtml = "<div class='message'><img src='{FacebookPic}' /><div class='name'>{Name}</div><div class='sinceSent'>{SinceSent}</div><div class='messageText'>{Message}</div><div class='messageImg'>{MessageImg}</div><div class='separator'></div>";
+                var img = message.HasImage ? "<img src='https://mayflyapp.blob.core.windows.net/messages/" + message.Id + ".jpeg' />" : "";
                 html += messageHtml.replace("{FacebookPic}", "https://graph.facebook.com/" + message.FacebookId + "/picture")
-                                    .replace("{Name}", message.Name).replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message);
+                                    .replace("{Name}", message.Name).replace("{SinceSent}", message.SinceSent).replace("{Message}", message.Message).replace("{MessageImg}", img);
             }
 
             $("#MessageResults").html(html);
@@ -2269,8 +2267,13 @@
             //$("#MessageResults").css("padding-top", (44 + $("#messageDiv .screenTitle").height()) + "px"); //Hack for multi line titles
             //$("#MessageResults").scrollTop(1000000);
 
-            ////Mark Messages as read
-            //Post("UpdateCheckedMessages", { eventId: currentEvent.Id, userId: currentUser.Id });
+            //Mark Messages as read
+            Post("UpdateCheckedMessages", { eventId: currentEvent.Id, userId: currentUser.Id });
+            $("#contentResults .event").each(function () {
+                if ($(this).attr("eventid") == currentEvent.Id) {
+                    $(this).find(".messageCt").hide();
+                }
+            });
         }
 
         function SendMessage() {
@@ -2278,7 +2281,7 @@
             if(!text)
                 return;
             
-            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id, FacebookId: currentUser.FacebookId };
+            var message = { EventId: currentEvent.Id, Name: currentUser.FirstName, Message: text, UserId: currentUser.Id, FacebookId: currentUser.FacebookId, ViewedBy: currentUser.Id };
             Post("SendMessage", { message: message }, LoadMessages);
             $("#sendText").val("");
             $("#sendText").attr("rows", 1);

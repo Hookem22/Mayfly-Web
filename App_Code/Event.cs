@@ -117,7 +117,14 @@ public class Event : Base<Event>
 
     public static string GetByGroup(string groupId, string latitude, string longitude, Users user)
     {
-        List<Event> events = GetByWhere(string.Format("primarygroupid%20eq%20'{0}'", groupId)); //GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
+        List<Event> allEvents = GetBySchoolId(user.SchoolId);
+        List<Event> events = new List<Event>();
+        //GetByWhere(string.Format("primarygroupid%20eq%20'{0}'", groupId)); //GetByProc("geteventsbygroup", string.Format("groupid={0}", groupId));
+        foreach (Event evt in allEvents)
+        {
+            if (evt.PrimaryGroupId == groupId)
+                events.Add(evt);
+        }
         if(events.Count > 0)
         {
             AddHelperProperties(events);
@@ -354,7 +361,7 @@ public class Event : Base<Event>
             if (i == events.Count - 1 || events[i].DayOfWeek != events[i + 1].DayOfWeek)
                 addClass += " last";
 
-            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}<div class='name'>{Name}</div>{Group}<div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='lit'>{Lit}</div></div>";
+            string groupHtml = "<div eventid='{EventId}' class='homeList event {Class}'>{img}{MessageCt}<div class='name'>{Name}</div>{Group}<div class='details'>{Details}</div><div class='day'>{StartDay}</div><div class='lit'>{Lit}</div></div>";
             string details = evt.GroupName;
             //details += ge.Events.Count > 1 ? ", and " + (ge.Events.Count - 1).ToString() + " more..." : " " + evt.Distance;
 
@@ -386,7 +393,11 @@ public class Event : Base<Event>
                 lit += "<img src='../Img/match.png' style='position: absolute;right: 80px;top: 35px;height: 35px;' />";
 
             groupHtml = groupHtml.Replace("{Lit}", lit);
-           
+
+            int messageCt = user == null ? 0 : Messages.CheckNewMessages(evt.Id, user.Id);
+            string messageIcon = messageCt == 0 ? "" : "<div class='messageCt'>" + messageCt + "</div>";
+            groupHtml = groupHtml.Replace("{MessageCt}", messageIcon);
+
             html += groupHtml;
             //string img = "<img src='../Img/face" + rnd.Next(8) + ".png' />";
             //if (!string.IsNullOrEmpty(evt.GroupId))
